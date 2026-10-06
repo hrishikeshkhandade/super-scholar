@@ -1,0 +1,154 @@
+{
+  "id": "avellaneda-lee-2008",
+  "title": "Statistical Arbitrage in the U.S. Equities Market",
+  "authors": ["Marco Avellaneda", "Jeong-Hyun Lee"],
+  "year": 2008,
+  "subject": "Quantitative Finance",
+  "summary": "Builds and back-tests market-neutral trading strategies that bet on stock prices snapping back to their peers, using PCA factors and sector ETFs.",
+  "intro": {
+    "title": "A New Quest",
+    "speaker": "PROF. QUANT",
+    "pages": [
+      "Welcome, runner! I'm Prof. Quant. Today's paper: \"Statistical Arbitrage in the U.S. Equities Market\" by Avellaneda and Lee, 2008.",
+      "The big question: can you make money by betting that stocks which drift away from their peers will drift back?",
+      "The authors tested this on U.S. stocks from 1997 to 2007. Their best strategy earned a Sharpe ratio of 1.44 after trading costs.",
+      "Don't worry if that means nothing yet. Each world teaches one piece. Reach the flags to learn, then beat the boss to prove it.",
+      "World 1 covers the paper's introduction: pairs trading. Press SPACE or tap to jump. Good luck!"
+    ]
+  },
+  "worlds": [
+    {
+      "id": "pairs-trading",
+      "name": "World 1: Pairs Trading",
+      "section": "Section 1: Introduction",
+      "cutscenes": [
+        {
+          "title": "What Is Stat Arb?",
+          "speaker": "PROF. QUANT",
+          "pages": [
+            "Statistical arbitrage, or stat arb, is a family of trading strategies. The paper says they share three features.",
+            "1. Signals are systematic: rules-based, not hunches about a company's business.",
+            "2. The book is market-neutral: it has zero beta, so it shouldn't care if the whole market goes up or down.",
+            "3. The edge is statistical: make many small bets that each win slightly more often than not.",
+            "Spread across many stocks, those bets add up to a low-volatility strategy that doesn't move with the market."
+          ],
+          "practice": {
+            "prompt": "Which is NOT one of the three features of stat arb?",
+            "choices": [
+              "Rules-based trading signals",
+              "Zero beta with the market",
+              "Betting big on a company's fundamentals",
+              "A statistical source of profit"
+            ],
+            "answerIndex": 2,
+            "explanation": "Stat arb signals are systematic and rules-based, not driven by fundamentals."
+          }
+        },
+        {
+          "title": "Pairs Trading",
+          "speaker": "PROF. QUANT",
+          "pages": [
+            "Pairs trading is the ancestor of stat arb. Take two similar stocks, like Exxon Mobil and ConocoPhillips.",
+            "Both are oil companies, so their prices tend to move together once you adjust for beta, how strongly one tracks the other.",
+            "The paper writes: ln(P/P0) = a*t + b*ln(Q/Q0) + X. Stock P moves like b times stock Q, plus a leftover X.",
+            "That leftover X is the residual. The key assumption: X is mean-reverting. It wanders, but keeps getting pulled back to normal.",
+            "Think of X as a rubber band between the two stocks. Stretch it, and it wants to snap back."
+          ],
+          "practice": {
+            "prompt": "In pairs trading, what is the residual X?",
+            "choices": [
+              "The total price of stock P",
+              "The part of P's move that Q doesn't explain",
+              "The trading fee per share",
+              "The market's average return"
+            ],
+            "answerIndex": 1,
+            "explanation": "X is what's left of P's return after accounting for b times Q's return."
+          }
+        },
+        {
+          "title": "The Contrarian Trade",
+          "speaker": "PROF. QUANT",
+          "pages": [
+            "If X is unusually LOW, P is cheap relative to Q. So buy $1 of P and short $b of Q.",
+            "If X is unusually HIGH, P is expensive. Do the reverse: short P, buy Q. You profit when the prices converge.",
+            "This is called contrarian: you bet against the recent move, assuming the market over-reacted.",
+            "The paper's rules: enter when X is 1.25 standard deviations from normal, exit once it's within 0.5. Parameters use the past 60 days.",
+            "Generalized pairs trading swaps stock Q for a whole sector fund (an ETF). Now the boss awaits. Ready?"
+          ],
+          "practice": {
+            "prompt": "X is unusually low, so P looks cheap versus Q. What's the trade?",
+            "choices": [
+              "Buy P, short Q",
+              "Short P, buy Q",
+              "Buy both",
+              "Short both"
+            ],
+            "answerIndex": 0,
+            "explanation": "Buy the cheap one (P) and short its partner (Q), betting the gap closes."
+          }
+        }
+      ],
+      "boss": {
+        "name": "THE BETA BEAST",
+        "questions": [
+          {
+            "prompt": "What does it mean for a stat arb book to be market-neutral?",
+            "choices": [
+              "It only trades on neutral news days",
+              "It has zero beta with the market",
+              "It holds no positions at all",
+              "It only buys index funds"
+            ],
+            "answerIndex": 1,
+            "explanation": "Market-neutral means zero beta: overall market moves shouldn't change its value."
+          },
+          {
+            "prompt": "Which pair does the paper use as its pairs-trading example?",
+            "choices": [
+              "Apple and Microsoft",
+              "Coca-Cola and Pepsi",
+              "Exxon Mobil and ConocoPhillips",
+              "Ford and GM"
+            ],
+            "answerIndex": 2,
+            "explanation": "Exxon Mobil and ConocoPhillips: two oil companies whose prices track each other."
+          },
+          {
+            "prompt": "The strategy assumes the residual X is...",
+            "choices": [
+              "Always increasing",
+              "Mean-reverting",
+              "Exactly zero",
+              "Random with no pattern"
+            ],
+            "answerIndex": 1,
+            "explanation": "Mean-reverting: X keeps getting pulled back toward its equilibrium."
+          },
+          {
+            "prompt": "X is unusually HIGH, so P is expensive versus Q. What do you do?",
+            "choices": [
+              "Buy P, short Q",
+              "Buy both and wait",
+              "Short P, buy Q",
+              "Do nothing"
+            ],
+            "answerIndex": 2,
+            "explanation": "Short the expensive stock (P) and buy its partner (Q), betting the gap closes."
+          },
+          {
+            "prompt": "How far from normal must the residual be before the paper enters a trade?",
+            "choices": [
+              "0.5 standard deviations",
+              "1.25 standard deviations",
+              "3 standard deviations",
+              "60 standard deviations"
+            ],
+            "answerIndex": 1,
+            "explanation": "Enter at 1.25 standard deviations, exit inside 0.5. The 60 is the look-back window in days."
+          }
+        ]
+      }
+    }
+  ]
+}
