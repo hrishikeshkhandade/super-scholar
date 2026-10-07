@@ -1,4 +1,4 @@
-# Paper Quest
+# Super Scholar
 
 A retro 2D game that turns research papers into levels: learn from cutscenes, practice with questions, and beat a quiz boss. The first paper is Avellaneda & Lee, *Statistical Arbitrage in the U.S. Equities Market* (2008).
 
@@ -24,7 +24,7 @@ npm run build
 
 ## Deploy
 
-The game is hosted on Netlify at https://paper-quest-762.netlify.app.
+The game is hosted on Netlify at https://super-scholar.netlify.app.
 
 ```bash
 npm run deploy

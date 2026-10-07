@@ -22,9 +22,9 @@ describe("save data", () => {
 
   it("ignores corrupted progress instead of crashing", () => {
     const storage = memoryStorage();
-    storage.setItem("paper-quest.progress", "{not json");
+    storage.setItem("super-scholar.progress", "{not json");
     expect(loadProgress(storage)).toBeUndefined();
-    storage.setItem("paper-quest.progress", JSON.stringify({ paperId: "p", worldIndex: -1 }));
+    storage.setItem("super-scholar.progress", JSON.stringify({ paperId: "p", worldIndex: -1 }));
     expect(loadProgress(storage)).toBeUndefined();
   });
 
@@ -38,9 +38,9 @@ describe("save data", () => {
 
   it("keeps old saves working and ignores bad setting values", () => {
     const storage = memoryStorage();
-    storage.setItem("paper-quest.settings", JSON.stringify({ textSpeed: "slow" }));
+    storage.setItem("super-scholar.settings", JSON.stringify({ textSpeed: "slow" }));
     expect(loadSettings(storage)).toEqual({ textSpeed: "slow", music: true, musicStyle: "upbeat", sfx: true });
-    storage.setItem("paper-quest.settings", JSON.stringify({ music: "loud", musicStyle: "jazz" }));
+    storage.setItem("super-scholar.settings", JSON.stringify({ music: "loud", musicStyle: "jazz" }));
     expect(loadSettings(storage).music).toBe(true);
     expect(loadSettings(storage).musicStyle).toBe("upbeat");
   });

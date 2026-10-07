@@ -13,7 +13,7 @@ export class TitleScene extends Phaser.Scene {
   create(): void {
     this.cameras.main.setBackgroundColor(NES.navy);
     audio.playMusic("title");
-    this.add.text(GAME_WIDTH / 2, 70, "PAPER QUEST", textStyle(40, NES.yellow)).setOrigin(0.5);
+    this.add.text(GAME_WIDTH / 2, 70, "SUPER SCHOLAR", textStyle(40, NES.yellow)).setOrigin(0.5);
     this.add
       .text(GAME_WIDTH / 2, 125, "Research papers, but make it a game", textStyle(12, NES.sky))
       .setOrigin(0.5);

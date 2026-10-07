@@ -24,8 +24,8 @@ export const MUSIC_STYLES: MusicStyle[] = ["upbeat", "tradingFloor"];
 export const TEXT_SPEED_MS: Record<TextSpeed, number> = { slow: 45, normal: 25, fast: 8 };
 export const TEXT_SPEEDS: TextSpeed[] = ["slow", "normal", "fast"];
 
-const PROGRESS_KEY = "paper-quest.progress";
-const SETTINGS_KEY = "paper-quest.settings";
+const PROGRESS_KEY = "super-scholar.progress";
+const SETTINGS_KEY = "super-scholar.settings";
 const DEFAULT_SETTINGS: Settings = { textSpeed: "normal", music: true, musicStyle: "upbeat", sfx: true };
 
 type Storage = Pick<globalThis.Storage, "getItem" | "setItem" | "removeItem">;
