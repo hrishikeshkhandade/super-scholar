@@ -7,7 +7,8 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
-    "test": "vitest run"
+    "test": "vitest run",
+    "deploy": "npm test && npm run build && npx -y netlify-cli@27 deploy --prod --dir=dist --no-build"
   },
   "dependencies": {
     "phaser": "^4.2.1"

@@ -21,3 +21,13 @@ npm run build
 ```
 
 `npm run build` type-checks the code and writes the playable site to `dist/`.
+
+## Deploy
+
+The game is hosted on Netlify at https://paper-quest-762.netlify.app.
+
+```bash
+npm run deploy
+```
+
+This runs the tests, builds, and publishes `dist/`. The first time on a new machine, log in with `npx -y netlify-cli@27 login` and link the site with `npx -y netlify-cli@27 link`.
