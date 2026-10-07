@@ -28,11 +28,21 @@ describe("save data", () => {
     expect(loadProgress(storage)).toBeUndefined();
   });
 
-  it("defaults text speed to normal and remembers changes", () => {
+  it("starts with default settings and remembers changes", () => {
     const storage = memoryStorage();
-    expect(loadSettings(storage).textSpeed).toBe("normal");
-    saveSettings({ textSpeed: "fast" }, storage);
-    expect(loadSettings(storage).textSpeed).toBe("fast");
+    expect(loadSettings(storage)).toEqual({ textSpeed: "normal", music: true, musicStyle: "upbeat", sfx: true });
+    const changed = { textSpeed: "fast", music: false, musicStyle: "tradingFloor", sfx: false } as const;
+    saveSettings(changed, storage);
+    expect(loadSettings(storage)).toEqual(changed);
+  });
+
+  it("keeps old saves working and ignores bad setting values", () => {
+    const storage = memoryStorage();
+    storage.setItem("paper-quest.settings", JSON.stringify({ textSpeed: "slow" }));
+    expect(loadSettings(storage)).toEqual({ textSpeed: "slow", music: true, musicStyle: "upbeat", sfx: true });
+    storage.setItem("paper-quest.settings", JSON.stringify({ music: "loud", musicStyle: "jazz" }));
+    expect(loadSettings(storage).music).toBe(true);
+    expect(loadSettings(storage).musicStyle).toBe("upbeat");
   });
 
   it("still works when storage is unavailable", () => {

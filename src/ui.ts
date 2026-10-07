@@ -1,4 +1,5 @@
 import Phaser from "phaser";
+import { audio } from "./audio/audio";
 import type { Question } from "./content/types";
 import { FONT, NES, css } from "./palette";
 
@@ -108,6 +109,7 @@ export class Menu {
       const next = (this.selected + step * i + count * count) % count;
       if (this.items[next].enabled !== false) {
         this.select(next);
+        audio.playSfx("move");
         return;
       }
     }
@@ -116,6 +118,7 @@ export class Menu {
   private choose(index: number): void {
     const item = this.items[index];
     if (!item || item.enabled === false) return;
+    audio.playSfx("select");
     item.onSelect();
   }
 

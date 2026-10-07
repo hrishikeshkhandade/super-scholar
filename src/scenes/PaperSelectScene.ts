@@ -1,4 +1,5 @@
 import Phaser from "phaser";
+import { audio } from "../audio/audio";
 import { LIBRARY, searchPapers } from "../content/library";
 import type { Paper } from "../content/types";
 import { NES } from "../palette";
@@ -18,6 +19,7 @@ export class PaperSelectScene extends Phaser.Scene {
 
   create(): void {
     this.cameras.main.setBackgroundColor(NES.navy);
+    audio.playMusic("title");
     this.add.text(GAME_WIDTH / 2, 36, "CHOOSE A PAPER", textStyle(24, NES.yellow)).setOrigin(0.5);
     this.add
       .text(GAME_WIDTH / 2, 420, `${LIBRARY.length} paper in the library. More coming soon.`, textStyle(8, NES.lightGray))

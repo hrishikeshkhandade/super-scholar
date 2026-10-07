@@ -1,4 +1,5 @@
 import Phaser from "phaser";
+import { audio } from "../audio/audio";
 import type { Cutscene, Question } from "../content/types";
 import { NES } from "../palette";
 import { TEXT_SPEED_MS, loadSettings } from "../save";
@@ -78,6 +79,7 @@ export class CutsceneScene extends Phaser.Scene {
       callback: () => {
         shown += 1;
         this.body.setText(text.slice(0, shown));
+        if (shown % 3 === 0) audio.playSfx("text");
         if (shown >= text.length) finishTyping();
       },
     });
@@ -94,6 +96,7 @@ export class CutsceneScene extends Phaser.Scene {
     const questionPanel = new QuestionPanel(this, question, 130, (choiceIndex) => {
       questionPanel.destroy();
       const correct = choiceIndex === question.answerIndex;
+      audio.playSfx(correct ? "correct" : "wrong");
       let heading = correct ? "CORRECT!" : "NOT QUITE.";
       if (correct && this.lives < MAX_LIVES) {
         this.lives += 1;

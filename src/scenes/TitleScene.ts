@@ -1,4 +1,5 @@
 import Phaser from "phaser";
+import { audio } from "../audio/audio";
 import { findPaper } from "../content/library";
 import { NES } from "../palette";
 import { loadProgress } from "../save";
@@ -11,6 +12,7 @@ export class TitleScene extends Phaser.Scene {
 
   create(): void {
     this.cameras.main.setBackgroundColor(NES.navy);
+    audio.playMusic("title");
     this.add.text(GAME_WIDTH / 2, 70, "PAPER QUEST", textStyle(40, NES.yellow)).setOrigin(0.5);
     this.add
       .text(GAME_WIDTH / 2, 125, "Research papers, but make it a game", textStyle(12, NES.sky))

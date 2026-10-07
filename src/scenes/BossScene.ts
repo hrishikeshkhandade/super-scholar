@@ -1,4 +1,5 @@
 import Phaser from "phaser";
+import { audio } from "../audio/audio";
 import { BossFight } from "../bossFight";
 import { NES } from "../palette";
 import { clearProgress, saveProgress } from "../save";
@@ -28,6 +29,7 @@ export class BossScene extends Phaser.Scene {
     this.feedback = [];
 
     this.cameras.main.setBackgroundColor(NES.black);
+    audio.playMusic("boss");
     this.add.rectangle(0, 170, GAME_WIDTH, 30, NES.purple).setOrigin(0, 0);
     this.player = this.add.image(140, 170, "player-idle").setOrigin(0.5, 1).setScale(2.5);
     this.boss = this.add.image(640, 170, "boss").setOrigin(0.5, 1).setScale(1.8);
@@ -57,6 +59,7 @@ export class BossScene extends Phaser.Scene {
   }
 
   private showFeedback(correct: boolean, answer: string, explanation: string): void {
+    audio.playSfx(correct ? "correct" : "wrong");
     if (correct) {
       this.tweens.add({ targets: this.healthFill, width: (BAR.width * this.fight.health) / this.fight.maxHealth, duration: 300 });
       this.flash(this.boss);
@@ -89,6 +92,7 @@ export class BossScene extends Phaser.Scene {
     const { paper, worldIndex } = this.stage;
     const nextWorld = worldIndex + 1;
     const hasNextWorld = nextWorld < paper.worlds.length;
+    audio.playSfx("clear");
     if (hasNextWorld) saveProgress({ paperId: paper.id, worldIndex: nextWorld, checkpointsCleared: 0 });
     else clearProgress();
 
@@ -115,6 +119,7 @@ export class BossScene extends Phaser.Scene {
   }
 
   private lose(): void {
+    audio.playSfx("gameover");
     panel(this, 20, PANEL_TOP, GAME_WIDTH - 40, 230);
     this.add.text(GAME_WIDTH / 2, PANEL_TOP + 50, "GAME OVER", textStyle(32, NES.red)).setOrigin(0.5);
     new Menu(this, 280, PANEL_TOP + 110, [

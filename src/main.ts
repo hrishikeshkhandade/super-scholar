@@ -1,4 +1,5 @@
 import Phaser from "phaser";
+import { audio } from "./audio/audio";
 import { NES } from "./palette";
 import { AboutScene } from "./scenes/AboutScene";
 import { BootScene } from "./scenes/BootScene";
@@ -17,6 +18,8 @@ async function waitForFont(): Promise<void> {
   await Promise.race([document.fonts.load('16px "Press Start 2P"'), timeout]);
 }
 
+audio.unlockOnFirstInput();
+
 waitForFont().then(() => {
   const game = new Phaser.Game({
     type: Phaser.AUTO,
@@ -26,6 +29,8 @@ waitForFont().then(() => {
     backgroundColor: NES.black,
     pixelArt: true,
     physics: { default: "arcade" },
+    // Sound comes from our own chiptune synth (src/audio), not Phaser.
+    audio: { noAudio: true },
     scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH },
     scene: [
       BootScene,

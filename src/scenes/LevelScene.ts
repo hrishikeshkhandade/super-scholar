@@ -1,4 +1,5 @@
 import Phaser from "phaser";
+import { audio } from "../audio/audio";
 import { LEVEL_LAYOUTS } from "../levels/layouts";
 import { TILE, isSolidTile, parseLevel, type BlockContents } from "../levels/parseLevel";
 import { NES } from "../palette";
@@ -74,6 +75,7 @@ export class LevelScene extends Phaser.Scene {
     this.physics.world.setBoundsCollision(true, true, false, false);
 
     this.drawBackground();
+    audio.playMusic("level");
 
     this.solids = this.physics.add.staticGroup();
     for (const tile of level.ground) this.solids.create(center(tile).x, center(tile).y, tile.top ? "ground-top" : "ground");
@@ -219,6 +221,7 @@ export class LevelScene extends Phaser.Scene {
     if (canJump && time - this.jumpPressedAt <= JUMP_BUFFER_MS) {
       this.player.setVelocityY(JUMP_VELOCITY);
       this.jumping = true;
+      audio.playSfx("jump");
       this.jumpPressedAt = -Infinity;
       this.lastGroundedAt = -Infinity;
     }
@@ -274,6 +277,7 @@ export class LevelScene extends Phaser.Scene {
     if (!this.player.body.blocked.up || block.getData("used")) return;
     if (this.player.body.top < block.body.bottom - 4) return;
     block.setData("used", true).setTexture("used-block");
+    audio.playSfx("bump");
     this.tweens.add({ targets: block, y: block.y - 8, duration: 80, yoyo: true });
     const contents = block.getData("contents") as BlockContents;
     if (contents === "coin") {
@@ -295,6 +299,7 @@ export class LevelScene extends Phaser.Scene {
         powerUp.refreshBody();
         this.physics.add.overlap(this.player, powerUp, () => {
           powerUp.destroy();
+          audio.playSfx("powerup");
           if (kind === "heart") {
             this.stage.lives = Math.min(this.stage.lives + 1, MAX_LIVES);
             this.hearts.set(this.stage.lives);
@@ -316,6 +321,7 @@ export class LevelScene extends Phaser.Scene {
   }
 
   private addCoins(amount: number): void {
+    audio.playSfx("coin");
     this.coins += amount;
     this.coinText.setText(`x ${this.coins}`);
   }
@@ -331,6 +337,7 @@ export class LevelScene extends Phaser.Scene {
     const fromAbove = this.player.body.bottom <= bear.body.top + 16;
     if (falling && fromAbove) {
       bear.body.enable = false;
+      audio.playSfx("stomp");
       bear.anims.stop();
       bear.setTexture("bear-flat").setY(bear.y + 8);
       this.tweens.add({ targets: bear, alpha: 0, delay: 400, duration: 300, onComplete: () => bear.destroy() });
@@ -377,6 +384,7 @@ export class LevelScene extends Phaser.Scene {
     this.invulnerableUntil = this.time.now + INVULNERABLE_MS;
     this.jumping = false;
     this.player.setVelocityY(JUMP_VELOCITY * 0.6);
+    audio.playSfx("hurt");
     this.cameras.main.shake(150, 0.01);
     this.tweens.add({ targets: this.player, alpha: 0.2, duration: 100, yoyo: true, repeat: 5 });
 
@@ -392,6 +400,7 @@ export class LevelScene extends Phaser.Scene {
 
   private fallIntoPit(): void {
     if (this.finished) return;
+    audio.playSfx("fall");
     if (this.loseLife()) this.scene.restart({ ...this.stage });
   }
 
@@ -408,6 +417,7 @@ export class LevelScene extends Phaser.Scene {
     if (this.finished) return;
     this.finished = true;
     this.physics.pause();
+    audio.playSfx("clear");
     this.showPlayerFrame("player-jump");
     this.add
       .text(GAME_WIDTH / 2, 160, "LEVEL CLEAR!", textStyle(32, NES.yellow))
@@ -431,6 +441,7 @@ export class LevelScene extends Phaser.Scene {
   }
 
   private gameOver(): void {
+    audio.playSfx("gameover");
     this.finished = true;
     this.physics.pause();
     panel(this, 200, 110, 400, 230).setScrollFactor(0).setDepth(20);
