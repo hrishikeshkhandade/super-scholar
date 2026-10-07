@@ -4,8 +4,8 @@ import { AboutScene } from "./scenes/AboutScene";
 import { BootScene } from "./scenes/BootScene";
 import { BossScene } from "./scenes/BossScene";
 import { CutsceneScene } from "./scenes/CutsceneScene";
+import { LevelScene } from "./scenes/LevelScene";
 import { PaperSelectScene } from "./scenes/PaperSelectScene";
-import { RunnerScene } from "./scenes/RunnerScene";
 import { SettingsScene } from "./scenes/SettingsScene";
 import { TitleScene } from "./scenes/TitleScene";
 import { GAME_HEIGHT, GAME_WIDTH } from "./ui";
@@ -18,23 +18,26 @@ async function waitForFont(): Promise<void> {
 }
 
 waitForFont().then(() => {
-  new Phaser.Game({
+  const game = new Phaser.Game({
     type: Phaser.AUTO,
     parent: "game",
     width: GAME_WIDTH,
     height: GAME_HEIGHT,
     backgroundColor: NES.black,
     pixelArt: true,
+    physics: { default: "arcade" },
     scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH },
     scene: [
       BootScene,
       TitleScene,
       PaperSelectScene,
       CutsceneScene,
-      RunnerScene,
+      LevelScene,
       BossScene,
       SettingsScene,
       AboutScene,
     ],
   });
+  // Lets the browser console inspect the running game during development.
+  if (import.meta.env.DEV) Object.assign(window, { game });
 });

@@ -69,7 +69,7 @@ export class PaperSelectScene extends Phaser.Scene {
     this.scene.start("Cutscene", {
       cutscene: paper.intro,
       lives: START_LIVES,
-      next: { scene: "Runner", data: { paper, worldIndex: 0, checkpointsCleared: 0 } },
+      next: { scene: "Level", data: { paper, worldIndex: 0, checkpointsCleared: 0 } },
     });
   }
 

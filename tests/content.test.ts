@@ -31,6 +31,13 @@ describe.each(LIBRARY)("paper $id", (paper) => {
     }
   });
 
+  it("has short fun facts in every world for bear stomps", () => {
+    for (const world of paper.worlds) {
+      expect(world.facts.length).toBeGreaterThan(0);
+      for (const fact of world.facts) expect(fact.length).toBeLessThanOrEqual(120);
+    }
+  });
+
   it("keeps cutscene pages short enough to fit the dialog box", () => {
     const pages = [paper.intro, ...paper.worlds.flatMap((world) => world.cutscenes)].flatMap((c) => c.pages);
     for (const page of pages) expect(page.length).toBeLessThanOrEqual(190);

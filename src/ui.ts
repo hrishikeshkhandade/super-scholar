@@ -81,6 +81,11 @@ export class Menu {
     this.texts.forEach((text) => text.setDepth(depth));
   }
 
+  setScrollFactor(factor: number): void {
+    this.cursor.setScrollFactor(factor);
+    this.texts.forEach((text) => text.setScrollFactor(factor));
+  }
+
   setLabel(index: number, label: string): void {
     this.texts[index]?.setText(label);
   }
@@ -116,10 +121,12 @@ export class Menu {
 
   private handleKey(event: KeyboardEvent): void {
     if (this.items.length === 0 || event.repeat) return;
-    if (event.key === "ArrowUp") this.move(-1);
-    else if (event.key === "ArrowDown") this.move(1);
+    const typing = isTypingInInput(event);
+    const key = event.key.toLowerCase();
+    if (key === "arrowup" || (key === "w" && !typing)) this.move(-1);
+    else if (key === "arrowdown" || (key === "s" && !typing)) this.move(1);
     else if (event.key === "Enter") this.choose(this.selected);
-    else if (event.key === " " && !isTypingInInput(event)) this.choose(this.selected);
+    else if (event.key === " " && !typing) this.choose(this.selected);
     else return;
     event.preventDefault();
   }
@@ -168,7 +175,7 @@ export class HeartBar {
 
   constructor(scene: Phaser.Scene, x: number, y: number) {
     for (let i = 0; i < MAX_LIVES; i++) {
-      this.hearts.push(scene.add.image(x + i * 34, y, "heart").setOrigin(0, 0).setDepth(10));
+      this.hearts.push(scene.add.image(x + i * 34, y, "heart").setOrigin(0, 0).setDepth(10).setScrollFactor(0));
     }
   }
 

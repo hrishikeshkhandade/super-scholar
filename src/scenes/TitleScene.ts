@@ -15,8 +15,8 @@ export class TitleScene extends Phaser.Scene {
     this.add
       .text(GAME_WIDTH / 2, 125, "Research papers, but make it a game", textStyle(12, NES.sky))
       .setOrigin(0.5);
-    this.add.image(GAME_WIDTH / 2 + 230, 300, "runner").setScale(2);
-    this.add.image(GAME_WIDTH / 2 - 250, 300, "candle").setScale(2);
+    this.add.image(GAME_WIDTH / 2 + 230, 300, "player-idle").setScale(2);
+    this.add.sprite(GAME_WIDTH / 2 - 250, 300, "bear-walk1").setScale(2).play("bear-walk");
 
     const progress = loadProgress();
     const savedPaper = progress && findPaper(progress.paperId);
@@ -29,7 +29,7 @@ export class TitleScene extends Phaser.Scene {
         enabled: canContinue,
         onSelect: () => {
           const atBoss = progress!.checkpointsCleared >= savedPaper!.worlds[progress!.worldIndex].cutscenes.length;
-          this.scene.start(atBoss ? "Boss" : "Runner", {
+          this.scene.start(atBoss ? "Boss" : "Level", {
             paper: savedPaper,
             worldIndex: progress!.worldIndex,
             checkpointsCleared: progress!.checkpointsCleared,
@@ -42,7 +42,7 @@ export class TitleScene extends Phaser.Scene {
     ]);
 
     this.add
-      .text(GAME_WIDTH / 2, 420, "ARROWS + ENTER, OR CLICK / TAP", textStyle(8, NES.lightGray))
+      .text(GAME_WIDTH / 2, 420, "W / S TO CHOOSE, ENTER TO SELECT, OR CLICK", textStyle(8, NES.lightGray))
       .setOrigin(0.5);
   }
 }

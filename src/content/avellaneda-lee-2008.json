@@ -1,7 +1,10 @@
 {
   "id": "avellaneda-lee-2008",
   "title": "Statistical Arbitrage in the U.S. Equities Market",
-  "authors": ["Marco Avellaneda", "Jeong-Hyun Lee"],
+  "authors": [
+    "Marco Avellaneda",
+    "Jeong-Hyun Lee"
+  ],
   "year": 2008,
   "subject": "Quantitative Finance",
   "summary": "Builds and back-tests market-neutral trading strategies that bet on stock prices snapping back to their peers, using PCA factors and sector ETFs.",
@@ -12,8 +15,8 @@
       "Welcome, runner! I'm Prof. Quant. Today's paper: \"Statistical Arbitrage in the U.S. Equities Market\" by Avellaneda and Lee, 2008.",
       "The big question: can you make money by betting that stocks which drift away from their peers will drift back?",
       "The authors tested this on U.S. stocks from 1997 to 2007. Their best strategy earned a Sharpe ratio of 1.44 after trading costs.",
-      "Don't worry if that means nothing yet. Each world teaches one piece. Reach the flags to learn, then beat the boss to prove it.",
-      "World 1 covers the paper's introduction: pairs trading. Press SPACE or tap to jump. Good luck!"
+      "Don't worry if that means nothing yet. Each world teaches one piece. Reach the flag in each level to learn, then beat the boss.",
+      "Move with A and D, jump with W. Stomp the bears, dodge red candles, and hit ? blocks. World 1 is pairs trading. Go!"
     ]
   },
   "worlds": [
@@ -148,7 +151,17 @@
             "explanation": "Enter at 1.25 standard deviations, exit inside 0.5. The 60 is the look-back window in days."
           }
         ]
-      }
+      },
+      "facts": [
+        "Stat arb holding periods range from a few seconds to days, weeks, or even longer.",
+        "The paper only trades stocks worth over $1 billion on the trade date. That avoids survivorship bias.",
+        "Every trade is charged 5 basis points (0.05%) for costs, so a round trip costs 10 basis points.",
+        "The 60-day look-back window was chosen because it covers roughly one company earnings cycle.",
+        "PCA strategies earned a Sharpe ratio of 1.44 from 1997 to 2007, but only 0.9 from 2003 on.",
+        "Using trading volume pushed ETF strategies to a Sharpe ratio of 1.51 from 2003 to 2007.",
+        "Section 2.1 is titled \"can you hear the shape of the market?\", a nod to a famous math question about drums.",
+        "Stat arb funds took a big loss in the second week of August 2007. Many never recovered."
+      ]
     }
   ]
 }

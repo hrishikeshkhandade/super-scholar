@@ -21,18 +21,186 @@ const COLORS: Record<string, number> = {
 };
 
 const SPRITES: Record<string, string[]> = {
-  runner: [
-    "...KKKK.",
-    "..KTTTTK",
-    "..KTKTKK",
-    "..KTTTTK",
-    "...KBBK.",
-    "..KBBBBK",
-    ".KTBBBBT",
-    "..KBBBBK",
-    "..KNNNNK",
-    "..KN..NK",
-    "..KK..KK",
+  "player-idle": [
+    "NNNNNNNN",
+    "..NNNNY.",
+    ".KTTTTKY",
+    ".KTKTKK.",
+    ".KTTTTK.",
+    "..KBBK..",
+    ".KBBBBK.",
+    "TKBBBBKT",
+    ".KNNNNK.",
+    ".KK..KK.",
+  ],
+  "player-walk1": [
+    "NNNNNNNN",
+    "..NNNNY.",
+    ".KTTTTKY",
+    ".KTKTKK.",
+    ".KTTTTK.",
+    "..KBBK..",
+    ".KBBBBK.",
+    "TKBBBBKT",
+    ".KNNNNK.",
+    "KK....KK",
+  ],
+  "player-walk2": [
+    "NNNNNNNN",
+    "..NNNNY.",
+    ".KTTTTKY",
+    ".KTKTKK.",
+    ".KTTTTK.",
+    "..KBBK..",
+    ".KBBBBK.",
+    "TKBBBBKT",
+    "..KNNK..",
+    "..KKKK..",
+  ],
+  "player-jump": [
+    "NNNNNNNN",
+    "..NNNNY.",
+    ".KTTTTKY",
+    ".KTKTKK.",
+    ".KTTTTK.",
+    "..KBBK..",
+    "TKBBBBKT",
+    ".KBBBBK.",
+    ".KNNNNK.",
+    "KK....KK",
+  ],
+  "bear-walk1": [
+    ".KK....KK.",
+    "KOOKKKKOOK",
+    "KOOOOOOOOK",
+    "KOKOOOOKOK",
+    "KOOOTTOOOK",
+    "KOOTKKTOOK",
+    ".KOOOOOOK.",
+    ".KK.KK.KK.",
+  ],
+  "bear-walk2": [
+    ".KK....KK.",
+    "KOOKKKKOOK",
+    "KOOOOOOOOK",
+    "KOKOOOOKOK",
+    "KOOOTTOOOK",
+    "KOOTKKTOOK",
+    ".KOOOOOOK.",
+    "..KK..KK..",
+  ],
+  "bear-flat": [
+    "KKKKKKKKKK",
+    "KOKOOOOKOK",
+    "KOOOOOOOOK",
+    "KKKKKKKKKK",
+  ],
+  coin1: [
+    ".YYYY.",
+    "YYWWYY",
+    "YWYYYY",
+    "YYWWYY",
+    "YYYYWY",
+    "YYWWYY",
+    ".YYYY.",
+  ],
+  coin2: [
+    "..YY..",
+    ".YWYY.",
+    ".YWYY.",
+    ".YWYY.",
+    ".YWYY.",
+    ".YWYY.",
+    "..YY..",
+  ],
+  coin3: [
+    "..YY..",
+    "..WY..",
+    "..WY..",
+    "..WY..",
+    "..WY..",
+    "..WY..",
+    "..YY..",
+  ],
+  shield: [
+    ".BBBBB.",
+    "BWWWWWB",
+    "BWBBBWB",
+    "BWBWBWB",
+    "BWBBBWB",
+    ".BWWWB.",
+    "..BWB..",
+    "...B...",
+  ],
+  "ground-top": [
+    "LLLLLLLL",
+    "GLGLLGLG",
+    "GGGGGGGG",
+    "OOOOOOOO",
+    "OOTOOOOO",
+    "OOOOOTOO",
+    "OTOOOOOO",
+    "OOOOOOTO",
+  ],
+  ground: [
+    "OOOOOOOO",
+    "OOTOOOOO",
+    "OOOOOTOO",
+    "OTOOOOOO",
+    "OOOOOOTO",
+    "OOOTOOOO",
+    "OOOOOOOO",
+    "TOOOOTOO",
+  ],
+  brick: [
+    "TTTOTTTT",
+    "TTTOTTTT",
+    "OOOOOOOO",
+    "TTTTTTOT",
+    "TTTTTTOT",
+    "OOOOOOOO",
+    "TTTOTTTT",
+    "OOOOOOOO",
+  ],
+  "question-block": [
+    "KKKKKKKK",
+    "KYYKKYYK",
+    "KYKYYKYK",
+    "KYYYYKYK",
+    "KYYYKYYK",
+    "KYYYYYYK",
+    "KYYYKYYK",
+    "KKKKKKKK",
+  ],
+  "used-block": [
+    "KKKKKKKK",
+    "KOOOOOOK",
+    "KOTOOTOK",
+    "KOOOOOOK",
+    "KOOOOOOK",
+    "KOTOOTOK",
+    "KOOOOOOK",
+    "KKKKKKKK",
+  ],
+  platform: [
+    "WWWWWWWW",
+    "AAAAAAAA",
+    ".A....A.",
+  ],
+  "moving-platform": [
+    "PPPPPPPPPPPPPPPPPPPPPPPP",
+    "NNNNNNNNNNNNNNNNNNNNNNNN",
+    ".N....N....N....N....N..",
+  ],
+  spike: [
+    "...KK...",
+    "..KRRK..",
+    "..KRRK..",
+    ".KRSRRK.",
+    ".KRSRRK.",
+    "KRRSRRRK",
+    "KRRRRRRK",
+    "KKKKKKKK",
   ],
   heart: [
     ".RR.RR.",
@@ -49,33 +217,6 @@ const SPRITES: Record<string, string[]> = {
     ".A...A.",
     "..A.A..",
     "...A...",
-  ],
-  candle: [
-    "..K..",
-    "..K..",
-    "KKKKK",
-    "KRRRK",
-    "KRSRK",
-    "KRRRK",
-    "KRRRK",
-    "KRRRK",
-    "KRRRK",
-    "KKKKK",
-    "..K..",
-  ],
-  flag: [
-    "KYYYYY",
-    "KYYYY.",
-    "KYYY..",
-    "KYYYY.",
-    "KYYYYY",
-    "K.....",
-    "K.....",
-    "K.....",
-    "K.....",
-    "K.....",
-    "K.....",
-    "K.....",
   ],
   cloud: [
     "...WWW....",
@@ -132,4 +273,64 @@ export function createTextures(scene: Phaser.Scene): void {
     graphics.generateTexture(key, rows[0].length * PIXEL, rows.length * PIXEL);
     graphics.destroy();
   }
+  drawFlagpole(scene);
+  drawSkyline(scene);
+  drawHills(scene);
+  createAnimations(scene);
+}
+
+function drawFlagpole(scene: Phaser.Scene): void {
+  const g = scene.add.graphics();
+  g.fillStyle(NES.lightGray, 1).fillRect(18, 8, 4, 152);
+  g.fillStyle(NES.yellow, 1).fillCircle(20, 6, 6);
+  g.fillStyle(NES.lime, 1).fillTriangle(22, 14, 22, 50, 40, 32);
+  g.fillStyle(NES.green, 1).fillRect(12, 152, 16, 8);
+  g.generateTexture("flagpole", 40, 160);
+  g.destroy();
+}
+
+// A row of city buildings with lit windows, drawn once and tiled behind the level.
+function drawSkyline(scene: Phaser.Scene): void {
+  const width = 384;
+  const height = 200;
+  const g = scene.add.graphics();
+  let x = 0;
+  let seed = 7;
+  const random = () => {
+    seed = (seed * 9301 + 49297) % 233280;
+    return seed / 233280;
+  };
+  while (x < width) {
+    const w = 32 + Math.floor(random() * 4) * 8;
+    const h = 60 + Math.floor(random() * 16) * 8;
+    g.fillStyle(random() > 0.5 ? NES.navy : NES.purple, 1).fillRect(x, height - h, w - 4, h);
+    g.fillStyle(NES.yellow, 1);
+    for (let wy = height - h + 8; wy < height - 8; wy += 16) {
+      for (let wx = x + 6; wx < x + w - 10; wx += 10) {
+        if (random() > 0.45) g.fillRect(wx, wy, 4, 6);
+      }
+    }
+    x += w;
+  }
+  g.generateTexture("skyline", width, height);
+  g.destroy();
+}
+
+function drawHills(scene: Phaser.Scene): void {
+  const g = scene.add.graphics();
+  g.fillStyle(NES.green, 1);
+  g.fillCircle(64, 120, 80);
+  g.fillCircle(240, 130, 96);
+  g.fillCircle(384, 120, 80);
+  g.fillStyle(NES.lime, 1);
+  g.fillRect(56, 60, 8, 8).fillRect(232, 52, 8, 8);
+  g.generateTexture("hills", 384, 128);
+  g.destroy();
+}
+
+function createAnimations(scene: Phaser.Scene): void {
+  const frames = (...keys: string[]) => keys.map((key) => ({ key }));
+  scene.anims.create({ key: "player-walk", frames: frames("player-walk1", "player-walk2"), frameRate: 8, repeat: -1 });
+  scene.anims.create({ key: "bear-walk", frames: frames("bear-walk1", "bear-walk2"), frameRate: 4, repeat: -1 });
+  scene.anims.create({ key: "coin-spin", frames: frames("coin1", "coin2", "coin3", "coin2"), frameRate: 8, repeat: -1 });
 }

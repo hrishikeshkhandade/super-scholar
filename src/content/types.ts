@@ -25,6 +25,8 @@ export interface World {
   name: string;
   section: string;
   cutscenes: Cutscene[];
+  // Shown one at a time, each time the player stomps a bear.
+  facts: string[];
   boss: Boss;
 }
 

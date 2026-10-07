@@ -3,7 +3,7 @@ import { BossFight } from "../bossFight";
 import { NES } from "../palette";
 import { clearProgress, saveProgress } from "../save";
 import { GAME_WIDTH, HeartBar, Menu, QuestionPanel, START_LIVES, onceAdvance, panel, textStyle } from "../ui";
-import type { StageData } from "./RunnerScene";
+import type { StageData } from "../stage";
 
 const PANEL_TOP = 200;
 const BAR = { x: 480, y: 40, width: 300, height: 16 };
@@ -29,7 +29,7 @@ export class BossScene extends Phaser.Scene {
 
     this.cameras.main.setBackgroundColor(NES.black);
     this.add.rectangle(0, 170, GAME_WIDTH, 30, NES.purple).setOrigin(0, 0);
-    this.player = this.add.image(140, 170, "runner").setOrigin(0.5, 1).setScale(2.5);
+    this.player = this.add.image(140, 170, "player-idle").setOrigin(0.5, 1).setScale(2.5);
     this.boss = this.add.image(640, 170, "boss").setOrigin(0.5, 1).setScale(1.8);
     this.tweens.add({ targets: this.boss, y: 160, duration: 600, yoyo: true, repeat: -1, ease: "Sine.easeInOut" });
 
@@ -106,7 +106,7 @@ export class BossScene extends Phaser.Scene {
             {
               label: "NEXT WORLD",
               onSelect: () =>
-                this.scene.start("Runner", { paper, worldIndex: nextWorld, checkpointsCleared: 0, lives: START_LIVES }),
+                this.scene.start("Level", { paper, worldIndex: nextWorld, checkpointsCleared: 0, lives: START_LIVES }),
             },
           ]
         : []),
