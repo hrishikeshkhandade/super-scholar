@@ -9,6 +9,7 @@ import { NES } from "../palette";
 import { GRAVITY, JUMP_VELOCITY, PlayerController, makeOneWay, type Sprite } from "../player";
 import { clearProgress, saveProgress } from "../save";
 import type { StageData } from "../stage";
+import { enablePause } from "./PauseScene";
 import {
   GAME_HEIGHT,
   GAME_WIDTH,
@@ -114,6 +115,8 @@ export class BossScene extends Phaser.Scene {
     });
 
     this.drawHud(world.boss.name);
+    // No pausing during a question: the fight is already stopped then.
+    enablePause(this, () => this.mode !== "question" && this.mode !== "over");
   }
 
   private drawArena(): void {
