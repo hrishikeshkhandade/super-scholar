@@ -56,6 +56,34 @@ const CHUNKS: Chunk[] = [
     art: [blank(12), blank(12), blank(12), "      oo    ", "  --  --    ", blank(12), blank(12)],
     ground: "##        ##",
   },
+  // A brick ceiling with coins underneath
+  { difficulty: 0.2, art: [blank(10), blank(10), blank(10), "  BBBBBB  ", blank(10), "   oooo   ", blank(10)], ground: "##########" },
+  // A market bubble bobbing over the path
+  { difficulty: 0.35, art: [blank(9), blank(9), blank(9), blank(9), "    u    ", blank(9), " o     o "], ground: "#########" },
+  // Hop across pits onto a pillar
+  {
+    difficulty: 0.45,
+    art: [blank(12), blank(12), blank(12), "     oo     ", blank(12), "     ##     ", "     ##     "],
+    ground: "###  ##  ###",
+  },
+  // A bear patrolling a brick bridge, coins below
+  {
+    difficulty: 0.55,
+    art: [blank(10), blank(10), "    b     ", "  BBBBBB  ", blank(10), blank(10), "   ooo    "],
+    ground: "##########",
+  },
+  // A bed of spikes with a platform over it
+  {
+    difficulty: 0.65,
+    art: [blank(11), blank(11), blank(11), "   ooo     ", "  -----    ", blank(11), "  ^^^^^    "],
+    ground: "###########",
+  },
+  // A bubble guarding a pit
+  {
+    difficulty: 0.7,
+    art: [blank(10), blank(10), blank(10), "    u     ", blank(10), blank(10), blank(10)],
+    ground: "###   ####",
+  },
   // Spike, wall, and bear in a row
   {
     difficulty: 0.85,

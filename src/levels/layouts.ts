@@ -1,7 +1,7 @@
 // Level layouts, drawn as text. Each character is one 32px tile:
 //   #  ground        B  brick         ?  coin block     H  heart block
 //   S  shield block  -  thin platform (jump up through it, S to drop)
-//   ~  moving platform  ^  candle spikes  b  bear  o  coin
+//   ~  moving platform  ^  candle spikes  b  bear  u  market bubble  o  coin
 //   P  player start  F  goal flag
 // Levels are shared by every paper: a world's Nth lesson uses the Nth layout.
 

@@ -1,6 +1,9 @@
 import Phaser from "phaser";
 import { audio } from "../audio/audio";
-import { layoutFor, themeFor } from "../levels/chooseLayout";
+import { hashString, seededRandom } from "../generator/questions";
+import { layoutFor } from "../levels/chooseLayout";
+import { farKey, groundKey, groundTopKey, hillsKey } from "../levels/themeTextures";
+import { themeFor, type Theme } from "../levels/themes";
 import { TILE, isSolidTile, parseLevel, type BlockContents } from "../levels/parseLevel";
 import { NES } from "../palette";
 import { GRAVITY, JUMP_VELOCITY, PlayerController, makeOneWay, type Sprite } from "../player";
@@ -11,6 +14,7 @@ import { GAME_HEIGHT, GAME_WIDTH, HeartBar, MAX_LIVES, Menu, START_LIVES, panel,
 type StaticSprite = Phaser.Types.Physics.Arcade.SpriteWithStaticBody;
 
 const BEAR_SPEED = 60;
+const BUBBLE_BOB_SPEED = 70; // how fast bubbles drift up and down
 const MOVING_PLATFORM_SPEED = 70;
 const MOVING_PLATFORM_RANGE = TILE * 3;
 const INVULNERABLE_MS = 1200;
@@ -28,8 +32,10 @@ export class LevelScene extends Phaser.Scene {
   private platformCollider!: Phaser.Physics.Arcade.Collider;
   private movingPlatforms!: Phaser.Physics.Arcade.Group;
   private bears!: Phaser.Physics.Arcade.Group;
+  private bubbles!: Phaser.Physics.Arcade.Group;
   private skyline!: Phaser.GameObjects.TileSprite;
   private hills!: Phaser.GameObjects.TileSprite;
+  private theme!: Theme;
   private hearts!: HeartBar;
   private coinText!: Phaser.GameObjects.Text;
   private shieldIcon!: Phaser.GameObjects.Image;
@@ -52,6 +58,7 @@ export class LevelScene extends Phaser.Scene {
     this.invulnerableUntil = 0;
     this.finished = false;
 
+    this.theme = themeFor(hashString(this.stage.paper.id), this.stage.worldIndex, this.stage.checkpointsCleared);
     const layout = layoutFor(this.stage.paper.id, this.stage.worldIndex, this.stage.checkpointsCleared);
     this.rows = layout.rows;
     const level = parseLevel(layout.rows);
@@ -68,7 +75,7 @@ export class LevelScene extends Phaser.Scene {
     audio.playMusic("level");
 
     this.solids = this.physics.add.staticGroup();
-    for (const tile of level.ground) this.solids.create(center(tile).x, center(tile).y, tile.top ? "ground-top" : "ground");
+    for (const tile of level.ground) this.solids.create(center(tile).x, center(tile).y, tile.top ? groundTopKey(this.theme) : groundKey(this.theme));
     for (const tile of level.bricks) this.solids.create(center(tile).x, center(tile).y, "brick");
 
     this.blocks = this.physics.add.staticGroup();
@@ -109,6 +116,14 @@ export class LevelScene extends Phaser.Scene {
       bear.body.setSize(32, 28).setOffset(4, 4);
     }
 
+    // Market bubbles float in place, bobbing up and down.
+    this.bubbles = this.physics.add.group({ allowGravity: false, immovable: true });
+    level.bubbles.forEach((tile, i) => {
+      const bubble = this.bubbles.create(center(tile).x, center(tile).y, "bubble") as Sprite;
+      bubble.setData("phase", i * 1.7);
+      bubble.body.setCircle(14, 2, 2);
+    });
+
     const goal = this.physics.add.staticImage(center(level.goal).x, (level.goal.y + 1) * TILE - 80, "flagpole");
     goal.body.setSize(16, 160);
 
@@ -126,6 +141,7 @@ export class LevelScene extends Phaser.Scene {
     this.physics.add.overlap(this.player, coins, (_player, coin) => this.collectCoin(coin as StaticSprite));
     this.physics.add.overlap(this.player, spikes, (_player, spike) => this.damage((spike as StaticSprite).x));
     this.physics.add.overlap(this.player, this.bears, (_player, bear) => this.touchBear(bear as Sprite));
+    this.physics.add.overlap(this.player, this.bubbles, (_player, bubble) => this.touchBubble(bubble as Sprite));
     this.physics.add.overlap(this.player, goal, () => this.reachGoal());
 
     this.cameras.main.setBounds(0, 0, worldWidth, worldHeight);
@@ -138,15 +154,24 @@ export class LevelScene extends Phaser.Scene {
     this.createFactBanner();
   }
 
+  // Sky in NES-style color bands, then far scenery and hills that scroll
+  // slower than the level (parallax), all in this level's theme.
   private drawBackground(): void {
-    const theme = themeFor(this.stage.worldIndex);
-    this.cameras.main.setBackgroundColor(theme.sky);
-    this.skyline = this.add
-      .tileSprite(0, GAME_HEIGHT - 260, GAME_WIDTH, 200, "skyline")
-      .setOrigin(0, 0)
-      .setScrollFactor(0)
-      .setAlpha(theme.skylineAlpha);
-    this.hills = this.add.tileSprite(0, GAME_HEIGHT - 150, GAME_WIDTH, 128, "hills").setOrigin(0, 0).setScrollFactor(0);
+    const theme = this.theme;
+    this.cameras.main.setBackgroundColor(theme.sky[2]);
+    const bandHeight = 70;
+    theme.sky.slice(0, 2).forEach((color, i) => {
+      this.add.rectangle(0, i * bandHeight, GAME_WIDTH, bandHeight, color).setOrigin(0, 0).setScrollFactor(0);
+    });
+    if (theme.stars) {
+      const random = seededRandom(hashString(theme.name));
+      for (let i = 0; i < 40; i++) {
+        const star = this.add.rectangle(random() * GAME_WIDTH, random() * 200, 2, 2, NES.white).setScrollFactor(0.05);
+        this.tweens.add({ targets: star, alpha: 0.2, duration: 600 + random() * 900, yoyo: true, repeat: -1 });
+      }
+    }
+    this.skyline = this.add.tileSprite(0, GAME_HEIGHT - 260, GAME_WIDTH, 200, farKey(theme)).setOrigin(0, 0).setScrollFactor(0);
+    this.hills = this.add.tileSprite(0, GAME_HEIGHT - 150, GAME_WIDTH, 128, hillsKey(theme)).setOrigin(0, 0).setScrollFactor(0);
     for (let i = 0; i < 6; i++) {
       this.add.image(80 + i * 260, 50 + (i % 3) * 30, "cloud").setScrollFactor(0.1).setAlpha(theme.cloudAlpha);
     }
@@ -196,6 +221,7 @@ export class LevelScene extends Phaser.Scene {
     this.controls.update(time);
     this.updateBears();
     this.updateMovingPlatforms();
+    this.updateBubbles(time);
     this.skyline.tilePositionX = this.cameras.main.scrollX * 0.2;
     this.hills.tilePositionX = this.cameras.main.scrollX * 0.4;
     if (this.player.y > this.rows.length * TILE + TILE) this.fallIntoPit();
@@ -223,6 +249,27 @@ export class LevelScene extends Phaser.Scene {
       const minX = platform.getData("minX") as number;
       if (platform.x >= minX + MOVING_PLATFORM_RANGE) platform.setVelocityX(-MOVING_PLATFORM_SPEED);
       if (platform.x <= minX) platform.setVelocityX(MOVING_PLATFORM_SPEED);
+    }
+  }
+
+  private updateBubbles(time: number): void {
+    for (const object of this.bubbles.getChildren()) {
+      const bubble = object as Sprite;
+      bubble.setVelocityY(Math.cos(time / 400 + (bubble.getData("phase") as number)) * BUBBLE_BOB_SPEED);
+    }
+  }
+
+  // Landing on a bubble pops it for a coin; touching it any other way hurts.
+  private touchBubble(bubble: Sprite): void {
+    const falling = this.player.body.velocity.y > 0;
+    if (falling && this.player.body.bottom <= bubble.body.top + 14) {
+      audio.playSfx("stomp");
+      this.controls.bounce(JUMP_VELOCITY * 0.7);
+      this.floatText(bubble.x, bubble.y - 20, "BUBBLE POPPED!", NES.sky);
+      this.addCoins(1);
+      bubble.destroy();
+    } else {
+      this.damage(bubble.x);
     }
   }
 

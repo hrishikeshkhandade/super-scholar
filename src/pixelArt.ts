@@ -18,6 +18,7 @@ const COLORS: Record<string, number> = {
   O: NES.brown,
   T: NES.tan,
   A: NES.gray,
+  C: NES.sky,
 };
 
 const SPRITES: Record<string, string[]> = {
@@ -240,6 +241,17 @@ const SPRITES: Record<string, string[]> = {
     ".WKWKWWW.",
     "..WWKWW..",
   ],
+  // A see-through "market bubble" with a shine on one side.
+  bubble: [
+    "..CCCC..",
+    ".CWW..C.",
+    "CWW....C",
+    "CW.....C",
+    "C......C",
+    "C.....BC",
+    ".C...BC.",
+    "..CCCC..",
+  ],
   cloud: [
     "...WWW....",
     ".WWWWWWW..",
@@ -281,23 +293,29 @@ const SPRITES: Record<string, string[]> = {
 
 export const PIXEL = 4;
 
-export function createTextures(scene: Phaser.Scene): void {
-  for (const [key, rows] of Object.entries(SPRITES)) {
-    const graphics = scene.add.graphics();
-    rows.forEach((row, y) => {
-      [...row].forEach((char, x) => {
-        const color = COLORS[char];
-        if (color === undefined) return;
-        graphics.fillStyle(color, 1);
-        graphics.fillRect(x * PIXEL, y * PIXEL, PIXEL, PIXEL);
-      });
+// Draws one text-grid sprite. `recolor` swaps letters for other colors,
+// which is how each level theme gets its own ground.
+export function drawSprite(scene: Phaser.Scene, key: string, rows: string[], recolor: Record<string, number> = {}): void {
+  const graphics = scene.add.graphics();
+  rows.forEach((row, y) => {
+    [...row].forEach((char, x) => {
+      const color = recolor[char] ?? COLORS[char];
+      if (color === undefined) return;
+      graphics.fillStyle(color, 1);
+      graphics.fillRect(x * PIXEL, y * PIXEL, PIXEL, PIXEL);
     });
-    graphics.generateTexture(key, rows[0].length * PIXEL, rows.length * PIXEL);
-    graphics.destroy();
-  }
+  });
+  graphics.generateTexture(key, rows[0].length * PIXEL, rows.length * PIXEL);
+  graphics.destroy();
+}
+
+export function spriteRows(key: string): string[] {
+  return SPRITES[key];
+}
+
+export function createTextures(scene: Phaser.Scene): void {
+  for (const [key, rows] of Object.entries(SPRITES)) drawSprite(scene, key, rows);
   drawFlagpole(scene);
-  drawSkyline(scene);
-  drawHills(scene);
   createAnimations(scene);
 }
 
@@ -308,45 +326,6 @@ function drawFlagpole(scene: Phaser.Scene): void {
   g.fillStyle(NES.lime, 1).fillTriangle(22, 14, 22, 50, 40, 32);
   g.fillStyle(NES.green, 1).fillRect(12, 152, 16, 8);
   g.generateTexture("flagpole", 40, 160);
-  g.destroy();
-}
-
-// A row of city buildings with lit windows, drawn once and tiled behind the level.
-function drawSkyline(scene: Phaser.Scene): void {
-  const width = 384;
-  const height = 200;
-  const g = scene.add.graphics();
-  let x = 0;
-  let seed = 7;
-  const random = () => {
-    seed = (seed * 9301 + 49297) % 233280;
-    return seed / 233280;
-  };
-  while (x < width) {
-    const w = 32 + Math.floor(random() * 4) * 8;
-    const h = 60 + Math.floor(random() * 16) * 8;
-    g.fillStyle(random() > 0.5 ? NES.navy : NES.purple, 1).fillRect(x, height - h, w - 4, h);
-    g.fillStyle(NES.yellow, 1);
-    for (let wy = height - h + 8; wy < height - 8; wy += 16) {
-      for (let wx = x + 6; wx < x + w - 10; wx += 10) {
-        if (random() > 0.45) g.fillRect(wx, wy, 4, 6);
-      }
-    }
-    x += w;
-  }
-  g.generateTexture("skyline", width, height);
-  g.destroy();
-}
-
-function drawHills(scene: Phaser.Scene): void {
-  const g = scene.add.graphics();
-  g.fillStyle(NES.green, 1);
-  g.fillCircle(64, 120, 80);
-  g.fillCircle(240, 130, 96);
-  g.fillCircle(384, 120, 80);
-  g.fillStyle(NES.lime, 1);
-  g.fillRect(56, 60, 8, 8).fillRect(232, 52, 8, 8);
-  g.generateTexture("hills", 384, 128);
   g.destroy();
 }
 

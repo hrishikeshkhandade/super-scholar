@@ -2,6 +2,8 @@ import Phaser from "phaser";
 import { audio } from "../audio/audio";
 import { BossFight } from "../bossFight";
 import { TILE } from "../levels/parseLevel";
+import { farKey } from "../levels/themeTextures";
+import { THEMES } from "../levels/themes";
 import { NES } from "../palette";
 import { GRAVITY, JUMP_VELOCITY, PlayerController, makeOneWay, type Sprite } from "../player";
 import { clearProgress, saveProgress } from "../save";
@@ -115,7 +117,8 @@ export class BossScene extends Phaser.Scene {
 
   private drawArena(): void {
     this.cameras.main.setBackgroundColor(NES.black);
-    this.add.tileSprite(0, GAME_HEIGHT - 250, GAME_WIDTH, 200, "skyline").setOrigin(0, 0).setAlpha(0.5);
+    // The boss always fights in the neon night city.
+    this.add.tileSprite(0, GAME_HEIGHT - 250, GAME_WIDTH, 200, farKey(THEMES[2])).setOrigin(0, 0).setAlpha(0.6);
     this.add.rectangle(0, 0, GAME_WIDTH, 60, NES.navy, 1).setOrigin(0, 0);
   }
 

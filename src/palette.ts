@@ -1,11 +1,11 @@
-// Colors from the NES hardware palette.
+// Colors from the NES hardware palette (see nesPalette.ts; a test checks them).
 export const NES = {
   black: 0x000000,
   white: 0xfcfcfc,
   lightGray: 0xbcbcbc,
   gray: 0x7c7c7c,
-  red: 0xd82800,
-  salmon: 0xfc7460,
+  red: 0xf83800,
+  salmon: 0xf87858,
   yellow: 0xf8b800,
   green: 0x00a800,
   lime: 0xb8f818,

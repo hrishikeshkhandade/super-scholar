@@ -20,6 +20,7 @@ export interface ParsedLevel {
   movingPlatforms: TilePos[];
   spikes: TilePos[];
   bears: TilePos[];
+  bubbles: TilePos[];
   coins: TilePos[];
   start: TilePos;
   goal: TilePos;
@@ -40,6 +41,7 @@ export function parseLevel(rows: string[]): ParsedLevel {
     movingPlatforms: [],
     spikes: [],
     bears: [],
+    bubbles: [],
     coins: [],
   };
 
@@ -69,6 +71,9 @@ export function parseLevel(rows: string[]): ParsedLevel {
           break;
         case "b":
           level.bears.push(pos);
+          break;
+        case "u":
+          level.bubbles.push(pos);
           break;
         case "o":
           level.coins.push(pos);
