@@ -15,7 +15,7 @@ export interface PaperOutline {
   sections: Section[];
 }
 
-const END_HEADINGS = /^(\d+\.?\s*)?(references|bibliography|acknowledg(e)?ments?|appendix)\b/i;
+const END_HEADINGS = /^(\d+\.?\s*)?(references|bibliography|acknowledg(e)?ments?|appendix|recommended reading|further reading|notes|competing interests|conflicts? of interest|funding|author contributions|data availability)\b/i;
 const NUMBERED_HEADING = /^(\d+(\.\d+)*\.?|[IVX]+\.)\s+[A-Z][^.!?]{2,70}$/;
 const STANDARD_HEADING = /^(introduction|background|related work|methods?|results|discussion|conclusions?|summary)\b/i;
 
@@ -60,13 +60,17 @@ export function joinLines(lines: string[], vocabulary: Set<string>): string {
   return text.replace(/\s+/g, " ").trim();
 }
 
-// Words that appear at least twice, so line-break fragments like "mov" don't count.
+// Words seen in the middle of a line. Line-break fragments like "mov-" or
+// "fer" only ever appear at the end or start of a line, so they're left out.
 function wordSet(lines: TextLine[]): Set<string> {
-  const counts = new Map<string, number>();
+  const words = new Set<string>();
   for (const line of lines) {
-    for (const word of line.text.toLowerCase().match(/[a-z]+/g) ?? []) counts.set(word, (counts.get(word) ?? 0) + 1);
+    const tokens = line.text.split(/\s+/);
+    tokens.slice(1, line.text.endsWith("-") ? -1 : undefined).forEach((token) => {
+      for (const word of token.toLowerCase().match(/[a-z]+/g) ?? []) words.add(word);
+    });
   }
-  return new Set([...counts].filter(([word, count]) => count >= 2 && word.length >= 2).map(([word]) => word));
+  return words;
 }
 
 export function outlinePaper(allLines: TextLine[]): PaperOutline {
@@ -80,59 +84,77 @@ export function outlinePaper(allLines: TextLine[]): PaperOutline {
   const titleLines = firstPage.filter((line) => line.size === titleSize);
   const title = titleSize > body * 1.15 ? titleLines.map((line) => line.text).join(" ") : undefined;
 
-  const bigLine = (line: TextLine) =>
+  // Heading levels come from font size: the biggest size used for at least
+  // two headings is the main level (one world each), and smaller heading
+  // sizes are subsections folded into their parent. An author name or page
+  // number in a bigger font then can't become a world.
+  const candidate = (line: TextLine) =>
     line.size >= body * 1.12 && line.text.length <= 90 && !titleLines.includes(line);
-  const bigLines = lines.filter(bigLine);
-  const numberedBig = bigLines.filter((line) => NUMBERED_HEADING.test(line.text));
-  // Papers that number their sections: only numbered (or standard) big lines
-  // are headings, so author names and dates in a big font are skipped.
-  const strict = numberedBig.length >= 2;
-  const bigHeading = (line: TextLine) =>
-    bigLine(line) && (!strict || NUMBERED_HEADING.test(line.text) || STANDARD_HEADING.test(line.text));
-  const useNumbered = bigLines.length < 2;
-  const isHeading = (line: TextLine) =>
-    useNumbered ? line.size >= body && NUMBERED_HEADING.test(line.text) : bigHeading(line);
+  const sizeCounts = new Map<number, number>();
+  for (const line of lines.filter(candidate)) sizeCounts.set(line.size, (sizeCounts.get(line.size) ?? 0) + 1);
+  const topSize = [...sizeCounts].filter(([, count]) => count >= 2).sort((a, b) => b[0] - a[0])[0]?.[0];
+  const useNumbered = topSize === undefined;
+  const sameSize = (a: number, b: number) => Math.abs(a - b) < 0.5;
+
+  // Papers that number their sections: only numbered (or standard) lines
+  // count as main headings.
+  const topLines = lines.filter((line) => candidate(line) && topSize !== undefined && sameSize(line.size, topSize));
+  const strict = topLines.filter((line) => NUMBERED_HEADING.test(line.text)).length >= 2;
+  const isTop = (line: TextLine) =>
+    useNumbered
+      ? line.size >= body && NUMBERED_HEADING.test(line.text) && isTopLevel(line.text)
+      : topLines.includes(line) && (!strict || NUMBERED_HEADING.test(line.text) || STANDARD_HEADING.test(line.text));
+  const isSub = (line: TextLine) =>
+    useNumbered
+      ? line.size >= body && NUMBERED_HEADING.test(line.text) && !isTopLevel(line.text)
+      : candidate(line) && !topLines.includes(line);
+  // A long heading wraps onto a second line of the same size.
+  const continues = (heading: string, line: TextLine) =>
+    topLines.includes(line) &&
+    !NUMBERED_HEADING.test(line.text) &&
+    (/[-,:]$/.test(heading) || /\b(of|the|and|a|an|in|for|to|with|on|from|by|its|their)$/i.test(heading) || /^[a-z]/.test(line.text));
 
   const sections: Section[] = [];
   const abstractLines: string[] = [];
   let heading: string | undefined;
   let buffer: string[] = [];
   let inAbstract = false;
-  let previousWasHeading = false;
+  let previousWasTop = false;
 
   const flush = () => {
-    if (heading && buffer.length > 0) {
-      const text = joinLines(buffer, vocabulary);
-      const last = sections[sections.length - 1];
-      // Subsections (2.1, 2.2...) are folded into their parent section.
-      if (last && !isTopLevel(heading)) last.text += ` ${text}`;
-      else sections.push({ heading, text });
-    }
+    if (heading && buffer.length > 0) sections.push({ heading, text: joinLines(buffer, vocabulary) });
     buffer = [];
   };
 
   for (const line of lines) {
     if (titleLines.includes(line)) continue;
+    // Smaller text is figure captions and footnotes, which interrupt sentences.
+    if (line.size < body * 0.88) continue;
     if (/^abstract\b/i.test(line.text) && !heading) {
       inAbstract = true;
       const rest = line.text.replace(/^abstract[\s.:—-]*/i, "");
       if (rest) abstractLines.push(rest);
       continue;
     }
-    const continuesHeading = previousWasHeading && bigLine(line) && !NUMBERED_HEADING.test(line.text);
-    if (isHeading(line) || continuesHeading) {
-      if (END_HEADINGS.test(line.text)) break;
-      // A heading that wraps onto a second line continues the same heading.
-      if (previousWasHeading && heading && !NUMBERED_HEADING.test(line.text)) heading += ` ${line.text}`;
-      else {
+    const top = isTop(line);
+    const sub = !top && isSub(line);
+    // References and other end matter stop the lessons, whatever their size
+    // or numbering (some papers set "References" in plain bold body text).
+    const standaloneReferences = /^(\d+\.?\s*)?(references|bibliography)$/i.test(line.text);
+    if (standaloneReferences || ((top || sub || candidate(line)) && END_HEADINGS.test(line.text))) break;
+    if (top) {
+      if (previousWasTop && heading && continues(heading, line)) {
+        heading = heading.endsWith("-") ? heading + line.text : `${heading} ${line.text}`;
+      } else {
         flush();
         heading = line.text;
       }
       inAbstract = false;
-      previousWasHeading = true;
+      previousWasTop = true;
       continue;
     }
-    previousWasHeading = false;
+    previousWasTop = false;
+    if (sub) continue; // subsection titles aren't lesson text
     if (inAbstract) abstractLines.push(line.text);
     else if (heading) buffer.push(line.text);
   }

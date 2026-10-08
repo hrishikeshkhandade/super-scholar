@@ -78,6 +78,13 @@ describe("generateGame", () => {
     }
   });
 
+  it("stops at a References line set in plain body-size text", () => {
+    const lines = fakePaper().filter((line) => line.text !== "References" && !line.text.startsWith("Smith"));
+    lines.push({ text: "References", size: 10, page: 9 });
+    lines.push({ text: "Jones K. Proceedings of the Annual Meeting on chloroplasts and rubisco enzymes.", size: 10, page: 9 });
+    expect(JSON.stringify(generateGame(lines, "plants.pdf").worlds)).not.toContain("Annual Meeting");
+  });
+
   it("gives the same game for the same paper every time", () => {
     expect(generateGame(fakePaper(), "plants.pdf")).toEqual(paper);
   });
@@ -143,5 +150,32 @@ describe("generator pieces", () => {
       ...fakePaper().slice(1),
     ]);
     expect(outline.sections[0].heading).toBe("1 Introduction");
+  });
+
+  it("uses font-size levels: big author names, captions, and end matter don't become lessons", () => {
+    // Like the Portland Press photosynthesis paper: unnumbered headings in two
+    // sizes, the author in a medium font, small captions mid-section.
+    const lines: TextLine[] = [
+      { text: "How Plants Make Food From Light", size: 25, page: 1 },
+      { text: "Ada Lovelace", size: 12, page: 1 },
+    ];
+    Object.entries(SECTIONS).forEach(([heading, sentences], i) => {
+      lines.push({ text: heading.replace(/^\d+ /, ""), size: 20, page: i + 1 });
+      lines.push({ text: "A subsection title", size: 15, page: i + 1 });
+      sentences.forEach((sentence, j) => {
+        lines.push({ text: sentence, size: 10, page: i + 1 });
+        if (j === 3) lines.push({ text: "Figure 2. A caption about rubisco that interrupts the text.", size: 7, page: i + 1 });
+      });
+    });
+    lines.push({ text: "Competing Interests", size: 15, page: 9 });
+    lines.push({ text: "The author declares that there are no competing interests associated with the manuscript.", size: 10, page: 9 });
+
+    const paper = generateGame(lines, "plants.pdf");
+    expect(paper.worlds.map((world) => world.section)).toEqual(["Introduction", "The light reactions", "The Calvin cycle"]);
+    const text = JSON.stringify(paper.worlds);
+    expect(text).not.toContain("Ada Lovelace");
+    expect(text).not.toContain("caption");
+    expect(text).not.toContain("declares");
+    expect(text).not.toContain("A subsection title");
   });
 });

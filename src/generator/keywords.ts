@@ -15,7 +15,7 @@ const STOPWORDS = new Set(
     "data study studies analysis work works found find show shows et al corp corresponding respectively therefore " +
     "similarly instead previous above-mentioned simple simply typical typically called defined define defines " +
     "observe observed assume assumed assuming propose proposed obtain obtained perform performed compute computed " +
-    "notice noticed seen describe described discuss discussed present presented"
+    "notice noticed seen describe described discuss discussed present presented process total framework uses consistent"
   ).split(" "),
 );
 
@@ -66,6 +66,9 @@ export function findKeyTerms(sectionTexts: string[], limit = 40): Term[] {
     // A single word usually written Capitalized (but not an acronym like ETF)
     // is a name, like an author, which makes a poor quiz answer.
     if (!phrase && /^[A-Z][a-z]/.test(text)) continue;
+    // One-word answers ending in -ed/-ing are usually verbs ("converted").
+    if (!phrase && !key.includes("-") && /(ed|ing)$/.test(key)) continue;
+    if (phrase && key.split(" ").some((word) => /ed$/.test(word))) continue; // "oxygen produced"
     // Phrases are more specific than single words, so they get a boost.
     terms.push({ text, key, count: entry.count, score: entry.count * idf * (phrase ? 2.5 : 1) });
   }
@@ -79,7 +82,10 @@ export function findKeyTerms(sectionTexts: string[], limit = 40): Term[] {
     const stem = (key: string) => key.split(" ").map((word) => word.replace(/(es|s)$/, ""));
     const overlaps = chosen.some((other) => {
       const [a, b] = [stem(term.key), stem(other.key)];
-      return a.some((word) => b.includes(word)) && (a.length === 1 || b.length === 1 || a.join() === b.join());
+      if (a.length === 1 || b.length === 1) return a.some((word) => b.includes(word));
+      // Two phrases that chain ("complex organic" + "organic compounds") are
+      // pieces of one longer term.
+      return a.join() === b.join() || a[a.length - 1] === b[0] || b[b.length - 1] === a[0];
     });
     if (!overlaps) chosen.push(term);
     if (chosen.length >= limit) break;

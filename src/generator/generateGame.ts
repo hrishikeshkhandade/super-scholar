@@ -18,7 +18,7 @@ const MAX_WORLDS = 5;
 const PAGES_PER_LESSON = 4;
 const BOSS_QUESTIONS = 5;
 const MIN_WORLD_SENTENCES = 6;
-const MAX_WORLD_NAME = 30;
+const MAX_WORLD_NAME = 44;
 
 interface ScoredSentence {
   text: string;
@@ -73,7 +73,10 @@ function makeFacts(sentences: ScoredSentence[], terms: Term[], worldText: string
   const hasNumber = (text: string) => /\d/.test(text.replace(/\(\d+\)|\b(section|figure|table|equation)\s+\d+/gi, ""));
   const withNumbers = sentences.filter((s) => hasNumber(s.text) && s.text.length <= MAX_FACT_CHARS);
   const short = sentences.filter((s) => s.text.length <= MAX_FACT_CHARS && !withNumbers.includes(s));
-  const facts = [...withNumbers, ...short].slice(0, 6).map((s) => s.text);
+  // "...shown in Figure 3" only makes sense next to the figure, so those go last.
+  const mentionsFigure = (s: ScoredSentence) => /\b(fig(ure)?s?|tables?)\.?\s*\d/i.test(s.text);
+  const ranked = [...withNumbers, ...short].sort((a, b) => Number(mentionsFigure(a)) - Number(mentionsFigure(b)));
+  const facts = ranked.slice(0, 6).map((s) => s.text);
   if (facts.length > 0) return facts;
   return terms
     .filter((term) => containsTerm(worldText, term))
