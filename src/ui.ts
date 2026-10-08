@@ -87,6 +87,18 @@ export class Menu {
     this.texts.forEach((text) => text.setScrollFactor(factor));
   }
 
+  // The y just below the last option.
+  get bottom(): number {
+    const last = this.texts[this.texts.length - 1];
+    return last ? last.y + last.height : this.y;
+  }
+
+  // Moves every option (and the cursor) up or down.
+  shiftY(dy: number): void {
+    this.texts.forEach((text) => text.setY(text.y + dy));
+    this.cursor.setY(this.cursor.y + dy);
+  }
+
   setLabel(index: number, label: string): void {
     this.texts[index]?.setText(label);
   }
@@ -189,6 +201,26 @@ export class HeartBar {
   }
 }
 
+// Cuts words off the end of a (word-wrapped) text until it fits in
+// maxHeight, ending with "...", so long titles and abstracts never spill
+// out of their box.
+export function fitTextToHeight(text: Phaser.GameObjects.Text, maxHeight: number): void {
+  if (text.height <= maxHeight) return;
+  let words = text.text.split(" ");
+  // Halve first for speed on very long text, then trim a word at a time.
+  while (words.length > 8) {
+    const half = words.slice(0, Math.ceil(words.length / 2));
+    text.setText(`${half.join(" ")}...`);
+    if (text.height <= maxHeight) break;
+    words = half;
+  }
+  while (words.length > 1) {
+    text.setText(`${words.join(" ")}...`);
+    if (text.height <= maxHeight) return;
+    words = words.slice(0, -1);
+  }
+}
+
 export function panel(scene: Phaser.Scene, x: number, y: number, width: number, height: number) {
   return scene.add
     .rectangle(x, y, width, height, NES.black, 1)
@@ -222,6 +254,16 @@ export class QuestionPanel {
       spacing: 8,
       wrapWidth: width - 80,
     });
+
+    // A long question grows the panel upward so every choice stays on screen.
+    const overflow = this.menu.bottom + 16 - (GAME_HEIGHT - 20);
+    if (overflow > 0) {
+      const newTop = Math.max(top - overflow, 20);
+      const shift = newTop - top;
+      prompt.setY(prompt.y + shift);
+      this.menu.shiftY(shift);
+      (this.objects[0] as Phaser.GameObjects.Rectangle).setPosition(20, newTop).setSize(width, GAME_HEIGHT - newTop - 20);
+    }
   }
 
   destroy(): void {

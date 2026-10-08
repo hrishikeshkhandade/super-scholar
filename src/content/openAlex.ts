@@ -15,10 +15,10 @@ export interface OnlinePaper {
   pdfUrl: string | undefined;
 }
 
-export function searchUrl(query: string, perPage = 4): string {
+export function searchUrl(query: string, perPage = 3): string {
   const params = new URLSearchParams({
     search: query.trim(),
-    // Papers without an abstract give the AI nothing to build a game from.
+    // Papers without an abstract have too little to show or build a game from.
     filter: "has_abstract:true",
     per_page: String(perPage),
     select: FIELDS,

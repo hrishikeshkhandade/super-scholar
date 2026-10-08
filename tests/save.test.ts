@@ -1,5 +1,14 @@
 import { describe, expect, it } from "vitest";
-import { clearProgress, loadProgress, loadSettings, saveProgress, saveSettings } from "../src/save";
+import { LIBRARY } from "../src/content/library";
+import {
+  clearProgress,
+  loadProgress,
+  loadSettings,
+  loadUploadedPapers,
+  saveProgress,
+  saveSettings,
+  saveUploadedPaper,
+} from "../src/save";
 
 function memoryStorage() {
   const data = new Map<string, string>();
@@ -48,5 +57,15 @@ describe("save data", () => {
   it("still works when storage is unavailable", () => {
     expect(loadProgress(null)).toBeUndefined();
     expect(() => saveProgress({ paperId: "p", worldIndex: 0, checkpointsCleared: 0 }, null)).not.toThrow();
+  });
+
+  it("keeps the 3 newest uploaded papers and skips corrupted ones", () => {
+    const storage = memoryStorage();
+    const paper = LIBRARY[0];
+    for (const id of ["a", "b", "c", "d"]) saveUploadedPaper({ ...paper, id }, storage);
+    saveUploadedPaper({ ...paper, id: "b" }, storage);
+    expect(loadUploadedPapers(storage).map((saved) => saved.id)).toEqual(["b", "d", "c"]);
+    storage.setItem("super-scholar.uploads", JSON.stringify([{ id: "broken" }, { ...paper, id: "ok" }]));
+    expect(loadUploadedPapers(storage).map((saved) => saved.id)).toEqual(["ok"]);
   });
 });

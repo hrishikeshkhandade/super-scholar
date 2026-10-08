@@ -1,45 +1,38 @@
 import { describe, expect, it } from "vitest";
 import { LIBRARY } from "../src/content/library";
-import type { Question } from "../src/content/types";
-
-// Catches broken content (a wrong answer index, an empty world) before a
-// player runs into it mid-game.
-function checkQuestion(question: Question) {
-  expect(question.prompt.trim()).not.toBe("");
-  expect(question.choices.length).toBeGreaterThanOrEqual(2);
-  expect(question.choices.length).toBeLessThanOrEqual(4);
-  expect(question.answerIndex).toBeGreaterThanOrEqual(0);
-  expect(question.answerIndex).toBeLessThan(question.choices.length);
-  expect(new Set(question.choices).size).toBe(question.choices.length);
-}
+import { validatePaper } from "../src/content/validate";
+import type { Paper } from "../src/content/types";
 
 describe.each(LIBRARY)("paper $id", (paper) => {
-  it("has an intro and at least one world", () => {
-    expect(paper.intro.pages.length).toBeGreaterThan(0);
-    expect(paper.worlds.length).toBeGreaterThan(0);
+  it("passes every content rule", () => {
+    expect(validatePaper(paper)).toEqual([]);
+  });
+});
+
+describe("validatePaper", () => {
+  const good = LIBRARY[0];
+  const withBossQuestion = (question: Paper["worlds"][0]["boss"]["questions"][0]): Paper => ({
+    ...good,
+    worlds: [{ ...good.worlds[0], boss: { ...good.worlds[0].boss, questions: [question] } }],
   });
 
-  it("has a valid cutscene, practice question, and boss in every world", () => {
-    for (const world of paper.worlds) {
-      expect(world.cutscenes.length).toBeGreaterThan(0);
-      for (const cutscene of world.cutscenes) {
-        expect(cutscene.pages.length).toBeGreaterThan(0);
-        if (cutscene.practice) checkQuestion(cutscene.practice);
-      }
-      expect(world.boss.questions.length).toBeGreaterThan(0);
-      world.boss.questions.forEach(checkQuestion);
-    }
+  it("catches a wrong answer index and duplicate choices", () => {
+    const problems = validatePaper(
+      withBossQuestion({ prompt: "Q?", choices: ["a", "A", "b"], answerIndex: 5, explanation: "" }),
+    );
+    expect(problems.join("\n")).toMatch(/answer index/);
+    expect(problems.join("\n")).toMatch(/duplicate/);
   });
 
-  it("has short fun facts in every world for bear stomps", () => {
-    for (const world of paper.worlds) {
-      expect(world.facts.length).toBeGreaterThan(0);
-      for (const fact of world.facts) expect(fact.length).toBeLessThanOrEqual(120);
-    }
-  });
-
-  it("keeps cutscene pages short enough to fit the dialog box", () => {
-    const pages = [paper.intro, ...paper.worlds.flatMap((world) => world.cutscenes)].flatMap((c) => c.pages);
-    for (const page of pages) expect(page.length).toBeLessThanOrEqual(190);
+  it("catches facts and pages too long to fit on screen", () => {
+    const tooLong = "x".repeat(300);
+    const paper: Paper = {
+      ...good,
+      intro: { ...good.intro, pages: [tooLong] },
+      worlds: [{ ...good.worlds[0], facts: [tooLong] }],
+    };
+    const problems = validatePaper(paper).join("\n");
+    expect(problems).toMatch(/intro page 1/);
+    expect(problems).toMatch(/fact 1/);
   });
 });

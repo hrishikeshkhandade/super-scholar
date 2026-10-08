@@ -11,6 +11,7 @@ const INPUT_BOX = { x: 40, y: 64, width: GAME_WIDTH - 80, height: 40 };
 const SEARCH_DELAY_MS = 500; // wait for a pause in typing before searching online
 const MIN_ONLINE_QUERY = 3;
 const LINE_CHARS = 40;
+const MAX_LISTED_PAPERS = 4; // as many as fit on screen with UPLOAD and BACK
 export const LAST_QUERY_KEY = "lastSearchQuery";
 
 function truncate(text: string, length: number): string {
@@ -80,6 +81,17 @@ export class PaperSelectScene extends Phaser.Scene {
 
   // Built-in papers filter instantly as you type; the online database is
   // searched once typing pauses, so each keystroke doesn't cost a request.
+  // The browser's file picker; picking a PDF starts building a game from it.
+  private chooseUpload(): void {
+    const picker = document.getElementById("pdf-input") as HTMLInputElement;
+    picker.value = "";
+    picker.onchange = () => {
+      const file = picker.files?.[0];
+      if (file && this.scene.isActive()) this.scene.start("Generate", { file });
+    };
+    picker.click();
+  }
+
   private onQueryChanged(query: string): void {
     this.registry.set(LAST_QUERY_KEY, query);
     this.localResults = searchPapers(query);
@@ -114,11 +126,12 @@ export class PaperSelectScene extends Phaser.Scene {
 
   private showResults(): void {
     this.menu.setItems([
-      ...this.localResults.map((paper) => ({
-        label: `* ${truncate(paper.title, LINE_CHARS - 2)}\n  ${truncate(`READY - ${byline(paper.authors, paper.year)}`, LINE_CHARS - 2)}`,
+      { label: "+ UPLOAD A PDF\n  Turn any paper into a game", onSelect: () => this.chooseUpload() },
+      ...this.localResults.slice(0, MAX_LISTED_PAPERS).map((paper) => ({
+        label: `* ${truncate(paper.title, LINE_CHARS - 2)}\n  ${truncate(`READY - ${paper.authors.length > 0 ? byline(paper.authors, paper.year) : "your upload"}`, LINE_CHARS - 2)}`,
         onSelect: () => this.startPaper(paper),
       })),
-      ...this.onlineResults.map((paper) => ({
+      ...this.onlineResults.slice(0, Math.max(MAX_LISTED_PAPERS - this.localResults.length, 0)).map((paper) => ({
         label: `${truncate(paper.title, LINE_CHARS)}\n${truncate(byline(paper.authors, paper.year), LINE_CHARS)}`,
         onSelect: () => this.scene.start("PaperDetail", { paper }),
       })),

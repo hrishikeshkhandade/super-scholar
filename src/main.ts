@@ -5,6 +5,7 @@ import { AboutScene } from "./scenes/AboutScene";
 import { BootScene } from "./scenes/BootScene";
 import { BossScene } from "./scenes/BossScene";
 import { CutsceneScene } from "./scenes/CutsceneScene";
+import { GenerateScene } from "./scenes/GenerateScene";
 import { LevelScene } from "./scenes/LevelScene";
 import { PaperDetailScene } from "./scenes/PaperDetailScene";
 import { PaperSelectScene } from "./scenes/PaperSelectScene";
@@ -38,6 +39,7 @@ waitForFont().then(() => {
       TitleScene,
       PaperSelectScene,
       PaperDetailScene,
+      GenerateScene,
       CutsceneScene,
       LevelScene,
       BossScene,
