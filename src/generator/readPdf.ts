@@ -13,7 +13,10 @@ export async function readPdfLines(
   const { default: workerUrl } = await import("pdfjs-dist/build/pdf.worker.min.mjs?url");
   pdfjs.GlobalWorkerOptions.workerSrc = workerUrl;
 
-  const task = pdfjs.getDocument({ data });
+  // Safety with untrusted PDFs: we only extract text (pages are never
+  // rendered), pdf.js runs in its own worker, and the site's security policy
+  // blocks eval, so code hidden in a PDF has nothing it can run.
+  const task = pdfjs.getDocument({ data, enableXfa: false });
   const pdf = await task.promise;
   const pages = Math.min(pdf.numPages, MAX_PDF_PAGES);
   const lines: TextLine[] = [];

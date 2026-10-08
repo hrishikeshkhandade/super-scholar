@@ -17,6 +17,8 @@ const NOT_FOUND_TIP = "Try OPEN PAPER to get the PDF yourself, then upload it.";
 
 export class GenerateScene extends Phaser.Scene {
   private status!: Phaser.GameObjects.Text;
+  private abort?: AbortController;
+  private hint?: Phaser.GameObjects.Text;
 
   constructor() {
     super("Generate");
@@ -28,6 +30,15 @@ export class GenerateScene extends Phaser.Scene {
     this.tweens.add({ targets: professor, y: 130, duration: 400, yoyo: true, repeat: -1, ease: "Sine.easeInOut" });
     this.add.text(GAME_WIDTH / 2, 230, "PROF. QUANT IS READING\nYOUR PAPER...", textStyle(24, NES.yellow)).setOrigin(0.5).setAlign("center");
     this.status = this.add.text(GAME_WIDTH / 2, 300, "Opening the PDF", textStyle(16, NES.white)).setOrigin(0.5);
+    const hint = this.add.text(GAME_WIDTH / 2, 420, "ESC: CANCEL", textStyle(8, NES.lightGray)).setOrigin(0.5);
+    // A slow download shouldn't trap the player on this screen.
+    this.abort = new AbortController();
+    this.input.keyboard?.once("keydown-ESC", () => {
+      this.abort?.abort();
+      this.scene.start("PaperSelect");
+    });
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.abort?.abort());
+    this.hint = hint;
     void this.build(data);
   }
 
@@ -41,7 +52,7 @@ export class GenerateScene extends Phaser.Scene {
 
   private async download(id: string): Promise<ArrayBuffer> {
     this.status.setText("Downloading the free PDF");
-    const response = await fetch(`/api/fetch-paper?id=${encodeURIComponent(id)}`).catch(() => {
+    const response = await fetch(`/api/fetch-paper?id=${encodeURIComponent(id)}`, { signal: this.abort?.signal }).catch(() => {
       throw new GenerateError("Couldn't connect to download the paper. Check your connection.");
     });
     if (!response.ok) {
@@ -93,6 +104,7 @@ export class GenerateScene extends Phaser.Scene {
   }
 
   private showError(message: string): void {
+    this.hint?.destroy();
     audio.playSfx("wrong");
     this.status.setText("");
     const error = this.add

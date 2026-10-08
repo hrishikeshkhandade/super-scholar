@@ -10,7 +10,7 @@ const MAX_TRIES = 4;
 const USER_AGENT = "SuperScholar/1.0 (educational game; https://super-scholar.netlify.app)";
 
 function error(status: number, message: string): Response {
-  return Response.json({ error: message }, { status });
+  return Response.json({ error: message }, { status, headers: { "x-content-type-options": "nosniff" } });
 }
 
 // Streams the PDF through while counting bytes, checking first that it
@@ -46,6 +46,7 @@ async function pdfStream(response: Response): Promise<ReadableStream<Uint8Array>
 }
 
 export default async (request: Request): Promise<Response> => {
+  if (request.method !== "GET") return error(405, "Only GET requests are allowed.");
   const id = new URL(request.url).searchParams.get("id") ?? "";
   if (!isWorkId(id)) return error(400, "Not a valid paper ID.");
 
@@ -65,7 +66,11 @@ export default async (request: Request): Promise<Response> => {
       const stream = await pdfStream(response);
       if (!stream) continue;
       return new Response(stream, {
-        headers: { "content-type": "application/pdf", "cache-control": "public, max-age=86400" },
+        headers: {
+          "content-type": "application/pdf",
+          "cache-control": "public, max-age=86400",
+          "x-content-type-options": "nosniff",
+        },
       });
     } catch {
       // That copy timed out or refused; try the next one.
@@ -74,4 +79,9 @@ export default async (request: Request): Promise<Response> => {
   return error(404, "No free copy of this paper could be downloaded.");
 };
 
-export const config = { path: "/api/fetch-paper" };
+export const config = {
+  path: "/api/fetch-paper",
+  // Each visitor can download at most 20 papers a minute, so nobody can use
+  // the site to hammer other servers or run up its usage.
+  rateLimit: { action: "rate_limit", aggregateBy: ["ip", "domain"], windowSize: 60, windowLimit: 20 },
+};
