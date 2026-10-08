@@ -15,6 +15,7 @@ const MOVING_PLATFORM_SPEED = 70;
 const MOVING_PLATFORM_RANGE = TILE * 3;
 const INVULNERABLE_MS = 1200;
 const FACT_SHOWN_MS = 5000;
+const STOMP_TIP_MS = 2000;
 const FACT_INDEX_KEY = "factIndex";
 
 export class LevelScene extends Phaser.Scene {
@@ -165,6 +166,27 @@ export class LevelScene extends Phaser.Scene {
       this.add.text(GAME_WIDTH / 2, 70, "A / D MOVE   W JUMP   S DROP", textStyle(16, NES.white)).setOrigin(0.5).setDepth(10),
     );
     this.tweens.add({ targets: hint, alpha: 0, delay: 4000, duration: 800 });
+    if (this.stage.worldIndex === 0 && this.stage.checkpointsCleared === 0) this.showStompTip();
+  }
+
+  // At the start of every paper: a quick reminder that bears hold fun facts.
+  private showStompTip(): void {
+    const tip = this.add
+      .container(GAME_WIDTH / 2, 130, [
+        this.add.rectangle(0, 0, 520, 56, NES.black, 0.85).setStrokeStyle(4, NES.yellow),
+        this.add.image(-220, 0, "bear-walk1"),
+        this.add.text(20, 0, "STOMP BEARS FOR FUN FACTS!", textStyle(16, NES.yellow)).setOrigin(0.5),
+      ])
+      .setScrollFactor(0)
+      .setDepth(15)
+      .setAlpha(0);
+    this.tweens.chain({
+      targets: tip,
+      tweens: [
+        { alpha: 1, duration: 200 },
+        { alpha: 0, delay: STOMP_TIP_MS, duration: 300, onComplete: () => tip.destroy() },
+      ],
+    });
   }
 
   update(time: number): void {

@@ -16,11 +16,19 @@ export interface CutsceneData {
 
 const BOX = { x: 20, y: 250, width: GAME_WIDTH - 40, height: 180 };
 
+const FORWARD_KEYS = [" ", "Enter", "d", "D", "s", "S", "ArrowRight", "ArrowDown"];
+const BACK_KEYS = ["a", "A", "w", "W", "ArrowLeft", "ArrowUp"];
+
 export class CutsceneScene extends Phaser.Scene {
   private params!: CutsceneData;
   private lives = 0;
   private body!: Phaser.GameObjects.Text;
   private prompt!: Phaser.GameObjects.Text;
+  private pageCounter!: Phaser.GameObjects.Text;
+  private pageIndex = 0;
+  private furthestShown = -1; // highest page shown in full so far
+  private typing?: Phaser.Time.TimerEvent;
+  private onPages = false;
 
   constructor() {
     super("Cutscene");
@@ -29,6 +37,9 @@ export class CutsceneScene extends Phaser.Scene {
   create(data: CutsceneData): void {
     this.params = data;
     this.lives = data.lives;
+    this.pageIndex = 0;
+    this.furthestShown = -1;
+    this.onPages = true;
 
     this.add.rectangle(0, 0, GAME_WIDTH, GAME_HEIGHT, NES.black, 0.75).setOrigin(0, 0);
     this.add.image(110, 160, "professor").setScale(3);
@@ -37,52 +48,92 @@ export class CutsceneScene extends Phaser.Scene {
     panel(this, BOX.x, BOX.y, BOX.width, BOX.height);
     this.add.text(BOX.x + 20, BOX.y - 8, ` ${data.cutscene.speaker} `, textStyle(16, NES.sky)).setBackgroundColor("#000000");
     this.body = this.add.text(BOX.x + 20, BOX.y + 24, "", textStyle(16, NES.white, BOX.width - 40));
+    this.pageCounter = this.add.text(BOX.x + 20, BOX.y + BOX.height - 14, "", textStyle(8, NES.lightGray)).setOrigin(0, 1);
     this.prompt = this.add
-      .text(BOX.x + BOX.width - 16, BOX.y + BOX.height - 14, "SPACE / TAP", textStyle(8, NES.yellow))
+      .text(BOX.x + BOX.width - 16, BOX.y + BOX.height - 14, "", textStyle(8, NES.yellow))
       .setOrigin(1, 1);
     this.tweens.add({ targets: this.prompt, alpha: 0, duration: 400, yoyo: true, repeat: -1 });
 
+    // Listen from the next frame, so the press that opened this cutscene
+    // doesn't also skip its first page.
+    const onKey = (event: KeyboardEvent) => this.handleKey(event);
+    const onClick = () => this.onPages && this.forward();
+    this.time.delayedCall(0, () => {
+      this.input.keyboard?.on("keydown", onKey);
+      this.input.on("pointerdown", onClick);
+    });
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      this.input.keyboard?.off("keydown", onKey);
+      this.input.off("pointerdown", onClick);
+    });
+
     this.showPage(0);
+  }
+
+  // Forward: D, S, right/down arrow, Space, Enter, or click.
+  // Back: A, W, left/up arrow, to reread a page skipped by accident.
+  private handleKey(event: KeyboardEvent): void {
+    if (!this.onPages || event.repeat) return;
+    if (FORWARD_KEYS.includes(event.key)) this.forward();
+    else if (BACK_KEYS.includes(event.key)) this.back();
+    else return;
+    event.preventDefault();
+  }
+
+  private forward(): void {
+    if (this.typing) this.finishTyping();
+    else this.showPage(this.pageIndex + 1);
+  }
+
+  private back(): void {
+    if (this.pageIndex > 0) this.showPage(this.pageIndex - 1);
+    else if (this.typing) this.finishTyping();
   }
 
   private showPage(index: number): void {
     const pages = this.params.cutscene.pages;
     if (index >= pages.length) {
+      this.onPages = false;
       const practice = this.params.cutscene.practice;
       if (practice) this.askPractice(practice);
       else this.finish();
       return;
     }
 
+    this.typing?.remove();
+    this.typing = undefined;
+    this.pageIndex = index;
+    this.pageCounter.setText(`${index + 1}/${pages.length}`);
     const text = pages[index];
-    const msPerChar = TEXT_SPEED_MS[loadSettings().textSpeed];
-    let shown = 0;
-    let typingDone = false;
-    this.body.setText("");
-    this.prompt.setVisible(false);
 
-    // Show the whole page; the next press moves on to the next page.
-    const finishTyping = () => {
-      if (typingDone) return;
-      typingDone = true;
-      typing.remove();
-      cancelSkip();
-      this.body.setText(text);
-      this.prompt.setVisible(true);
-      onceAdvance(this, () => this.showPage(index + 1));
-    };
-    // Pressing while the text is still typing skips to the full page.
-    const cancelSkip = onceAdvance(this, finishTyping);
-    const typing = this.time.addEvent({
-      delay: msPerChar,
+    // Pages already read appear instantly; new pages type out.
+    if (index <= this.furthestShown) {
+      this.finishTyping();
+      return;
+    }
+    this.body.setText("");
+    this.prompt.setText("SPACE / D: SKIP");
+    let shown = 0;
+    this.typing = this.time.addEvent({
+      delay: TEXT_SPEED_MS[loadSettings().textSpeed],
       repeat: text.length - 1,
       callback: () => {
         shown += 1;
         this.body.setText(text.slice(0, shown));
         if (shown % 3 === 0) audio.playSfx("text");
-        if (shown >= text.length) finishTyping();
+        if (shown >= text.length) this.finishTyping();
       },
     });
+  }
+
+  private finishTyping(): void {
+    this.typing?.remove();
+    this.typing = undefined;
+    this.body.setText(this.params.cutscene.pages[this.pageIndex]);
+    this.furthestShown = Math.max(this.furthestShown, this.pageIndex);
+    const isLast = this.pageIndex === this.params.cutscene.pages.length - 1;
+    const back = this.pageIndex > 0 ? "A: BACK   " : "";
+    this.prompt.setText(`${back}SPACE / D: ${isLast ? "DONE" : "NEXT"}`);
   }
 
   private askPractice(question: Question): void {
