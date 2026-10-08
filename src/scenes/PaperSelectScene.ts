@@ -132,7 +132,8 @@ export class PaperSelectScene extends Phaser.Scene {
         onSelect: () => this.startPaper(paper),
       })),
       ...this.onlineResults.slice(0, Math.max(MAX_LISTED_PAPERS - this.localResults.length, 0)).map((paper) => ({
-        label: `${truncate(paper.title, LINE_CHARS)}\n${truncate(byline(paper.authors, paper.year), LINE_CHARS)}`,
+        // "FREE PDF" up front means it can be played right away.
+        label: `${truncate(paper.title, LINE_CHARS)}\n${truncate(`${paper.pdfUrl ? "FREE PDF - " : ""}${byline(paper.authors, paper.year)}`, LINE_CHARS)}`,
         onSelect: () => this.scene.start("PaperDetail", { paper }),
       })),
       { label: "BACK", onSelect: () => this.scene.start("Title") },
