@@ -1,6 +1,6 @@
 import Phaser from "phaser";
 import { audio } from "../audio/audio";
-import { LEVEL_LAYOUTS } from "../levels/layouts";
+import { layoutFor, themeFor } from "../levels/chooseLayout";
 import { TILE, isSolidTile, parseLevel, type BlockContents } from "../levels/parseLevel";
 import { NES } from "../palette";
 import { GRAVITY, JUMP_VELOCITY, PlayerController, makeOneWay, type Sprite } from "../player";
@@ -51,7 +51,7 @@ export class LevelScene extends Phaser.Scene {
     this.invulnerableUntil = 0;
     this.finished = false;
 
-    const layout = LEVEL_LAYOUTS[this.stage.checkpointsCleared % LEVEL_LAYOUTS.length];
+    const layout = layoutFor(this.stage.paper.id, this.stage.worldIndex, this.stage.checkpointsCleared);
     this.rows = layout.rows;
     const level = parseLevel(layout.rows);
     const worldWidth = level.widthTiles * TILE;
@@ -136,11 +136,16 @@ export class LevelScene extends Phaser.Scene {
   }
 
   private drawBackground(): void {
-    this.cameras.main.setBackgroundColor(NES.sky);
-    this.skyline = this.add.tileSprite(0, GAME_HEIGHT - 260, GAME_WIDTH, 200, "skyline").setOrigin(0, 0).setScrollFactor(0);
+    const theme = themeFor(this.stage.worldIndex);
+    this.cameras.main.setBackgroundColor(theme.sky);
+    this.skyline = this.add
+      .tileSprite(0, GAME_HEIGHT - 260, GAME_WIDTH, 200, "skyline")
+      .setOrigin(0, 0)
+      .setScrollFactor(0)
+      .setAlpha(theme.skylineAlpha);
     this.hills = this.add.tileSprite(0, GAME_HEIGHT - 150, GAME_WIDTH, 128, "hills").setOrigin(0, 0).setScrollFactor(0);
     for (let i = 0; i < 6; i++) {
-      this.add.image(80 + i * 260, 50 + (i % 3) * 30, "cloud").setScrollFactor(0.1);
+      this.add.image(80 + i * 260, 50 + (i % 3) * 30, "cloud").setScrollFactor(0.1).setAlpha(theme.cloudAlpha);
     }
   }
 

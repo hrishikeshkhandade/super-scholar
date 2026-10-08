@@ -2,9 +2,7 @@ import { describe, expect, it } from "vitest";
 import { LIBRARY } from "../src/content/library";
 import { LEVEL_LAYOUTS } from "../src/levels/layouts";
 import { parseLevel } from "../src/levels/parseLevel";
-
-const GROUND_ROW = 12;
-const MAX_JUMPABLE_GAP = 4; // tiles; a running jump covers about 5
+import { layoutProblems } from "../src/levels/validateLayout";
 
 describe("parseLevel", () => {
   it("finds the start, goal, and each kind of tile", () => {
@@ -25,26 +23,31 @@ describe("parseLevel", () => {
   });
 });
 
-describe.each(LEVEL_LAYOUTS)("level $name", (layout) => {
-  it("parses, with the player and flag standing on ground", () => {
-    const level = parseLevel(layout.rows);
-    const solidBelow = (x: number, y: number) => layout.rows[y + 1]?.[x] === "#";
-    expect(solidBelow(level.start.x, level.start.y)).toBe(true);
-    expect(solidBelow(level.goal.x, level.goal.y)).toBe(true);
+describe("layoutProblems", () => {
+  const rows = (ground: string, above = "P" + " ".repeat(ground.length - 2) + "F") => [
+    ...Array(11).fill(" ".repeat(ground.length)),
+    above,
+    ground,
+    ground,
+  ];
+
+  it("accepts a beatable level and flags an unjumpable pit", () => {
+    expect(layoutProblems(rows("####  ####"))).toEqual([]);
+    expect(layoutProblems(rows("##      ##")).join()).toMatch(/too wide/);
   });
 
-  it("has no pit too wide to jump unless a platform crosses it", () => {
-    const ground = layout.rows[GROUND_ROW];
-    for (const match of ground.matchAll(/ +/g)) {
-      const start = match.index!;
-      const end = start + match[0].length;
-      const bridged = layout.rows.some((row) => /[~-]/.test(row.slice(start, end)));
-      if (!bridged) expect(match[0].length, `gap at column ${start}`).toBeLessThanOrEqual(MAX_JUMPABLE_GAP);
-    }
+  it("flags a player or flag floating over a pit", () => {
+    expect(layoutProblems(rows(" ######## ")).join()).toMatch(/start|flag/);
   });
 });
 
-it("has a level layout for every lesson in every world", () => {
+describe.each(LEVEL_LAYOUTS)("hand-made level $name", (layout) => {
+  it("is beatable", () => {
+    expect(layoutProblems(layout.rows)).toEqual([]);
+  });
+});
+
+it("has a hand-made level for every lesson in the built-in papers", () => {
   for (const paper of LIBRARY) {
     for (const world of paper.worlds) expect(world.cutscenes.length).toBeLessThanOrEqual(LEVEL_LAYOUTS.length);
   }
