@@ -30,4 +30,4 @@ The game is hosted on Netlify at https://super-scholar.netlify.app.
 npm run deploy
 ```
 
-This runs the tests, builds, and publishes `dist/`. The first time on a new machine, log in with `npx -y netlify-cli@27 login` and link the site with `npx -y netlify-cli@27 link`.
+This runs the tests, builds, and publishes `dist/` plus the server function in `netlify/functions/` (it downloads free PDFs for the game). During `npm run dev`, `/api` requests go to the live site's function. The first time on a new machine, log in with `npx -y netlify-cli@27 login` and link the site with `npx -y netlify-cli@27 link`.

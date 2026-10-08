@@ -6,7 +6,14 @@ import { NES } from "../palette";
 import { saveProgress, saveUploadedPaper } from "../save";
 import { GAME_WIDTH, Menu, START_LIVES, textStyle } from "../ui";
 
-// Reads an uploaded PDF and builds a game from it, all in the browser.
+// Gets a paper's PDF (an upload, or a free copy downloaded by our server
+// function) and builds a game from it in the browser.
+
+export type PaperSource =
+  | { file: File }
+  | { download: { id: string; title: string; authors: string[]; year: number | undefined } };
+
+const NOT_FOUND_TIP = "Try OPEN PAPER to get the PDF yourself, then upload it.";
 
 export class GenerateScene extends Phaser.Scene {
   private status!: Phaser.GameObjects.Text;
@@ -15,28 +22,57 @@ export class GenerateScene extends Phaser.Scene {
     super("Generate");
   }
 
-  create(data: { file: File }): void {
+  create(data: PaperSource): void {
     this.cameras.main.setBackgroundColor(NES.navy);
     const professor = this.add.image(GAME_WIDTH / 2, 140, "professor").setScale(3);
     this.tweens.add({ targets: professor, y: 130, duration: 400, yoyo: true, repeat: -1, ease: "Sine.easeInOut" });
     this.add.text(GAME_WIDTH / 2, 230, "PROF. QUANT IS READING\nYOUR PAPER...", textStyle(24, NES.yellow)).setOrigin(0.5).setAlign("center");
     this.status = this.add.text(GAME_WIDTH / 2, 300, "Opening the PDF", textStyle(16, NES.white)).setOrigin(0.5);
-    void this.build(data.file);
+    void this.build(data);
   }
 
-  private async build(file: File): Promise<void> {
-    try {
-      if (!/\.pdf$/i.test(file.name) && file.type !== "application/pdf") {
-        throw new GenerateError("That file isn't a PDF. Pick a .pdf file.");
-      }
-      if (file.size > MAX_PDF_BYTES) throw new GenerateError("That PDF is too big (over 40 MB).");
+  private async readUpload(file: File): Promise<ArrayBuffer> {
+    if (!/\.pdf$/i.test(file.name) && file.type !== "application/pdf") {
+      throw new GenerateError("That file isn't a PDF. Pick a .pdf file.");
+    }
+    if (file.size > MAX_PDF_BYTES) throw new GenerateError("That PDF is too big (over 40 MB).");
+    return file.arrayBuffer();
+  }
 
-      const lines = await readPdfLines(await file.arrayBuffer(), (page, pages) => {
+  private async download(id: string): Promise<ArrayBuffer> {
+    this.status.setText("Downloading the free PDF");
+    const response = await fetch(`/api/fetch-paper?id=${encodeURIComponent(id)}`).catch(() => {
+      throw new GenerateError("Couldn't connect to download the paper. Check your connection.");
+    });
+    if (!response.ok) {
+      const body = (await response.json().catch(() => ({}))) as { error?: string };
+      throw new GenerateError(`${body.error ?? "The download failed."} ${NOT_FOUND_TIP}`);
+    }
+    return response.arrayBuffer();
+  }
+
+  private async build(source: PaperSource): Promise<void> {
+    try {
+      const data = "file" in source ? await this.readUpload(source.file) : await this.download(source.download.id);
+      const fileName = "file" in source ? source.file.name : `${source.download.title}.pdf`;
+      if (!this.scene.isActive()) return;
+
+      const lines = await readPdfLines(data, (page, pages) => {
         if (this.scene.isActive()) this.status.setText(`Reading page ${page} of ${pages}`);
       });
       if (!this.scene.isActive()) return;
       this.status.setText("Building your levels");
-      const paper = generateGame(lines, file.name);
+      const generated = generateGame(lines, fileName);
+      // For downloads, the database knows the real title, authors, and year.
+      const paper =
+        "download" in source
+          ? {
+              ...generated,
+              title: source.download.title,
+              authors: source.download.authors,
+              year: source.download.year ?? generated.year,
+            }
+          : generated;
       saveUploadedPaper(paper);
       saveProgress({ paperId: paper.id, worldIndex: 0, checkpointsCleared: 0 });
       audio.playSfx("powerup");
@@ -59,13 +95,13 @@ export class GenerateScene extends Phaser.Scene {
   private showError(message: string): void {
     audio.playSfx("wrong");
     this.status.setText("");
-    this.add
-      .text(GAME_WIDTH / 2, 300, message, textStyle(16, NES.salmon, GAME_WIDTH - 120))
+    const error = this.add
+      .text(GAME_WIDTH / 2, 280, message, textStyle(16, NES.salmon, GAME_WIDTH - 120))
       .setOrigin(0.5, 0)
       .setAlign("center");
-    this.add
-      .text(GAME_WIDTH / 2, 360, `Tip: text-based PDFs up to ${MAX_PDF_PAGES} pages work best.`, textStyle(8, NES.lightGray))
+    const tip = this.add
+      .text(GAME_WIDTH / 2, error.y + error.height + 12, `Text-based PDFs up to ${MAX_PDF_PAGES} pages work best.`, textStyle(8, NES.lightGray))
       .setOrigin(0.5, 0);
-    new Menu(this, 300, 390, [{ label: "BACK TO PAPERS", onSelect: () => this.scene.start("PaperSelect") }]);
+    new Menu(this, 300, tip.y + tip.height + 16, [{ label: "BACK TO PAPERS", onSelect: () => this.scene.start("PaperSelect") }]);
   }
 }

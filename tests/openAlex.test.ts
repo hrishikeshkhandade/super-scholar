@@ -14,7 +14,7 @@ describe("OpenAlex search", () => {
     expect(abstractFromIndex(null)).toBe("");
   });
 
-  it("turns raw results into papers, keeping only HTTPS PDF links", () => {
+  it("turns raw results into papers, with the best PDF link upgraded to https", () => {
     const papers = parseResults({
       results: [
         {
@@ -26,7 +26,8 @@ describe("OpenAlex search", () => {
           best_oa_location: { pdf_url: "https://example.org/paper.pdf" },
           abstract_inverted_index: { Plants: [0], grow: [1] },
         },
-        { id: "https://openalex.org/W2", display_name: "No PDF", best_oa_location: { pdf_url: "http://insecure.pdf" } },
+        { id: "https://openalex.org/W2", display_name: "Archive copy", locations: [{ pdf_url: "http://uni.edu/a.pdf" }] },
+        { id: "https://openalex.org/W3", display_name: "No PDF" },
       ],
     });
     expect(papers[0]).toEqual({
@@ -38,8 +39,9 @@ describe("OpenAlex search", () => {
       abstract: "Plants grow",
       pdfUrl: "https://example.org/paper.pdf",
     });
-    expect(papers[1].pdfUrl).toBeUndefined();
-    expect(papers[1].authors).toEqual([]);
+    expect(papers[1].pdfUrl).toBe("https://uni.edu/a.pdf");
+    expect(papers[2].pdfUrl).toBeUndefined();
+    expect(papers[2].authors).toEqual([]);
   });
 
   it("ignores malformed responses instead of crashing", () => {

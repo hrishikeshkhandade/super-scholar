@@ -1,6 +1,7 @@
 import Phaser from "phaser";
 import type { OnlinePaper } from "../content/openAlex";
 import { NES } from "../palette";
+import type { PaperSource } from "./GenerateScene";
 import { GAME_WIDTH, Menu, fitTextToHeight, panel, textStyle } from "../ui";
 
 const TITLE_MAX_HEIGHT = 44; // two lines of 16px text
@@ -22,7 +23,7 @@ export class PaperDetailScene extends Phaser.Scene {
     const meta = [authors, paper.year, paper.field].filter(Boolean).join("  |  ");
     const metaText = this.add.text(40, title.y + title.height + 12, meta, textStyle(8, NES.sky, GAME_WIDTH - 80));
 
-    const availability = paper.pdfUrl ? "FULL TEXT AVAILABLE" : "ABSTRACT ONLY";
+    const availability = paper.pdfUrl ? "FREE PDF AVAILABLE" : "ABSTRACT ONLY (PAYWALLED)";
     const tag = this.add.text(40, metaText.y + metaText.height + 12, availability, textStyle(8, paper.pdfUrl ? NES.lime : NES.tan));
 
     const boxTop = tag.y + tag.height + 12;
@@ -31,14 +32,24 @@ export class PaperDetailScene extends Phaser.Scene {
     fitTextToHeight(abstract, BOX_BOTTOM - boxTop - 24);
 
     const hint = paper.pdfUrl
-      ? "Open it, save the PDF, then pick UPLOAD A PDF to play it."
-      : "Open it to find a PDF (your library may have access), then upload it.";
+      ? "PLAY downloads the free PDF and builds your game right here."
+      : "Paywalled: open it (your library may have access), save the PDF, then upload it.";
     this.add.text(GAME_WIDTH / 2, 338, hint, textStyle(8, NES.salmon, GAME_WIDTH - 80)).setOrigin(0.5, 0).setAlign("center");
-    new Menu(this, 260, 370, [
-      // Opens in a new tab, so the game keeps its place.
-      { label: "OPEN PAPER", onSelect: () => window.open(paper.pdfUrl ?? `https://openalex.org/${paper.id}`, "_blank", "noopener") },
-      { label: "BACK TO SEARCH", onSelect: () => this.scene.start("PaperSelect") },
-    ], { spacing: 10 });
+    const source: PaperSource = {
+      download: { id: paper.id, title: paper.title, authors: paper.authors, year: paper.year },
+    };
+    new Menu(
+      this,
+      260,
+      paper.pdfUrl ? 358 : 370,
+      [
+        ...(paper.pdfUrl ? [{ label: "PLAY THIS PAPER", onSelect: () => this.scene.start("Generate", source) }] : []),
+        // Opens in a new tab, so the game keeps its place.
+        { label: "OPEN PAPER", onSelect: () => window.open(paper.pdfUrl ?? `https://openalex.org/${paper.id}`, "_blank", "noopener") },
+        { label: "BACK TO SEARCH", onSelect: () => this.scene.start("PaperSelect") },
+      ],
+      { spacing: 8 },
+    );
     this.input.keyboard?.on("keydown-ESC", () => this.scene.start("PaperSelect"));
   }
 }
