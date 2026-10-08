@@ -30,7 +30,9 @@ waitForFont().then(() => {
     height: GAME_HEIGHT,
     backgroundColor: NES.black,
     pixelArt: true,
-    physics: { default: "arcade" },
+    // Physics steps with each screen refresh instead of a fixed 60 per
+    // second, so movement stays smooth on 120 Hz screens (like MacBooks).
+    physics: { default: "arcade", arcade: { fixedStep: false } },
     // Sound comes from our own chiptune synth (src/audio), not Phaser.
     audio: { noAudio: true },
     scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH },

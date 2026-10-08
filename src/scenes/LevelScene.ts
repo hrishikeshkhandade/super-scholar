@@ -129,7 +129,9 @@ export class LevelScene extends Phaser.Scene {
     this.physics.add.overlap(this.player, goal, () => this.reachGoal());
 
     this.cameras.main.setBounds(0, 0, worldWidth, worldHeight);
-    this.cameras.main.startFollow(this.player, true, 0.15, 0.15);
+    // A firmer follow (0.25) keeps the player from shimmering against the
+    // pixel grid while the camera catches up.
+    this.cameras.main.startFollow(this.player, true, 0.25, 0.25);
     this.cameras.main.setDeadzone(120, 80);
 
     this.drawHud(layout.name);
@@ -331,9 +333,13 @@ export class LevelScene extends Phaser.Scene {
     this.tweens.killTweensOf(this.factBanner);
     this.tweens.add({ targets: this.factBanner, y: 56, duration: 250, ease: "Back.easeOut" });
     this.factHideTimer?.remove();
-    this.factHideTimer = this.time.delayedCall(FACT_SHOWN_MS, () => {
-      this.tweens.add({ targets: this.factBanner, y: -120, duration: 250 });
-    });
+    this.factHideTimer = this.time.delayedCall(FACT_SHOWN_MS, () => this.hideFact());
+  }
+
+  private hideFact(): void {
+    this.factHideTimer?.remove();
+    this.tweens.killTweensOf(this.factBanner);
+    this.tweens.add({ targets: this.factBanner, y: -120, duration: 200 });
   }
 
   private damage(fromX: number): void {
@@ -373,6 +379,7 @@ export class LevelScene extends Phaser.Scene {
     if (this.finished) return;
     this.finished = true;
     this.physics.pause();
+    this.hideFact(); // so it can't cover "LEVEL CLEAR!"
     audio.playSfx("clear");
     this.controls.showFrame("player-jump");
     this.add
@@ -400,6 +407,7 @@ export class LevelScene extends Phaser.Scene {
     audio.playSfx("gameover");
     this.finished = true;
     this.physics.pause();
+    this.hideFact();
     panel(this, 200, 110, 400, 230).setScrollFactor(0).setDepth(20);
     this.add.text(GAME_WIDTH / 2, 150, "GAME OVER", textStyle(32, NES.red)).setOrigin(0.5).setScrollFactor(0).setDepth(20);
     const menu = new Menu(this, 260, 220, [
