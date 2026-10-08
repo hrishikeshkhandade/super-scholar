@@ -218,8 +218,8 @@ export class QuestionPanel {
       },
     }));
     this.menu = new Menu(scene, 72, prompt.y + prompt.height + 20, items, {
-      size: 12,
-      spacing: 12,
+      size: 16,
+      spacing: 8,
       wrapWidth: width - 80,
     });
   }

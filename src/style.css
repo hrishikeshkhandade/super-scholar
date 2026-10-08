@@ -12,6 +12,11 @@ body {
   height: 100dvh;
 }
 
+/* Scale the small game canvas up with sharp pixels instead of smoothing. */
+canvas {
+  image-rendering: pixelated;
+}
+
 #search-input {
   position: absolute;
   box-sizing: border-box;

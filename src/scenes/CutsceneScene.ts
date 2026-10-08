@@ -35,7 +35,7 @@ export class CutsceneScene extends Phaser.Scene {
     this.add.text(200, 120, data.cutscene.title.toUpperCase(), textStyle(24, NES.yellow, GAME_WIDTH - 220));
 
     panel(this, BOX.x, BOX.y, BOX.width, BOX.height);
-    this.add.text(BOX.x + 20, BOX.y - 12, ` ${data.cutscene.speaker} `, textStyle(12, NES.sky)).setBackgroundColor("#000000");
+    this.add.text(BOX.x + 20, BOX.y - 8, ` ${data.cutscene.speaker} `, textStyle(16, NES.sky)).setBackgroundColor("#000000");
     this.body = this.add.text(BOX.x + 20, BOX.y + 24, "", textStyle(16, NES.white, BOX.width - 40));
     this.prompt = this.add
       .text(BOX.x + BOX.width - 16, BOX.y + BOX.height - 14, "SPACE / TAP", textStyle(8, NES.yellow))
@@ -90,7 +90,7 @@ export class CutsceneScene extends Phaser.Scene {
     this.add.rectangle(0, 0, GAME_WIDTH, GAME_HEIGHT, NES.black, 0.85).setOrigin(0, 0);
     this.add.text(GAME_WIDTH / 2, 50, "PRACTICE!", textStyle(24, NES.yellow)).setOrigin(0.5);
     this.add
-      .text(GAME_WIDTH / 2, 90, "Get it right to earn a life", textStyle(12, NES.lime))
+      .text(GAME_WIDTH / 2, 90, "Get it right to earn a life", textStyle(16, NES.lime))
       .setOrigin(0.5);
 
     const questionPanel = new QuestionPanel(this, question, 130, (choiceIndex) => {

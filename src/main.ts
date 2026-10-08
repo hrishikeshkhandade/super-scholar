@@ -6,6 +6,7 @@ import { BootScene } from "./scenes/BootScene";
 import { BossScene } from "./scenes/BossScene";
 import { CutsceneScene } from "./scenes/CutsceneScene";
 import { LevelScene } from "./scenes/LevelScene";
+import { PaperDetailScene } from "./scenes/PaperDetailScene";
 import { PaperSelectScene } from "./scenes/PaperSelectScene";
 import { SettingsScene } from "./scenes/SettingsScene";
 import { TitleScene } from "./scenes/TitleScene";
@@ -36,6 +37,7 @@ waitForFont().then(() => {
       BootScene,
       TitleScene,
       PaperSelectScene,
+      PaperDetailScene,
       CutsceneScene,
       LevelScene,
       BossScene,

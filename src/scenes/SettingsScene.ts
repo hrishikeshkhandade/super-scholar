@@ -18,7 +18,7 @@ export class SettingsScene extends Phaser.Scene {
     audio.playMusic("title");
 
     const settings = loadSettings();
-    const status = this.add.text(GAME_WIDTH / 2, 400, "", textStyle(12, NES.lime)).setOrigin(0.5);
+    const status = this.add.text(GAME_WIDTH / 2, 400, "", textStyle(16, NES.lime)).setOrigin(0.5);
     let confirmingReset = false;
 
     const labels = (s: Settings) => [

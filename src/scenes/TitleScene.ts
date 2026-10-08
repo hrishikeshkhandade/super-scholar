@@ -4,6 +4,7 @@ import { findPaper } from "../content/library";
 import { NES } from "../palette";
 import { loadProgress } from "../save";
 import { GAME_WIDTH, Menu, START_LIVES, textStyle } from "../ui";
+import { LAST_QUERY_KEY } from "./PaperSelectScene";
 
 export class TitleScene extends Phaser.Scene {
   constructor() {
@@ -15,7 +16,7 @@ export class TitleScene extends Phaser.Scene {
     audio.playMusic("title");
     this.add.text(GAME_WIDTH / 2, 70, "SUPER SCHOLAR", textStyle(40, NES.yellow)).setOrigin(0.5);
     this.add
-      .text(GAME_WIDTH / 2, 125, "Research papers, but make it a game", textStyle(12, NES.sky))
+      .text(GAME_WIDTH / 2, 125, "Research papers, but make it a game", textStyle(16, NES.sky))
       .setOrigin(0.5);
     this.add.image(GAME_WIDTH / 2 + 230, 300, "player-idle").setScale(2);
     this.add.sprite(GAME_WIDTH / 2 - 250, 300, "bear-walk1").setScale(2).play("bear-walk");
@@ -25,7 +26,13 @@ export class TitleScene extends Phaser.Scene {
     const canContinue = savedPaper !== undefined && progress!.worldIndex < savedPaper.worlds.length;
 
     new Menu(this, 290, 200, [
-      { label: "NEW GAME", onSelect: () => this.scene.start("PaperSelect") },
+      {
+        label: "NEW GAME",
+        onSelect: () => {
+          this.registry.set(LAST_QUERY_KEY, "");
+          this.scene.start("PaperSelect");
+        },
+      },
       {
         label: "CONTINUE",
         enabled: canContinue,
