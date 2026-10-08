@@ -1,7 +1,7 @@
 import Phaser from "phaser";
 import { audio } from "./audio/audio";
 import { NES } from "./palette";
-import { AboutScene } from "./scenes/AboutScene";
+import { AboutScene, CreditsScene } from "./scenes/AboutScene";
 import { BootScene } from "./scenes/BootScene";
 import { BossScene } from "./scenes/BossScene";
 import { CutsceneScene } from "./scenes/CutsceneScene";
@@ -49,6 +49,7 @@ waitForFont().then(() => {
       PauseScene,
       SettingsScene,
       AboutScene,
+      CreditsScene,
     ],
   });
   // Lets the browser console inspect the running game during development.
