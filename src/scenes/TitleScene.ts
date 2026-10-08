@@ -48,6 +48,7 @@ export class TitleScene extends Phaser.Scene {
       },
       { label: "SETTINGS", onSelect: () => this.scene.start("Settings") },
       { label: "ABOUT", onSelect: () => this.scene.start("About") },
+      { label: "CREDITS", onSelect: () => this.scene.start("Credits", { from: "Title" }) },
     ]);
 
     this.add

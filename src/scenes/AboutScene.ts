@@ -44,7 +44,7 @@ export class AboutScene extends Phaser.Scene {
     this.add.text(40, 290, GOAL_TEXT, textStyle(16, NES.white, GAME_WIDTH - 80));
 
     new Menu(this, 330, 382, [
-      { label: "CREDITS", onSelect: () => this.scene.start("Credits") },
+      { label: "CREDITS", onSelect: () => this.scene.start("Credits", { from: "About" }) },
       { label: "BACK", onSelect: () => this.scene.start("Title") },
     ]);
     this.input.keyboard?.on("keydown-ESC", () => this.scene.start("Title"));
@@ -57,7 +57,9 @@ export class CreditsScene extends Phaser.Scene {
     super("Credits");
   }
 
-  create(): void {
+  // BACK returns to whichever screen opened the credits (title or About).
+  create(data: { from?: string }): void {
+    const back = () => this.scene.start(data.from ?? "About");
     this.cameras.main.setBackgroundColor(NES.navy);
     const centered = (y: number, text: string, size: number, color: number) =>
       this.add.text(GAME_WIDTH / 2, y, text, textStyle(size, color)).setOrigin(0.5);
@@ -72,7 +74,7 @@ export class CreditsScene extends Phaser.Scene {
     const menu = new Menu(this, menuX, menuY, [
       { label: "LINKEDIN", onSelect: () => openLink(LINKEDIN_URL) },
       { label: "GITHUB", onSelect: () => openLink(GITHUB_URL) },
-      { label: "BACK", onSelect: () => this.scene.start("About") },
+      { label: "BACK", onSelect: back },
     ]);
     const rowHeight = (menu.bottom - menuY + 20) / 3;
     const icon = (y: number, key: string, url: string) =>
@@ -84,6 +86,6 @@ export class CreditsScene extends Phaser.Scene {
     icon(menuY + rowHeight + 8, "github", GITHUB_URL);
 
     centered(400, "Made with Phaser, pdf.js & OpenAlex", 16, NES.sky);
-    this.input.keyboard?.on("keydown-ESC", () => this.scene.start("About"));
+    this.input.keyboard?.on("keydown-ESC", back);
   }
 }
