@@ -3,21 +3,16 @@ import { audio } from "../audio/audio";
 import { LEVEL_LAYOUTS } from "../levels/layouts";
 import { TILE, isSolidTile, parseLevel, type BlockContents } from "../levels/parseLevel";
 import { NES } from "../palette";
+import { GRAVITY, JUMP_VELOCITY, PlayerController, makeOneWay, type Sprite } from "../player";
 import { saveProgress } from "../save";
 import type { StageData } from "../stage";
 import { GAME_HEIGHT, GAME_WIDTH, HeartBar, MAX_LIVES, Menu, START_LIVES, panel, textStyle } from "../ui";
 
-type Sprite = Phaser.Types.Physics.Arcade.SpriteWithDynamicBody;
 type StaticSprite = Phaser.Types.Physics.Arcade.SpriteWithStaticBody;
 
-const RUN_SPEED = 210;
-const JUMP_VELOCITY = -600;
-const GRAVITY = 1400;
 const BEAR_SPEED = 60;
 const MOVING_PLATFORM_SPEED = 70;
 const MOVING_PLATFORM_RANGE = TILE * 3;
-const COYOTE_MS = 100; // can still jump just after running off a ledge
-const JUMP_BUFFER_MS = 120; // a jump pressed just before landing still counts
 const INVULNERABLE_MS = 1200;
 const FACT_SHOWN_MS = 5000;
 const FACT_INDEX_KEY = "factIndex";
@@ -25,8 +20,8 @@ const FACT_INDEX_KEY = "factIndex";
 export class LevelScene extends Phaser.Scene {
   private stage!: StageData;
   private rows: string[] = [];
+  private controls!: PlayerController;
   private player!: Sprite;
-  private keys!: Record<"left" | "right" | "jump" | "down", Phaser.Input.Keyboard.Key[]>;
   private solids!: Phaser.Physics.Arcade.StaticGroup;
   private blocks!: Phaser.Physics.Arcade.StaticGroup;
   private platformCollider!: Phaser.Physics.Arcade.Collider;
@@ -43,10 +38,7 @@ export class LevelScene extends Phaser.Scene {
   private coins = 0;
   private hasShield = false;
   private invulnerableUntil = 0;
-  private lastGroundedAt = 0;
-  private jumpPressedAt = -Infinity;
   private finished = false;
-  private jumping = false; // true during a jump the player started (not a bounce)
 
   constructor() {
     super("Level");
@@ -57,10 +49,7 @@ export class LevelScene extends Phaser.Scene {
     this.coins = 0;
     this.hasShield = false;
     this.invulnerableUntil = 0;
-    this.lastGroundedAt = 0;
-    this.jumpPressedAt = -Infinity;
     this.finished = false;
-    this.jumping = false;
 
     const layout = LEVEL_LAYOUTS[this.stage.checkpointsCleared % LEVEL_LAYOUTS.length];
     this.rows = layout.rows;
@@ -90,13 +79,13 @@ export class LevelScene extends Phaser.Scene {
     const platforms = this.physics.add.staticGroup();
     for (const tile of level.platforms) {
       const platform = platforms.create(center(tile).x, tile.y * TILE + 6, "platform") as StaticSprite;
-      this.makeOneWay(platform.body);
+      makeOneWay(platform.body);
     }
 
     this.movingPlatforms = this.physics.add.group({ allowGravity: false, immovable: true });
     for (const tile of level.movingPlatforms) {
       const platform = this.movingPlatforms.create(tile.x * TILE + 48, tile.y * TILE + 6, "moving-platform") as Sprite;
-      this.makeOneWay(platform.body);
+      makeOneWay(platform.body);
       platform.setData("minX", platform.x);
       platform.setVelocityX(MOVING_PLATFORM_SPEED);
     }
@@ -122,9 +111,10 @@ export class LevelScene extends Phaser.Scene {
     const goal = this.physics.add.staticImage(center(level.goal).x, (level.goal.y + 1) * TILE - 80, "flagpole");
     goal.body.setSize(16, 160);
 
-    this.player = this.physics.add.sprite(center(level.start).x, center(level.start).y, "player-idle");
-    this.player.setCollideWorldBounds(true).setDepth(5);
-    this.player.body.setSize(20, 36).setOffset(6, 4);
+    this.controls = new PlayerController(this, center(level.start).x, center(level.start).y, () =>
+      this.dropThroughPlatform(),
+    );
+    this.player = this.controls.sprite;
 
     this.physics.add.collider(this.player, this.solids);
     this.physics.add.collider(this.player, this.blocks, (_player, block) => this.bumpBlock(block as StaticSprite));
@@ -133,7 +123,7 @@ export class LevelScene extends Phaser.Scene {
     this.physics.add.collider(this.bears, this.solids);
     this.physics.add.collider(this.bears, this.blocks);
     this.physics.add.overlap(this.player, coins, (_player, coin) => this.collectCoin(coin as StaticSprite));
-    this.physics.add.overlap(this.player, spikes, () => this.damage());
+    this.physics.add.overlap(this.player, spikes, (_player, spike) => this.damage((spike as StaticSprite).x));
     this.physics.add.overlap(this.player, this.bears, (_player, bear) => this.touchBear(bear as Sprite));
     this.physics.add.overlap(this.player, goal, () => this.reachGoal());
 
@@ -143,32 +133,6 @@ export class LevelScene extends Phaser.Scene {
 
     this.drawHud(layout.name);
     this.createFactBanner();
-    this.setUpKeys();
-  }
-
-  private makeOneWay(body: Phaser.Physics.Arcade.Body | Phaser.Physics.Arcade.StaticBody): void {
-    body.checkCollision.down = false;
-    body.checkCollision.left = false;
-    body.checkCollision.right = false;
-  }
-
-  private setUpKeys(): void {
-    const keyboard = this.input.keyboard!;
-    // Capture is off so these keys still type normally in the search box.
-    const add = (...codes: number[]) => codes.map((code) => keyboard.addKey(code, false));
-    const K = Phaser.Input.Keyboard.KeyCodes;
-    this.keys = {
-      left: add(K.A, K.LEFT),
-      right: add(K.D, K.RIGHT),
-      jump: add(K.W, K.UP, K.SPACE),
-      down: add(K.S, K.DOWN),
-    };
-    for (const key of this.keys.jump) key.on("down", () => (this.jumpPressedAt = this.time.now));
-    for (const key of this.keys.down) key.on("down", () => this.dropThroughPlatform());
-  }
-
-  private isDown(keys: Phaser.Input.Keyboard.Key[]): boolean {
-    return keys.some((key) => key.isDown);
   }
 
   private drawBackground(): void {
@@ -187,59 +151,25 @@ export class LevelScene extends Phaser.Scene {
     this.hearts.set(this.stage.lives);
     this.shieldIcon = fixed(this.add.image(196, 24, "shield").setDepth(10).setVisible(false));
     fixed(this.add.image(240, 24, "coin1").setDepth(10));
-    this.coinText = fixed(this.add.text(256, 18, "x 0", textStyle(12, NES.white)).setDepth(10));
+    this.coinText = fixed(this.add.text(256, 18, "x 0", textStyle(16, NES.white)).setDepth(10));
     const world = this.stage.paper.worlds[this.stage.worldIndex];
     const label = `${this.stage.worldIndex + 1}-${this.stage.checkpointsCleared + 1} ${levelName.toUpperCase()}`;
-    fixed(this.add.text(GAME_WIDTH - 16, 10, label, textStyle(12, NES.yellow)).setOrigin(1, 0).setDepth(10));
+    fixed(this.add.text(GAME_WIDTH - 16, 8, label, textStyle(16, NES.yellow)).setOrigin(1, 0).setDepth(10));
     fixed(this.add.text(GAME_WIDTH - 16, 30, world.name.toUpperCase(), textStyle(8, NES.lightGray)).setOrigin(1, 0).setDepth(10));
     const hint = fixed(
-      this.add.text(GAME_WIDTH / 2, 70, "A / D MOVE   W JUMP   S DROP", textStyle(12, NES.white)).setOrigin(0.5).setDepth(10),
+      this.add.text(GAME_WIDTH / 2, 70, "A / D MOVE   W JUMP   S DROP", textStyle(16, NES.white)).setOrigin(0.5).setDepth(10),
     );
     this.tweens.add({ targets: hint, alpha: 0, delay: 4000, duration: 800 });
   }
 
   update(time: number): void {
     if (this.finished) return;
-    this.updatePlayer(time);
+    this.controls.update(time);
     this.updateBears();
     this.updateMovingPlatforms();
     this.skyline.tilePositionX = this.cameras.main.scrollX * 0.2;
     this.hills.tilePositionX = this.cameras.main.scrollX * 0.4;
     if (this.player.y > this.rows.length * TILE + TILE) this.fallIntoPit();
-  }
-
-  private updatePlayer(time: number): void {
-    const body = this.player.body;
-    const onGround = body.blocked.down || body.touching.down;
-    if (onGround) this.lastGroundedAt = time;
-
-    const direction = (this.isDown(this.keys.right) ? 1 : 0) - (this.isDown(this.keys.left) ? 1 : 0);
-    this.player.setVelocityX(direction * RUN_SPEED);
-    if (direction !== 0) this.player.setFlipX(direction < 0);
-
-    const canJump = time - this.lastGroundedAt <= COYOTE_MS;
-    if (canJump && time - this.jumpPressedAt <= JUMP_BUFFER_MS) {
-      this.player.setVelocityY(JUMP_VELOCITY);
-      this.jumping = true;
-      audio.playSfx("jump");
-      this.jumpPressedAt = -Infinity;
-      this.lastGroundedAt = -Infinity;
-    }
-    // Let go of jump early for a short hop.
-    if (body.velocity.y >= 0) this.jumping = false;
-    if (this.jumping && !this.isDown(this.keys.jump) && body.velocity.y < JUMP_VELOCITY / 3) {
-      this.player.setVelocityY(JUMP_VELOCITY / 3);
-      this.jumping = false;
-    }
-
-    if (!onGround) this.showPlayerFrame("player-jump");
-    else if (direction !== 0) this.player.anims.play("player-walk", true);
-    else this.showPlayerFrame("player-idle");
-  }
-
-  private showPlayerFrame(texture: string): void {
-    this.player.anims.stop();
-    this.player.setTexture(texture);
   }
 
   private updateBears(): void {
@@ -327,7 +257,7 @@ export class LevelScene extends Phaser.Scene {
   }
 
   private floatText(x: number, y: number, message: string, color: number): void {
-    const text = this.add.text(x, y, message, textStyle(12, color)).setOrigin(0.5).setDepth(8);
+    const text = this.add.text(x, y, message, textStyle(16, color)).setOrigin(0.5).setDepth(8);
     this.tweens.add({ targets: text, y: y - 40, alpha: 0, duration: 900, onComplete: () => text.destroy() });
   }
 
@@ -341,12 +271,12 @@ export class LevelScene extends Phaser.Scene {
       bear.anims.stop();
       bear.setTexture("bear-flat").setY(bear.y + 8);
       this.tweens.add({ targets: bear, alpha: 0, delay: 400, duration: 300, onComplete: () => bear.destroy() });
-      this.player.setVelocityY(JUMP_VELOCITY * 0.6);
+      this.controls.bounce(JUMP_VELOCITY * 0.6);
       this.addCoins(2);
       this.floatText(bear.x, bear.y - 24, "BEAR SHORTED!", NES.yellow);
       this.showNextFact();
     } else {
-      this.damage();
+      this.damage(bear.x);
     }
   }
 
@@ -354,11 +284,11 @@ export class LevelScene extends Phaser.Scene {
   // hides itself after a few seconds. The game keeps running underneath.
   private createFactBanner(): void {
     const width = GAME_WIDTH - 40;
-    const background = this.add.rectangle(0, 0, width, 64, NES.black, 0.9).setOrigin(0, 0).setStrokeStyle(4, NES.yellow);
+    const background = this.add.rectangle(0, 0, width, 100, NES.black, 0.9).setOrigin(0, 0).setStrokeStyle(4, NES.yellow);
     const label = this.add.text(12, 10, "FUN FACT", textStyle(8, NES.yellow));
-    this.factText = this.add.text(12, 26, "", textStyle(12, NES.white, width - 24));
+    this.factText = this.add.text(12, 26, "", textStyle(16, NES.white, width - 24));
     this.factBanner = this.add
-      .container(20, -80, [background, label, this.factText])
+      .container(20, -120, [background, label, this.factText])
       .setScrollFactor(0)
       .setDepth(15);
   }
@@ -375,15 +305,14 @@ export class LevelScene extends Phaser.Scene {
     this.tweens.add({ targets: this.factBanner, y: 56, duration: 250, ease: "Back.easeOut" });
     this.factHideTimer?.remove();
     this.factHideTimer = this.time.delayedCall(FACT_SHOWN_MS, () => {
-      this.tweens.add({ targets: this.factBanner, y: -80, duration: 250 });
+      this.tweens.add({ targets: this.factBanner, y: -120, duration: 250 });
     });
   }
 
-  private damage(): void {
+  private damage(fromX: number): void {
     if (this.finished || this.time.now < this.invulnerableUntil) return;
     this.invulnerableUntil = this.time.now + INVULNERABLE_MS;
-    this.jumping = false;
-    this.player.setVelocityY(JUMP_VELOCITY * 0.6);
+    this.controls.knockback(fromX);
     audio.playSfx("hurt");
     this.cameras.main.shake(150, 0.01);
     this.tweens.add({ targets: this.player, alpha: 0.2, duration: 100, yoyo: true, repeat: 5 });
@@ -418,7 +347,7 @@ export class LevelScene extends Phaser.Scene {
     this.finished = true;
     this.physics.pause();
     audio.playSfx("clear");
-    this.showPlayerFrame("player-jump");
+    this.controls.showFrame("player-jump");
     this.add
       .text(GAME_WIDTH / 2, 160, "LEVEL CLEAR!", textStyle(32, NES.yellow))
       .setOrigin(0.5)
