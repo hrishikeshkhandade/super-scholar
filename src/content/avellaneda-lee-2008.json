@@ -153,12 +153,12 @@
         ]
       },
       "facts": [
-        "Stat arb holding periods range from a few seconds to days, weeks, or even longer.",
+        "Stat arb trades don't all last the same time: some close in seconds, others stay open for weeks.",
         "The paper only trades stocks worth over $1 billion on the trade date. That avoids survivorship bias.",
         "Every trade is charged 5 basis points (0.05%) for costs, so a round trip costs 10 basis points.",
         "The 60-day look-back window was chosen because it covers roughly one company earnings cycle.",
         "PCA strategies earned a Sharpe ratio of 1.44 from 1997 to 2007, but only 0.9 from 2003 on.",
-        "Using trading volume pushed ETF strategies to a Sharpe ratio of 1.51 from 2003 to 2007.",
+        "Factoring in trading volume lifted the ETF strategies to a Sharpe ratio of 1.51 over 2003 to 2007.",
         "Section 2.1 is titled \"can you hear the shape of the market?\", a nod to a famous math question about drums.",
         "Stat arb funds took a big loss in the second week of August 2007. Many never recovered."
       ]

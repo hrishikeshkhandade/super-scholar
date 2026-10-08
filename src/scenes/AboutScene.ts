@@ -45,6 +45,9 @@ export class AboutScene extends Phaser.Scene {
         .on("pointerdown", () => openLink(url));
     icon(menuY + 8, "linkedin", LINKEDIN_URL);
     icon(menuY + rowHeight + 8, "github", GITHUB_URL);
+    this.add
+      .text(GAME_WIDTH / 2, 438, "Built with Phaser and pdf.js. Paper search: OpenAlex. Font: Press Start 2P.", textStyle(8, NES.lightGray))
+      .setOrigin(0.5);
     this.input.keyboard?.on("keydown-ESC", () => this.scene.start("Title"));
   }
 }

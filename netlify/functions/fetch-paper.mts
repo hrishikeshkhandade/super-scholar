@@ -68,7 +68,10 @@ export default async (request: Request): Promise<Response> => {
       return new Response(stream, {
         headers: {
           "content-type": "application/pdf",
-          "cache-control": "public, max-age=86400",
+          // Pass each paper straight through to the player who asked for it;
+          // never let Netlify's servers keep and re-serve copies, since free
+          // papers come with different licenses.
+          "cache-control": "private, no-store",
           "x-content-type-options": "nosniff",
         },
       });
