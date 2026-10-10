@@ -7,7 +7,7 @@ import { themeFor, type Theme } from "../levels/themes";
 import { TILE, isSolidTile, parseLevel, type BlockContents } from "../levels/parseLevel";
 import { NES } from "../palette";
 import { GRAVITY, JUMP_VELOCITY, PlayerController, makeOneWay, type Sprite } from "../player";
-import { saveProgress } from "../save";
+import { saveProgress, unlockNote } from "../save";
 import type { StageData } from "../stage";
 import { enablePause } from "./PauseScene";
 import { GAME_HEIGHT, GAME_WIDTH, HeartBar, MAX_LIVES, Menu, START_LIVES, panel, textStyle } from "../ui";
@@ -377,6 +377,7 @@ export class LevelScene extends Phaser.Scene {
     // The registry outlives this scene, so facts keep cycling across levels.
     const index = ((this.registry.get(FACT_INDEX_KEY) as number | undefined) ?? 0) % facts.length;
     this.registry.set(FACT_INDEX_KEY, index + 1);
+    unlockNote(this.stage.paper.id, this.stage.worldIndex, "fact", index);
     this.factText.setText(facts[index]);
 
     this.tweens.killTweensOf(this.factBanner);
@@ -440,6 +441,7 @@ export class LevelScene extends Phaser.Scene {
     const world = this.stage.paper.worlds[this.stage.worldIndex];
     const cleared = this.stage.checkpointsCleared + 1;
     saveProgress({ paperId: this.stage.paper.id, worldIndex: this.stage.worldIndex, checkpointsCleared: cleared });
+    unlockNote(this.stage.paper.id, this.stage.worldIndex, "lesson", this.stage.checkpointsCleared);
     const nextStage: StageData = { ...this.stage, checkpointsCleared: cleared };
     const nextScene = cleared >= world.cutscenes.length ? "Boss" : "Level";
 

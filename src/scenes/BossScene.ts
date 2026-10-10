@@ -7,7 +7,7 @@ import { farKey } from "../levels/themeTextures";
 import { THEMES } from "../levels/themes";
 import { NES } from "../palette";
 import { GRAVITY, JUMP_VELOCITY, PlayerController, makeOneWay, type Sprite } from "../player";
-import { clearProgress, saveProgress } from "../save";
+import { clearProgress, saveProgress, unlockNote } from "../save";
 import type { StageData } from "../stage";
 import { enablePause } from "./PauseScene";
 import {
@@ -251,6 +251,8 @@ export class BossScene extends Phaser.Scene {
   private askQuestion(): void {
     const question = this.fight.current;
     if (!question) return;
+    const world = this.stage.paper.worlds[this.stage.worldIndex];
+    unlockNote(this.stage.paper.id, this.stage.worldIndex, "boss", world.boss.questions.indexOf(question));
     const questionPanel = new QuestionPanel(this, question, PANEL_TOP, (choiceIndex) => {
       questionPanel.destroy();
       const correct = this.fight.answer(choiceIndex);

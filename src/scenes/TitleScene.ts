@@ -3,8 +3,14 @@ import { audio } from "../audio/audio";
 import { findPaper } from "../content/library";
 import { NES } from "../palette";
 import { loadProgress } from "../save";
-import { GAME_WIDTH, Menu, START_LIVES, textStyle } from "../ui";
+import { GAME_WIDTH, Menu, START_LIVES, textStyle, type MenuItem } from "../ui";
 import { LAST_QUERY_KEY } from "./PaperSelectScene";
+
+const CHAR_WIDTH = 16; // the pixel font is monospace
+const CURSOR_SPACE = 28; // the menu's ">" sits this far left of the options
+const ROW_HEIGHT = 36; // a 16px option plus 20px spacing
+const MENU_AREA = { top: 136, bottom: 412 }; // between the subtitle and the hint
+const SPRITE_GAP = 110;
 
 export class TitleScene extends Phaser.Scene {
   constructor() {
@@ -18,14 +24,12 @@ export class TitleScene extends Phaser.Scene {
     this.add
       .text(GAME_WIDTH / 2, 125, "Research papers, but make it a game", textStyle(16, NES.sky))
       .setOrigin(0.5);
-    this.add.image(GAME_WIDTH / 2 + 230, 300, "player-idle").setScale(2);
-    this.add.sprite(GAME_WIDTH / 2 - 250, 300, "bear-walk1").setScale(2).play("bear-walk");
 
     const progress = loadProgress();
     const savedPaper = progress && findPaper(progress.paperId);
     const canContinue = savedPaper !== undefined && progress!.worldIndex < savedPaper.worlds.length;
 
-    new Menu(this, 290, 200, [
+    const items: MenuItem[] = [
       {
         label: "NEW GAME",
         onSelect: () => {
@@ -46,10 +50,21 @@ export class TitleScene extends Phaser.Scene {
           });
         },
       },
+      { label: "NOTEBOOK", onSelect: () => this.scene.start("Notebook") },
       { label: "SETTINGS", onSelect: () => this.scene.start("Settings") },
       { label: "ABOUT", onSelect: () => this.scene.start("About") },
       { label: "CREDITS", onSelect: () => this.scene.start("Credits", { from: "Title" }) },
-    ]);
+    ];
+
+    // Center the options (with the ">" cursor) between the subtitle and the
+    // hint, and stand the bear and the player level with the middle of it.
+    const menuWidth = Math.max(...items.map((item) => item.label.length)) * CHAR_WIDTH + CURSOR_SPACE;
+    const menuLeft = Math.round((GAME_WIDTH - menuWidth) / 2);
+    const menuTop = Math.round((MENU_AREA.top + MENU_AREA.bottom - (items.length * ROW_HEIGHT - 20)) / 2);
+    const menu = new Menu(this, menuLeft + CURSOR_SPACE, menuTop, items);
+    const middle = (menuTop + menu.bottom) / 2;
+    this.add.sprite(menuLeft - SPRITE_GAP, middle, "bear-walk1").setScale(2).play("bear-walk");
+    this.add.image(menuLeft + menuWidth + SPRITE_GAP, middle, "player-idle").setScale(2);
 
     this.add
       .text(GAME_WIDTH / 2, 420, "W / S TO CHOOSE, ENTER TO SELECT, OR CLICK", textStyle(8, NES.lightGray))

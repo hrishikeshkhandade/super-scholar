@@ -29,6 +29,7 @@ export const TEXT_SPEEDS: TextSpeed[] = ["slow", "normal", "fast"];
 const PROGRESS_KEY = "super-scholar.progress";
 const SETTINGS_KEY = "super-scholar.settings";
 const UPLOADS_KEY = "super-scholar.uploads";
+const NOTEBOOK_KEY = "super-scholar.notebook";
 const MAX_SAVED_UPLOADS = 3;
 const DEFAULT_SETTINGS: Settings = { textSpeed: "normal", music: true, musicStyle: "upbeat", sfx: true };
 
@@ -119,4 +120,41 @@ export function loadUploadedPapers(storage: Storage | null = browserStorage()): 
 export function saveUploadedPaper(paper: Paper, storage: Storage | null = browserStorage()): void {
   const others = loadUploadedPapers(storage).filter((saved) => saved.id !== paper.id);
   writeJson(storage, UPLOADS_KEY, [paper, ...others].slice(0, MAX_SAVED_UPLOADS));
+}
+
+// The Scholar's Notebook: what the player has unlocked in each paper, kept
+// as entries like "0:lesson:2" (world 0, lesson 2). It is separate from
+// progress, so resetting progress keeps everything already learned.
+
+export type NoteKind = "lesson" | "fact" | "boss";
+export type Notebook = Record<string, string[]>;
+
+const NOTE_PATTERN = /^\d{1,3}:(lesson|fact|boss):\d{1,3}$/;
+
+export const noteKey = (worldIndex: number, kind: NoteKind, index: number) => `${worldIndex}:${kind}:${index}`;
+
+export function loadNotebook(storage: Storage | null = browserStorage()): Notebook {
+  const value = readJson(storage, NOTEBOOK_KEY);
+  if (typeof value !== "object" || value === null || Array.isArray(value)) return {};
+  const notebook: Notebook = {};
+  for (const [paperId, entries] of Object.entries(value)) {
+    if (!Array.isArray(entries)) continue;
+    notebook[paperId] = entries.filter((entry): entry is string => typeof entry === "string" && NOTE_PATTERN.test(entry));
+  }
+  return notebook;
+}
+
+export function unlockNote(
+  paperId: string,
+  worldIndex: number,
+  kind: NoteKind,
+  index: number,
+  storage: Storage | null = browserStorage(),
+): void {
+  const notebook = loadNotebook(storage);
+  const key = noteKey(worldIndex, kind, index);
+  const entries = notebook[paperId] ?? [];
+  if (entries.includes(key)) return;
+  notebook[paperId] = [...entries, key];
+  writeJson(storage, NOTEBOOK_KEY, notebook);
 }
