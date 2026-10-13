@@ -10,6 +10,7 @@ import { GRAVITY, JUMP_VELOCITY, PlayerController, makeOneWay, type Sprite } fro
 import { saveProgress, unlockNote } from "../save";
 import type { StageData } from "../stage";
 import { enablePause } from "./PauseScene";
+import { isTouchDevice } from "../touchControls";
 import { GAME_HEIGHT, GAME_WIDTH, HeartBar, MAX_LIVES, Menu, START_LIVES, panel, textStyle } from "../ui";
 
 type StaticSprite = Phaser.Types.Physics.Arcade.SpriteWithStaticBody;
@@ -192,7 +193,7 @@ export class LevelScene extends Phaser.Scene {
     fixed(this.add.text(GAME_WIDTH - 16, 8, label, textStyle(16, NES.yellow)).setOrigin(1, 0).setDepth(10));
     fixed(this.add.text(GAME_WIDTH - 16, 30, world.name.toUpperCase(), textStyle(8, NES.lightGray)).setOrigin(1, 0).setDepth(10));
     const hint = fixed(
-      this.add.text(GAME_WIDTH / 2, 70, "A/D MOVE  W JUMP  S DROP  ESC PAUSE", textStyle(16, NES.white)).setOrigin(0.5).setDepth(10),
+      this.add.text(GAME_WIDTH / 2, 70, isTouchDevice() ? "TAP THE BUTTONS TO MOVE AND JUMP" : "A/D MOVE  W JUMP  S DROP  ESC PAUSE", textStyle(16, NES.white)).setOrigin(0.5).setDepth(10),
     );
     this.tweens.add({ targets: hint, alpha: 0, delay: 4000, duration: 800 });
     if (this.stage.worldIndex === 0 && this.stage.checkpointsCleared === 0) this.showStompTip();
@@ -219,6 +220,7 @@ export class LevelScene extends Phaser.Scene {
   }
 
   update(time: number): void {
+    this.controls.touch?.setVisible(!this.finished);
     if (this.finished) return;
     this.controls.update(time);
     this.updateBears();

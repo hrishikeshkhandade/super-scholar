@@ -2,6 +2,7 @@ import Phaser from "phaser";
 import { audio } from "../audio/audio";
 import { NES } from "../palette";
 import { loadSettings, saveSettings } from "../save";
+import { addTapButton, isTouchDevice } from "../touchControls";
 import { GAME_HEIGHT, GAME_WIDTH, Menu, panel, textStyle } from "../ui";
 
 // Shown on top of a paused level or boss fight. Esc or P resumes.
@@ -58,7 +59,7 @@ export class PauseScene extends Phaser.Scene {
       },
     ]);
     this.add
-      .text(GAME_WIDTH / 2, 350, "ESC / P: RESUME", textStyle(8, NES.lightGray))
+      .text(GAME_WIDTH / 2, 350, isTouchDevice() ? "TAP RESUME TO PLAY ON" : "ESC / P: RESUME", textStyle(8, NES.lightGray))
       .setOrigin(0.5);
 
     // Listen from the next frame, so the Esc that opened this menu doesn't
@@ -88,6 +89,8 @@ export function enablePause(scene: Phaser.Scene, canPause: () => boolean): void 
   scene.input.keyboard?.on("keydown-ESC", pause);
   scene.input.keyboard?.on("keydown-P", pause);
   scene.game.events.on(Phaser.Core.Events.BLUR, pause);
+  // Phones have no Esc key, so they get a pause button at the top.
+  if (isTouchDevice()) addTapButton(scene, GAME_WIDTH / 2, 26, "II", pause);
 
   // Keys released while paused never reached this scene, so forget them;
   // otherwise the player would keep running after resuming.

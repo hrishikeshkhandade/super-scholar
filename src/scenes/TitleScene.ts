@@ -3,6 +3,7 @@ import { audio } from "../audio/audio";
 import { findPaper } from "../content/library";
 import { NES } from "../palette";
 import { loadProgress } from "../save";
+import { isTouchDevice } from "../touchControls";
 import { GAME_WIDTH, Menu, START_LIVES, textStyle, type MenuItem } from "../ui";
 import { LAST_QUERY_KEY } from "./PaperSelectScene";
 
@@ -66,7 +67,7 @@ export class TitleScene extends Phaser.Scene {
     this.add.image(GAME_WIDTH / 2 + menuWidth / 2 + SPRITE_GAP, middle, "player-idle").setScale(2);
 
     this.add
-      .text(GAME_WIDTH / 2, 420, "W / S TO CHOOSE, ENTER TO SELECT, OR CLICK", textStyle(8, NES.lightGray))
+      .text(GAME_WIDTH / 2, 420, isTouchDevice() ? "TAP AN OPTION TO CHOOSE IT" : "W / S TO CHOOSE, ENTER TO SELECT, OR CLICK", textStyle(8, NES.lightGray))
       .setOrigin(0.5);
   }
 }

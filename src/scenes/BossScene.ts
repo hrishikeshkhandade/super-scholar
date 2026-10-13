@@ -142,7 +142,9 @@ export class BossScene extends Phaser.Scene {
   }
 
   update(time: number, deltaMs: number): void {
-    if (this.mode === "question" || this.mode === "over") return;
+    const fighting = this.mode !== "question" && this.mode !== "over";
+    this.controls.touch?.setVisible(fighting);
+    if (!fighting) return;
     this.controls.update(time);
     this.updateDrops(deltaMs);
     this.updateBoss(deltaMs);

@@ -4,6 +4,7 @@ import { GenerateError, generateGame } from "../generator/generateGame";
 import { MAX_PDF_BYTES, MAX_PDF_PAGES, readPdfLines } from "../generator/readPdf";
 import { NES } from "../palette";
 import { saveProgress, saveUploadedPaper } from "../save";
+import { isTouchDevice } from "../touchControls";
 import { GAME_WIDTH, Menu, START_LIVES, textStyle } from "../ui";
 
 // Gets a paper's PDF (an upload, or a free copy downloaded by our server
@@ -30,13 +31,20 @@ export class GenerateScene extends Phaser.Scene {
     this.tweens.add({ targets: professor, y: 130, duration: 400, yoyo: true, repeat: -1, ease: "Sine.easeInOut" });
     this.add.text(GAME_WIDTH / 2, 230, "PROF. QUANT IS READING\nYOUR PAPER...", textStyle(24, NES.yellow)).setOrigin(0.5).setAlign("center");
     this.status = this.add.text(GAME_WIDTH / 2, 300, "Opening the PDF", textStyle(16, NES.white)).setOrigin(0.5);
-    const hint = this.add.text(GAME_WIDTH / 2, 420, "ESC: CANCEL", textStyle(8, NES.lightGray)).setOrigin(0.5);
-    // A slow download shouldn't trap the player on this screen.
+    // A slow download shouldn't trap the player on this screen. Esc, or a
+    // tap on the hint, cancels.
     this.abort = new AbortController();
-    this.input.keyboard?.once("keydown-ESC", () => {
+    const cancel = () => {
       this.abort?.abort();
       this.scene.start("PaperSelect");
-    });
+    };
+    const hint = this.add
+      .text(GAME_WIDTH / 2, 420, isTouchDevice() ? "TAP HERE TO CANCEL" : "ESC: CANCEL", textStyle(8, NES.lightGray))
+      .setOrigin(0.5)
+      .setPadding(16, 12, 16, 12)
+      .setInteractive({ useHandCursor: true })
+      .once("pointerdown", cancel);
+    this.input.keyboard?.once("keydown-ESC", cancel);
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.abort?.abort());
     this.hint = hint;
     void this.build(data);

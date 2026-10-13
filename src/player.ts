@@ -1,7 +1,8 @@
 import Phaser from "phaser";
 import { audio } from "./audio/audio";
+import { TouchControls, isTouchDevice } from "./touchControls";
 
-// WASD movement and jumping, shared by the levels and the boss arena so the
+// WASD (or on-screen buttons on phones) movement and jumping, shared by the levels and the boss arena so the
 // controls feel the same everywhere.
 
 export type Sprite = Phaser.Types.Physics.Arcade.SpriteWithDynamicBody;
@@ -23,6 +24,8 @@ export class PlayerController {
   private jumpPressedAt = -Infinity;
   private jumping = false; // true during a jump the player started (not a bounce)
   private knockbackUntil = 0;
+  // The on-screen buttons, on phones and tablets only.
+  readonly touch?: TouchControls;
 
   constructor(
     private readonly scene: Phaser.Scene,
@@ -46,6 +49,16 @@ export class PlayerController {
     };
     for (const key of this.keys.jump) key.on("down", () => (this.jumpPressedAt = scene.time.now));
     for (const key of this.keys.down) key.on("down", onDrop);
+
+    if (isTouchDevice()) {
+      const touch = new TouchControls(scene, (button) => {
+        if (button === "jump") this.jumpPressedAt = scene.time.now;
+        else if (button === "down") onDrop();
+      });
+      // Fingers lifted while paused never reached this scene.
+      scene.events.on(Phaser.Scenes.Events.RESUME, () => touch.reset());
+      this.touch = touch;
+    }
   }
 
   update(time: number): void {
@@ -100,7 +113,7 @@ export class PlayerController {
   }
 
   private isDown(name: KeyName): boolean {
-    return this.keys[name].some((key) => key.isDown);
+    return this.keys[name].some((key) => key.isDown) || this.touch?.isDown(name) === true;
   }
 }
 

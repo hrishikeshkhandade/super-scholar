@@ -3,6 +3,7 @@ import { audio } from "../audio/audio";
 import type { Cutscene, Question } from "../content/types";
 import { NES } from "../palette";
 import { TEXT_SPEED_MS, loadSettings } from "../save";
+import { isTouchDevice } from "../touchControls";
 import { GAME_HEIGHT, GAME_WIDTH, MAX_LIVES, QuestionPanel, onceAdvance, panel, textStyle } from "../ui";
 
 export interface CutsceneData {
@@ -18,6 +19,8 @@ const BOX = { x: 20, y: 250, width: GAME_WIDTH - 40, height: 180 };
 
 const FORWARD_KEYS = [" ", "Enter", "d", "D", "s", "S", "ArrowRight", "ArrowDown"];
 const BACK_KEYS = ["a", "A", "w", "W", "ArrowLeft", "ArrowUp"];
+// On phones, a tap on the left third of the screen goes back a page.
+const BACK_TAP_WIDTH = GAME_WIDTH / 3;
 
 export class CutsceneScene extends Phaser.Scene {
   private params!: CutsceneData;
@@ -57,7 +60,12 @@ export class CutsceneScene extends Phaser.Scene {
     // Listen from the next frame, so the press that opened this cutscene
     // doesn't also skip its first page.
     const onKey = (event: KeyboardEvent) => this.handleKey(event);
-    const onClick = () => this.onPages && this.forward();
+    const touch = isTouchDevice();
+    const onClick = (pointer: Phaser.Input.Pointer) => {
+      if (!this.onPages) return;
+      if (touch && pointer.x < BACK_TAP_WIDTH) this.back();
+      else this.forward();
+    };
     this.time.delayedCall(0, () => {
       this.input.keyboard?.on("keydown", onKey);
       this.input.on("pointerdown", onClick);
@@ -112,7 +120,7 @@ export class CutsceneScene extends Phaser.Scene {
       return;
     }
     this.body.setText("");
-    this.prompt.setText("SPACE / D: SKIP");
+    this.prompt.setText(isTouchDevice() ? "TAP: SKIP" : "SPACE / D: SKIP");
     let shown = 0;
     this.typing = this.time.addEvent({
       delay: TEXT_SPEED_MS[loadSettings().textSpeed],
@@ -132,8 +140,9 @@ export class CutsceneScene extends Phaser.Scene {
     this.body.setText(this.params.cutscene.pages[this.pageIndex]);
     this.furthestShown = Math.max(this.furthestShown, this.pageIndex);
     const isLast = this.pageIndex === this.params.cutscene.pages.length - 1;
-    const back = this.pageIndex > 0 ? "A: BACK   " : "";
-    this.prompt.setText(`${back}SPACE / D: ${isLast ? "DONE" : "NEXT"}`);
+    const touch = isTouchDevice();
+    const back = this.pageIndex > 0 ? (touch ? "TAP LEFT: BACK   " : "A: BACK   ") : "";
+    this.prompt.setText(`${back}${touch ? "TAP" : "SPACE / D"}: ${isLast ? "DONE" : "NEXT"}`);
   }
 
   private askPractice(question: Question): void {

@@ -5,6 +5,7 @@ import type { Paper } from "../content/types";
 import { paperProgress, progressOf, worldSections, type NotePage, type NoteSection } from "../notebook";
 import { NES, css } from "../palette";
 import { loadNotebook, type Notebook } from "../save";
+import { isTouchDevice } from "../touchControls";
 import { GAME_WIDTH, Menu, fitTextToHeight, panel, textStyle } from "../ui";
 
 // The Scholar's Notebook: review every lesson, fun fact, and question
@@ -145,8 +146,22 @@ export class NotebookScene extends Phaser.Scene {
     this.counter = this.add.text(GAME_WIDTH / 2, 412, "", textStyle(16, NES.white)).setOrigin(0.5);
     this.flipHint = this.add.text(PAGE_BOX.x + PAGE_BOX.width, 412, "", textStyle(8, NES.yellow)).setOrigin(1, 0.5);
     this.add
-      .text(GAME_WIDTH / 2, 438, "A/D: PAGE   W/S: SECTION   SPACE: FLIP CARD   ESC: BACK", textStyle(8, NES.lightGray))
+      .text(
+        GAME_WIDTH / 2,
+        438,
+        isTouchDevice()
+          ? "TAP < > FOR PAGES, A TAB FOR A SECTION, A CARD TO FLIP IT"
+          : "A/D: PAGE   W/S: SECTION   SPACE: FLIP CARD   ESC: BACK",
+        textStyle(8, NES.lightGray),
+      )
       .setOrigin(0.5);
+    // A visible way out, since phones have no Esc key.
+    this.add
+      .text(PAGE_BOX.x + 8, 412, "BACK", textStyle(16, NES.white))
+      .setOrigin(0, 0.5)
+      .setPadding(8, 8, 8, 8)
+      .setInteractive({ useHandCursor: true })
+      .on("pointerdown", back);
 
     this.input.keyboard?.on("keydown", (event: KeyboardEvent) => {
       if (event.repeat) return;

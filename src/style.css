@@ -31,3 +31,36 @@ canvas {
 #search-input:focus {
   border-color: #f8b800;
 }
+
+/* Phones: no page scrolling, zooming, or text selection while playing. */
+#game {
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+
+/* The game is wide, so a phone held upright asks to be turned sideways. */
+@media (pointer: coarse) and (orientation: portrait) {
+  body::after {
+    content: "TURN YOUR PHONE SIDEWAYS TO PLAY";
+    position: fixed;
+    inset: 0;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 32px;
+    text-align: center;
+    line-height: 2;
+    background: #0000bc;
+    color: #f8b800;
+    font: 16px "Press Start 2P", monospace;
+  }
+}
+
+/* The search box still needs normal text selection. */
+#game input {
+  user-select: text;
+  -webkit-user-select: text;
+}

@@ -37,6 +37,8 @@ waitForFont().then(() => {
     physics: { default: "arcade", arcade: { fixedStep: false } },
     // Sound comes from our own chiptune synth (src/audio), not Phaser.
     audio: { noAudio: true },
+    // Up to three fingers at once on phones: move, jump, and one spare.
+    input: { activePointers: 3 },
     scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH },
     scene: [
       BootScene,
