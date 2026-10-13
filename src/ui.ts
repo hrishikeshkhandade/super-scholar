@@ -46,7 +46,8 @@ export class Menu {
     private readonly x: number,
     private readonly y: number,
     items: MenuItem[],
-    private readonly options: { size?: number; spacing?: number; wrapWidth?: number } = {},
+    // align "center" centers every option on x instead of starting it there.
+    private readonly options: { size?: number; spacing?: number; wrapWidth?: number; align?: "left" | "center" } = {},
   ) {
     this.items = items;
     this.cursor = scene.add.text(x - 28, y, ">", textStyle(this.size, NES.yellow));
@@ -65,6 +66,7 @@ export class Menu {
     let y = this.y;
     this.texts = items.map((item, index) => {
       const text = this.scene.add.text(this.x, y, item.label, textStyle(this.size, NES.white, this.options.wrapWidth));
+      if (this.options.align === "center") text.setOrigin(0.5, 0);
       y += text.height + (this.options.spacing ?? 20);
       text.setDepth(this.depth);
       text.setInteractive({ useHandCursor: item.enabled !== false });
@@ -112,7 +114,7 @@ export class Menu {
     });
     const target = this.texts[index];
     this.cursor.setVisible(target !== undefined);
-    if (target) this.cursor.setY(target.y);
+    if (target) this.cursor.setPosition(target.getBounds().left - 28, target.y);
   }
 
   private move(step: number): void {
