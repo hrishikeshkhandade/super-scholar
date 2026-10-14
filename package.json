@@ -11,6 +11,7 @@
     "deploy": "npm test && npm run build && npx -y netlify-cli@27 deploy --prod --dir=dist --no-build"
   },
   "dependencies": {
+    "@netlify/blobs": "^11.1.4",
     "pdfjs-dist": "^6.4.299",
     "phaser": "^4.2.1"
   },

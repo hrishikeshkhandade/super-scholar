@@ -1,4 +1,5 @@
 import type { Cutscene, Paper, Question, World } from "../content/types";
+import { MAX_ABSTRACT_CHARS, MAX_EXCERPT_CHARS, MAX_TITLE_CHARS, type AiRequest } from "./aiWorlds";
 import { MAX_FACT_CHARS, MAX_PAGE_CHARS, validatePaper } from "../content/validate";
 import { LEVEL_LAYOUTS } from "../levels/layouts";
 import { containsTerm, findKeyTerms, type Term } from "./keywords";
@@ -9,7 +10,9 @@ import type { TextLine } from "./textLines";
 
 // Builds a whole game from a paper's text with plain rules, no AI:
 // sections become worlds, the most important sentences become lessons,
-// and key terms become fill-in-the-blank questions.
+// and key terms become fill-in-the-blank questions. It also picks out each
+// section's key sentences for the AI, which rewrites the worlds in plain
+// words when it's available (the rules version is the fallback).
 
 export class GenerateError extends Error {}
 
@@ -141,22 +144,68 @@ function buildWorld(section: Section, index: number, terms: Term[], seed: number
   };
 }
 
-function introPages(title: string, abstract: string, worlds: World[], pageCount: number): string[] {
-  const worldList = worlds.map((world) => world.section).join(", ");
+const worldLabel = (world: World) => world.name.replace(/^World \d+:\s*/, "");
+
+function introPages(title: string, abstract: string, worlds: World[], pageCount: number, byAi: boolean): string[] {
+  const worldList = worlds.map(byAi ? worldLabel : (world) => world.section).join(", ");
   const pages = [
     shorten(`Welcome, scholar! Today's paper: "${title}".`, MAX_PAGE_CHARS),
     shorten(`It is ${pageCount} pages long. I turned it into ${worlds.length} world${worlds.length === 1 ? "" : "s"}: ${worldList}.`, MAX_PAGE_CHARS),
   ];
   const summary = splitSentences(abstract).find(isReadable);
-  if (summary) pages.push(shorten(`In short: ${summary}`, MAX_PAGE_CHARS));
+  if (summary && !byAi) pages.push(shorten(`In short: ${summary}`, MAX_PAGE_CHARS));
   pages.push(
-    "I built these lessons straight from the paper's own sentences, with no AI, so a few may read a little rough.",
+    byAi
+      ? "An AI helped me explain this paper in plain words. AI can slip up, so check anything important against the paper."
+      : "I built these lessons straight from the paper's own sentences, with no AI, so a few may read a little rough.",
     "Move with A and D, jump with W. Stomp bears for fun facts, and reach each flag for a lesson. Go!",
   );
   return pages;
 }
 
+// A section's strongest sentences, in reading order, for the AI to teach from.
+function excerptFor(section: Section, terms: Term[]): string {
+  const best = scoreSentences(section.text, terms).sort((a, b) => b.score - a.score);
+  const chosen: ScoredSentence[] = [];
+  let length = 0;
+  for (const sentence of best) {
+    if (length + sentence.text.length + 1 > MAX_EXCERPT_CHARS) continue;
+    chosen.push(sentence);
+    length += sentence.text.length + 1;
+  }
+  return chosen
+    .sort((a, b) => a.position - b.position)
+    .map((s) => s.text)
+    .join(" ");
+}
+
+// Everything needed to finish the game once the AI answers (or doesn't).
+export interface PreparedGame {
+  paper: Paper; // the rules-only version, always playable
+  aiRequest: AiRequest; // what to send the AI, one entry per section
+  ruleWorlds: (World | undefined)[]; // the rules world for each section, if any
+  pageCount: number;
+}
+
+// Swaps in the AI's worlds where it wrote one, keeping the rules world for
+// any section it didn't. Falls back to the rules version if none came back.
+export function withAiWorlds(prepared: PreparedGame, aiWorlds: (World | undefined)[]): Paper {
+  if (!aiWorlds.some((world) => world !== undefined)) return prepared.paper;
+  const worlds = prepared.ruleWorlds
+    .map((ruleWorld, i) => aiWorlds[i] ?? ruleWorld)
+    .filter((world): world is World => world !== undefined)
+    .map((world, i) => ({ ...world, id: `world-${i + 1}`, name: shorten(`World ${i + 1}: ${worldLabel(world)}`, MAX_WORLD_NAME) }));
+  const { paper } = prepared;
+  const intro = { ...paper.intro, pages: introPages(paper.title, paper.summary, worlds, prepared.pageCount, true) };
+  const merged: Paper = { ...paper, intro, worlds };
+  return validatePaper(merged).length === 0 ? merged : paper;
+}
+
 export function generateGame(lines: TextLine[], fileName: string): Paper {
+  return prepareGame(lines, fileName).paper;
+}
+
+export function prepareGame(lines: TextLine[], fileName: string): PreparedGame {
   const text = lines.map((line) => line.text).join(" ");
   if (text.replace(/\s/g, "").length < 800) {
     throw new GenerateError("This PDF has almost no text to read. It may be a scanned image.");
@@ -174,8 +223,8 @@ export function generateGame(lines: TextLine[], fileName: string): Paper {
   if (terms.length < 8) throw new GenerateError("Couldn't find enough key terms in this paper to make questions.");
 
   const seed = hashString(title);
-  const worlds = sections
-    .map((section, i) => buildWorld(section, i, terms, seed))
+  const ruleWorlds = sections.map((section, i) => buildWorld(section, i, terms, seed));
+  const worlds = ruleWorlds
     .filter((world): world is World => world !== undefined)
     .map((world, i) => ({ ...world, id: `world-${i + 1}`, name: shorten(`World ${i + 1}: ${world.section}`, MAX_WORLD_NAME) }));
   if (worlds.length === 0) {
@@ -191,12 +240,21 @@ export function generateGame(lines: TextLine[], fileName: string): Paper {
     year: yearMatch ? Number(yearMatch[1]) : new Date().getFullYear(),
     subject: "Uploaded PDF",
     summary: outline.abstract,
-    intro: { title: "A New Quest", speaker: SPEAKER, pages: introPages(title, outline.abstract, worlds, pageCount) },
+    intro: { title: "A New Quest", speaker: SPEAKER, pages: introPages(title, outline.abstract, worlds, pageCount, false) },
     worlds,
   };
 
   // The rules above should always produce valid content; this is a safety net.
   const problems = validatePaper(paper);
   if (problems.length > 0) throw new GenerateError(`Generated game failed checks: ${problems[0]}`);
-  return paper;
+
+  const aiRequest: AiRequest = {
+    title: title.slice(0, MAX_TITLE_CHARS),
+    abstract: outline.abstract.slice(0, MAX_ABSTRACT_CHARS),
+    sections: sections.map((section) => ({
+      heading: cleanHeading(section.heading).slice(0, MAX_TITLE_CHARS) || "Untitled section",
+      excerpt: excerptFor(section, terms),
+    })),
+  };
+  return { paper, aiRequest, ruleWorlds, pageCount };
 }

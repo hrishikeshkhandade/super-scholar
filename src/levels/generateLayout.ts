@@ -24,8 +24,8 @@ const CHUNKS: Chunk[] = [
   { difficulty: 0.2, art: [blank(9), blank(9), blank(9), blank(9), "   oo    ", blank(9), blank(9)], ground: "###  ####" },
   // One candle spike
   { difficulty: 0.25, art: [blank(9), blank(9), blank(9), blank(9), blank(9), blank(9), "    ^    "], ground: "#########" },
-  // One bear
-  { difficulty: 0.3, art: [blank(9), blank(9), blank(9), blank(9), blank(9), blank(9), "     b   "], ground: "#########" },
+  // One bear on flat ground (easy, so even the first level has bears)
+  { difficulty: 0.1, art: [blank(9), blank(9), blank(9), blank(9), blank(9), blank(9), "     b   "], ground: "#########" },
   // A wall to hop
   { difficulty: 0.3, art: [blank(9), blank(9), blank(9), blank(9), blank(9), "    ##   ", "    ##   "], ground: "#########" },
   // Blocks over a bear
@@ -106,6 +106,10 @@ const NAMES = [
 ];
 
 const HEIGHT = 14;
+// Every third chunk has a bear, since stomping bears is how players find fun facts.
+const BEAR_EVERY = 3;
+
+const hasBear = (chunk: Chunk) => chunk.art.some((line) => line.includes("b"));
 
 export function generateLayout(seed: number, difficulty: number): LevelLayout {
   const random = seededRandom(seed);
@@ -121,12 +125,14 @@ export function generateLayout(seed: number, difficulty: number): LevelLayout {
   // A safe start and a safe finish, with the chosen chunks in between.
   append([blank(6), blank(6), blank(6), blank(6), blank(6), blank(6), "  P   "], "######");
   const usable = CHUNKS.filter((chunk) => chunk.difficulty <= difficulty + 0.15);
+  const withBears = usable.filter(hasBear);
   const count = 8 + Math.round(difficulty * 5);
   for (let i = 0; i < count; i++) {
+    const choices = i % BEAR_EVERY === 1 ? withBears : usable;
     // Harder settings favour harder chunks, but easy ones still appear as breathers.
-    const weights = usable.map((chunk) => 1 + chunk.difficulty * difficulty * 4);
+    const weights = choices.map((chunk) => 1 + chunk.difficulty * difficulty * 4);
     let pick = random() * weights.reduce((sum, w) => sum + w, 0);
-    const chunk = usable.find((_, index) => (pick -= weights[index]) <= 0) ?? usable[0];
+    const chunk = choices.find((_, index) => (pick -= weights[index]) <= 0) ?? choices[0];
     const art = chunk.art.map((line) =>
       line.replace(/X/g, () => {
         const roll = random();

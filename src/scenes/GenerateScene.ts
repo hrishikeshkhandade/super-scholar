@@ -1,6 +1,7 @@
 import Phaser from "phaser";
 import { audio } from "../audio/audio";
-import { GenerateError, generateGame } from "../generator/generateGame";
+import { fetchAiWorlds } from "../generator/aiClient";
+import { GenerateError, prepareGame, withAiWorlds } from "../generator/generateGame";
 import { MAX_PDF_BYTES, MAX_PDF_PAGES, readPdfLines } from "../generator/readPdf";
 import { NES } from "../palette";
 import { saveProgress, saveUploadedPaper } from "../save";
@@ -81,7 +82,13 @@ export class GenerateScene extends Phaser.Scene {
       });
       if (!this.scene.isActive()) return;
       this.status.setText("Building your levels");
-      const generated = generateGame(lines, fileName);
+      // The rules version first, as a fallback that always works; then the
+      // AI rewrites its worlds in plain words if it can.
+      const prepared = prepareGame(lines, fileName);
+      this.status.setText("Rewriting it in plain words (AI)");
+      const aiWorlds = await fetchAiWorlds(prepared.aiRequest, this.abort!.signal);
+      if (!this.scene.isActive()) return;
+      const generated = withAiWorlds(prepared, aiWorlds);
       // For downloads, the database knows the real title, authors, and year.
       const paper =
         "download" in source
@@ -102,16 +109,16 @@ export class GenerateScene extends Phaser.Scene {
       });
     } catch (error) {
       if (!this.scene.isActive()) return;
-      // pdf.js errors are technical, so show a plain message for those.
-      const message =
-        error instanceof GenerateError
-          ? error.message
-          : "Couldn't read this PDF. It may be damaged or password-protected.";
-      this.showError(message);
+      // pdf.js errors are technical, so show a plain message for those, with
+      // the technical one in small print to help track down bugs.
+      if (error instanceof GenerateError) return this.showError(error.message);
+      console.error(error);
+      const details = error instanceof Error ? `${error.name}: ${error.message}` : String(error);
+      this.showError("Couldn't read this PDF. It may be damaged or password-protected.", details);
     }
   }
 
-  private showError(message: string): void {
+  private showError(message: string, details?: string): void {
     this.hint?.destroy();
     audio.playSfx("wrong");
     this.status.setText("");
@@ -119,9 +126,11 @@ export class GenerateScene extends Phaser.Scene {
       .text(GAME_WIDTH / 2, 280, message, textStyle(16, NES.salmon, GAME_WIDTH - 120))
       .setOrigin(0.5, 0)
       .setAlign("center");
+    const tipText = `Text-based PDFs up to ${MAX_PDF_PAGES} pages work best.`;
     const tip = this.add
-      .text(GAME_WIDTH / 2, error.y + error.height + 12, `Text-based PDFs up to ${MAX_PDF_PAGES} pages work best.`, textStyle(8, NES.lightGray))
-      .setOrigin(0.5, 0);
+      .text(GAME_WIDTH / 2, error.y + error.height + 12, details ? `${tipText}\nDetails: ${details.slice(0, 140)}` : tipText, textStyle(8, NES.lightGray, GAME_WIDTH - 80))
+      .setOrigin(0.5, 0)
+      .setAlign("center");
     new Menu(this, 300, tip.y + tip.height + 16, [{ label: "BACK TO PAPERS", onSelect: () => this.scene.start("PaperSelect") }]);
   }
 }
