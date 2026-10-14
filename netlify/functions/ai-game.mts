@@ -78,6 +78,8 @@ function providers(): { name: string; ask: Ask }[] {
   return list;
 }
 
+const describe = (failure: unknown) => (failure instanceof Error ? failure.message : String(failure));
+
 // Some models wrap JSON in ``` fences even when asked not to.
 function parseJson(text: string): unknown {
   return JSON.parse(text.replace(/^\s*```(?:json)?\s*/i, "").replace(/\s*```\s*$/, ""));
@@ -94,7 +96,7 @@ async function writeWorld(request: AiRequest, index: number, ais: { name: string
       console.warn(`${ai.name}: world ${index + 1} failed the game's checks`);
     } catch (failure) {
       // Out of quota, timed out, or not JSON: try the next AI.
-      console.warn(`${ai.name}: world ${index + 1}: ${failure instanceof Error ? failure.message : "failed"}`);
+      console.warn(`${ai.name}: world ${index + 1}: ${describe(failure)}`);
     }
   }
   return null;
@@ -112,19 +114,24 @@ async function worldsFor(request: AiRequest): Promise<{ worlds: unknown[]; cache
   const key = await cacheKey(request);
   const store = (() => {
     try {
-      return getStore(STORE_NAME);
-    } catch {
-      return undefined; // no storage (e.g. local testing): just don't save
+      // Strong consistency: a result saved a second ago is already readable.
+      return getStore({ name: STORE_NAME, consistency: "strong" });
+    } catch (failure) {
+      console.warn(`saved results unavailable: ${describe(failure)}`);
+      return undefined; // no storage: still works, just doesn't save
     }
   })();
-  const saved = (await store?.get(key, { type: "json" }).catch(() => undefined)) as { worlds?: unknown[] } | undefined;
+  const saved = (await store?.get(key, { type: "json" }).catch((failure) => {
+    console.warn(`couldn't read saved result: ${describe(failure)}`);
+    return undefined;
+  })) as { worlds?: unknown[] } | undefined;
   if (Array.isArray(saved?.worlds)) return { worlds: saved.worlds, cached: true };
 
   const ais = providers();
   const worlds = await Promise.all(request.sections.map((_, i) => writeWorld(request, i, ais)));
   // Only complete results are saved, so a later try can fill any gaps.
   if (worlds.every((world, i) => world !== null || !request.sections[i].excerpt.trim())) {
-    await store?.setJSON(key, { worlds }).catch(() => undefined);
+    await store?.setJSON(key, { worlds }).catch((failure) => console.warn(`couldn't save result: ${describe(failure)}`));
   }
   return { worlds, cached: false };
 }
