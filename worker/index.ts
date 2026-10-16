@@ -1,0 +1,66 @@
+import { handleAiGame } from "../server/aiGame";
+import { handleFetchPaper } from "../server/fetchPaper";
+
+// The Cloudflare Worker behind the site. Game files (HTML, JS, images) are
+// served straight from Cloudflare's static assets; only /api/ requests run
+// this code: paper downloads and AI-written worlds.
+
+interface RateLimiter {
+  limit(options: { key: string }): Promise<{ success: boolean }>;
+}
+
+interface Env {
+  ASSETS: { fetch(request: Request): Promise<Response> };
+  AI_WORLDS: {
+    get(key: string, type: "json"): Promise<unknown>;
+    put(key: string, value: string): Promise<void>;
+  };
+  DOWNLOAD_LIMITER?: RateLimiter;
+  AI_LIMITER?: RateLimiter;
+  GEMINI_API_KEY?: string;
+  GROQ_API_KEY?: string;
+}
+
+// Security headers for responses made here (the _headers file covers the
+// game's static files, but Cloudflare doesn't apply it to worker responses).
+const API_HEADERS: Record<string, string> = {
+  "x-content-type-options": "nosniff",
+  "referrer-policy": "strict-origin-when-cross-origin",
+  "cross-origin-resource-policy": "same-origin",
+};
+
+function withHeaders(response: Response): Response {
+  const copy = new Response(response.body, response);
+  for (const [name, value] of Object.entries(API_HEADERS)) copy.headers.set(name, value);
+  return copy;
+}
+
+// Each visitor (by IP address) gets a limited number of calls a minute, so
+// nobody can hammer other servers or burn through the shared AI quota.
+async function allowed(limiter: RateLimiter | undefined, request: Request): Promise<boolean> {
+  if (!limiter) return true;
+  const ip = request.headers.get("cf-connecting-ip") ?? "unknown";
+  return (await limiter.limit({ key: ip })).success;
+}
+
+const tooMany = () => Response.json({ error: "Too many requests. Wait a minute and try again." }, { status: 429 });
+
+export default {
+  async fetch(request: Request, env: Env): Promise<Response> {
+    const { pathname } = new URL(request.url);
+    if (pathname === "/api/fetch-paper") {
+      if (!(await allowed(env.DOWNLOAD_LIMITER, request))) return withHeaders(tooMany());
+      return withHeaders(await handleFetchPaper(request));
+    }
+    if (pathname === "/api/ai-game") {
+      if (!(await allowed(env.AI_LIMITER, request))) return withHeaders(tooMany());
+      const store = {
+        get: (key: string) => env.AI_WORLDS.get(key, "json"),
+        put: (key: string, value: string) => env.AI_WORLDS.put(key, value),
+      };
+      return withHeaders(await handleAiGame(request, { geminiKey: env.GEMINI_API_KEY, groqKey: env.GROQ_API_KEY, store }));
+    }
+    if (pathname.startsWith("/api/")) return withHeaders(Response.json({ error: "Not found." }, { status: 404 }));
+    return env.ASSETS.fetch(request);
+  },
+};

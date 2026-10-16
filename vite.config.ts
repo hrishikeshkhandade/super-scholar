@@ -6,7 +6,7 @@ export default defineConfig({
   server: {
     // During development, send /api requests to the live site's server
     // functions, since Vite only serves the game itself.
-    proxy: { "/api": { target: "https://super-scholar.netlify.app", changeOrigin: true } },
+    proxy: { "/api": { target: "https://super-scholar.super-scholar.workers.dev", changeOrigin: true } },
   },
   build: {
     // Phaser alone is about 1.4 MB (370 KB gzipped) and the game needs all of

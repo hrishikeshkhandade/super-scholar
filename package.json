@@ -8,16 +8,16 @@
     "build": "tsc && vite build",
     "preview": "vite preview",
     "test": "vitest run",
-    "deploy": "npm test && npm run build && npx -y netlify-cli@27 deploy --prod --dir=dist --no-build"
+    "deploy": "npm test && npm run build && wrangler deploy"
   },
   "dependencies": {
-    "@netlify/blobs": "^11.1.4",
     "pdfjs-dist": "^6.4.299",
     "phaser": "^4.2.1"
   },
   "devDependencies": {
     "typescript": "^7.0.2",
     "vite": "^8.3.3",
-    "vitest": "^5.0.3"
+    "vitest": "^5.0.3",
+    "wrangler": "^4.150.0"
   }
 }

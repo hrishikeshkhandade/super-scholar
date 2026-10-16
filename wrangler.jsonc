@@ -1,0 +1,22 @@
+// Cloudflare hosting for Super Scholar: the built game (dist/) as static
+// assets, plus a small Worker for /api/ requests. Secrets (the AI keys) are
+// set with `npx wrangler secret put NAME`, never in this file.
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "super-scholar",
+  "main": "./worker/index.ts",
+  "compatibility_date": "2026-10-14",
+  "assets": {
+    "directory": "./dist/",
+    "binding": "ASSETS",
+    "run_worker_first": ["/api/*"]
+  },
+  // Saved AI-written worlds, one entry per paper (keyed by a fingerprint of its text).
+  "kv_namespaces": [{ "binding": "AI_WORLDS", "id": "9c37b30aa8e04c62b14e6925d3c96853" }],
+  // Per-visitor limits: 20 paper downloads and 4 AI papers a minute.
+  "ratelimits": [
+    { "name": "DOWNLOAD_LIMITER", "namespace_id": "1001", "simple": { "limit": 20, "period": 60 } },
+    { "name": "AI_LIMITER", "namespace_id": "1002", "simple": { "limit": 4, "period": 60 } }
+  ],
+  "observability": { "enabled": true }
+}
