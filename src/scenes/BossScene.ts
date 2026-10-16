@@ -1,7 +1,6 @@
 import Phaser from "phaser";
 import { audio } from "../audio/audio";
 import { BossFight } from "../bossFight";
-import { LIBRARY } from "../content/library";
 import { TILE } from "../levels/parseLevel";
 import { farKey } from "../levels/themeTextures";
 import { THEMES } from "../levels/themes";
@@ -332,15 +331,11 @@ export class BossScene extends Phaser.Scene {
 
     this.tweens.add({ targets: this.boss, alpha: 0, angle: 90, y: this.boss.y + 40, duration: 800 });
     panel(this, 20, PANEL_TOP, GAME_WIDTH - 40, 230);
-    this.add.text(GAME_WIDTH / 2, PANEL_TOP + 40, "WORLD CLEAR!", textStyle(32, NES.yellow)).setOrigin(0.5);
-    // Only the hand-written papers have more worlds on the way; generated
-    // games already cover the whole paper.
-    const handWritten = LIBRARY.some((built) => built.id === paper.id);
+    const heading = hasNextWorld ? "WORLD CLEAR!" : "PAPER COMPLETE!";
+    this.add.text(GAME_WIDTH / 2, PANEL_TOP + 40, heading, textStyle(32, NES.yellow)).setOrigin(0.5);
     const message = hasNextWorld
       ? "You beat the boss. On to the next section of the paper!"
-      : handWritten
-        ? "You beat every world in this paper. More worlds are coming soon!"
-        : "You beat every world in this paper. Scholar status: legendary!";
+      : "You beat every world in this paper. Scholar status: legendary!";
     this.add.text(GAME_WIDTH / 2, PANEL_TOP + 90, message, textStyle(16, NES.white, GAME_WIDTH - 100)).setOrigin(0.5);
     new Menu(this, 280, PANEL_TOP + 140, [
       ...(hasNextWorld

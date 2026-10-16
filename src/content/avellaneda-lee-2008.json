@@ -16,7 +16,7 @@
       "The big question: can you make money by betting that stocks which drift away from their peers will drift back?",
       "The authors tested this on U.S. stocks from 1997 to 2007. Their best strategy earned a Sharpe ratio of 1.44 after trading costs.",
       "Don't worry if that means nothing yet. Each world teaches one piece. Reach the flag in each level to learn, then beat the boss.",
-      "Move with A and D, jump with W. Stomp the bears, dodge red candles, and hit ? blocks. World 1 is pairs trading. Go!"
+      "Move with A and D, jump with W. Stomp the bears, dodge red candles, and hit ? blocks. There are 5 worlds; World 1 is pairs trading. Go!"
     ]
   },
   "worlds": [
@@ -161,6 +161,570 @@
         "Factoring in trading volume lifted the ETF strategies to a Sharpe ratio of 1.51 over 2003 to 2007.",
         "Section 2.1 is titled \"can you hear the shape of the market?\", a nod to a famous math question about drums.",
         "Stat arb funds took a big loss in the second week of August 2007. Many never recovered."
+      ]
+    },
+    {
+      "id": "factors",
+      "name": "World 2: Hunting Factors",
+      "section": "Section 2: Risk factors and market neutrality",
+      "cutscenes": [
+        {
+          "title": "Two Kinds of Investors",
+          "speaker": "PROF. QUANT",
+          "pages": [
+            "The paper splits investors into two camps. Indexers WANT to ride the market or a sector up and down.",
+            "Market-neutral traders want the opposite: returns that have nothing to do with where the market goes.",
+            "To get there, split each stock's daily return in two: a part the market explains, plus a leftover all its own.",
+            "The explained part is beta times a factor, like the S&P 500's return. With several factors, add one such term for each.",
+            "Choose your dollar amounts so the betas cancel to zero for every factor. Then only the leftovers can move your money."
+          ],
+          "practice": {
+            "prompt": "A portfolio's betas add up to zero for every factor. What can still change its value?",
+            "choices": [
+              "The overall market's moves",
+              "Nothing at all",
+              "Only interest rates",
+              "Each stock's own leftover moves"
+            ],
+            "answerIndex": 3,
+            "explanation": "Zero betas cancel the factors, so only the stocks' idiosyncratic leftovers remain."
+          }
+        },
+        {
+          "title": "PCA: Listening to the Market",
+          "speaker": "PROF. QUANT",
+          "pages": [
+            "Which factors? Idea one: let the data decide, with Principal Components Analysis, or PCA.",
+            "Take a year of daily returns for hundreds of stocks. Rescale each stock so wild and calm stocks count the same.",
+            "Build the correlation matrix: a giant table, often 500 by 500, of how strongly each pair moves together.",
+            "Its eigenvalues measure hidden patterns. A few huge ones stand far above a big pile of tiny ones that look like noise.",
+            "Keep only the big ones. Each becomes an eigenportfolio, a basket of stocks, and their returns are your factors."
+          ],
+          "practice": {
+            "prompt": "Why does the paper keep only the largest eigenvalues?",
+            "choices": [
+              "They come from the biggest companies",
+              "The small ones mostly look like noise",
+              "There is never more than one",
+              "They are the easiest to compute"
+            ],
+            "answerIndex": 1,
+            "explanation": "The few big eigenvalues stand out from a 'bulk' of small ones that behave like random noise."
+          }
+        },
+        {
+          "title": "Reading the Eigenportfolios",
+          "speaker": "PROF. QUANT",
+          "pages": [
+            "The biggest eigenportfolio puts money in nearly every stock, tilted toward calmer ones. It's basically the market.",
+            "The next ones are long-short. Sort a stock list by weight and neighbors tend to share an industry, like energy or banks.",
+            "So each eigenportfolio is like a giant pairs trade between whole industries: oil versus airlines, say.",
+            "Idea two skips PCA: regress each stock on its sector ETF, a fund that tracks its industry. Easy to interpret!",
+            "The catch: you must know the economy well to pick good ETFs, and ETFs lean toward big companies. PCA has no size bias."
+          ],
+          "practice": {
+            "prompt": "What does the very first eigenportfolio look like?",
+            "choices": [
+              "Pure cash",
+              "A bet on a single stock",
+              "The overall market portfolio",
+              "A short position in every stock"
+            ],
+            "answerIndex": 2,
+            "explanation": "Its weights are almost all positive, so it tracks the market like a cap-weighted index."
+          }
+        }
+      ],
+      "boss": {
+        "name": "THE EIGEN EMPEROR",
+        "questions": [
+          {
+            "prompt": "What do market-neutral traders want?",
+            "choices": [
+              "To beat the S&P 500 by leverage",
+              "Returns that track the market",
+              "Returns unrelated to the market",
+              "Only bond returns"
+            ],
+            "answerIndex": 2,
+            "explanation": "Market-neutral means returns uncorrelated with the market's ups and downs."
+          },
+          {
+            "prompt": "In PCA, what is an eigenportfolio?",
+            "choices": [
+              "A fund run by a computer",
+              "A list of ETF prices",
+              "The single best stock",
+              "A basket of stocks built from an eigenvector"
+            ],
+            "answerIndex": 3,
+            "explanation": "Each significant eigenvector gives weights for a basket of stocks; its returns act as a factor."
+          },
+          {
+            "prompt": "Why rescale returns before building the correlation matrix?",
+            "choices": [
+              "To remove weekends",
+              "To make prices smaller",
+              "Because PCA needs negative numbers",
+              "So volatile stocks don't dominate"
+            ],
+            "answerIndex": 3,
+            "explanation": "Standardizing puts calm and jumpy stocks on equal footing."
+          },
+          {
+            "prompt": "What's an advantage of using sector ETFs as factors?",
+            "choices": [
+              "Their meaning is easy to understand",
+              "They never move",
+              "They need no data at all",
+              "They have no size bias"
+            ],
+            "answerIndex": 0,
+            "explanation": "An ETF factor is just 'the tech sector' or 'banks', so loadings are intuitive."
+          },
+          {
+            "prompt": "Neighbors in a sorted eigenvector tend to be...",
+            "choices": [
+              "Alphabetical",
+              "The same price",
+              "In the same industry",
+              "Random"
+            ],
+            "answerIndex": 2,
+            "explanation": "The paper calls this coherence: high-ranking eigenvectors group stocks by industry."
+          }
+        ]
+      },
+      "facts": [
+        "The correlation matrix in the paper is huge: often 500 by 500, or even 1000 by 1000 entries.",
+        "There are about 252 trading days in a year, so one day is 1/252 of a year in the paper's math.",
+        "One eigenportfolio had oil and gas firms at the top and airlines and banks at the bottom.",
+        "Another eigenportfolio pitted utility companies against semiconductor makers.",
+        "The market-wide part of stock moves explains roughly half of all the wiggling.",
+        "Around 15 factors (somewhere between 10 and 20) explain stock returns in big economies."
+      ]
+    },
+    {
+      "id": "signal",
+      "name": "World 3: The S-Score",
+      "section": "Sections 3-4: The model and trading signals",
+      "cutscenes": [
+        {
+          "title": "A Rubber Band Model",
+          "speaker": "PROF. QUANT",
+          "pages": [
+            "Each stock's return = a small drift + beta times its sector's move + a wobble X that's all its own.",
+            "The paper models X as an Ornstein-Uhlenbeck process. Fancy name, simple idea: a ball on a rubber band.",
+            "X has a home value m. The farther X wanders from m, the harder the band pulls it back.",
+            "Pull strength is kappa. Add random kicks, and X jiggles around m but never strays for long.",
+            "The model only uses prices: no earnings reports or analyst opinions. Pure relative value."
+          ],
+          "practice": {
+            "prompt": "X is far ABOVE its home value m. What does the model expect next?",
+            "choices": [
+              "X gets pulled back down toward m",
+              "X keeps rising",
+              "Nothing; X is random",
+              "X jumps to zero"
+            ],
+            "answerIndex": 0,
+            "explanation": "The pull is kappa times (m - X), which points back toward m."
+          }
+        },
+        {
+          "title": "How Fast Does It Snap Back?",
+          "speaker": "PROF. QUANT",
+          "pages": [
+            "Kappa is the speed of mean reversion. Flip it to get tau = 1 / kappa, the typical time to snap back.",
+            "Each stock's model is fit on the last 60 trading days. That window covers about one earnings season.",
+            "The paper only trades stocks whose snap-back time is under half that window, so the fit stays trustworthy.",
+            "In 2007 the median snap-back time was about 7.5 days. Some took half a day, the slowest about 30.",
+            "Left alone, X settles into a bell curve around m. Its spread depends on the random kicks and the pull."
+          ],
+          "practice": {
+            "prompt": "Why trade only stocks that snap back fast?",
+            "choices": [
+              "Regulators require it",
+              "So reversion happens within the window the model was fit on",
+              "Fast stocks are cheaper",
+              "Slow stocks can't be shorted"
+            ],
+            "answerIndex": 1,
+            "explanation": "The parameters are assumed constant over 60 days, so reversion should happen well inside that window."
+          }
+        },
+        {
+          "title": "The S-Score",
+          "speaker": "PROF. QUANT",
+          "pages": [
+            "The s-score says how many standard deviations X sits from home: s = (X - m) / its equilibrium spread.",
+            "s below -1.25: the stock is cheap versus its peers. Buy $1 of it and short beta dollars of its ETF.",
+            "s above +1.25: it's expensive. Short it and buy the ETF. Close a short once s drops below 0.75.",
+            "Close a long once s climbs back above -0.50. The cutoffs came from testing on 2000 to 2004 data.",
+            "A fancier version adds the drift, which sneaks in a little momentum. In practice it barely changed results."
+          ],
+          "practice": {
+            "prompt": "A stock's s-score is -1.6. What does the rule say?",
+            "choices": [
+              "Buy to open",
+              "Sell to open (short it)",
+              "Close every position",
+              "Wait for +1.6"
+            ],
+            "answerIndex": 0,
+            "explanation": "Below -1.25 means unusually cheap versus its sector, so buy to open."
+          }
+        }
+      ],
+      "boss": {
+        "name": "THE RUBBER BAND",
+        "questions": [
+          {
+            "prompt": "What does kappa measure in the model?",
+            "choices": [
+              "Trading fees",
+              "The stock's price",
+              "The number of factors",
+              "How fast X is pulled back home"
+            ],
+            "answerIndex": 3,
+            "explanation": "Kappa is the speed of mean reversion; bigger kappa means a faster snap-back."
+          },
+          {
+            "prompt": "What is tau?",
+            "choices": [
+              "The stock's beta",
+              "The typical time to revert, 1 / kappa",
+              "The s-score cutoff",
+              "The interest rate"
+            ],
+            "answerIndex": 1,
+            "explanation": "Tau = 1 / kappa: the characteristic time for X to return toward its mean."
+          },
+          {
+            "prompt": "An s-score of +2 means the stock is...",
+            "choices": [
+              "About to be delisted",
+              "Exactly fairly priced",
+              "Expensive versus its peers",
+              "Cheap versus its peers"
+            ],
+            "answerIndex": 2,
+            "explanation": "Two standard deviations above equilibrium: rich relative to its sector, a short signal."
+          },
+          {
+            "prompt": "How long is the estimation window?",
+            "choices": [
+              "60 trading days",
+              "10 years",
+              "5 days",
+              "1 trading day"
+            ],
+            "answerIndex": 0,
+            "explanation": "60 trading days, about one earnings cycle."
+          },
+          {
+            "prompt": "When does the paper close a long position?",
+            "choices": [
+              "Never",
+              "After exactly 60 days",
+              "When s hits +1.25",
+              "When s rises above -0.50"
+            ],
+            "answerIndex": 3,
+            "explanation": "Longs close once the s-score climbs back above -0.50, near equilibrium."
+          }
+        ]
+      },
+      "facts": [
+        "The paper's s-score example tracks JPMorgan against XLF, a financial-sector ETF.",
+        "The fastest stocks in 2007 snapped back in about half a day; the slowest took about 30.",
+        "The Ornstein-Uhlenbeck model is the continuous cousin of a simple AR(1) time-series model.",
+        "Closing shorts at 0.75 did slightly better than waiting until 0.50.",
+        "Typical leftover drift was only about 15 basis points: tiny next to 300 bps of wobble.",
+        "The model's settings are fit with a simple one-step regression on 60 data points."
+      ]
+    },
+    {
+      "id": "backtest",
+      "name": "World 4: Time Machine",
+      "section": "Sections 5-6: Back-testing and trading volume",
+      "cutscenes": [
+        {
+          "title": "Testing on the Past",
+          "speaker": "PROF. QUANT",
+          "pages": [
+            "A back-test replays history: each day, re-fit the model, check the signals, and trade at the closing price.",
+            "Trading isn't free, so every trade is charged 0.05%: 10 basis points for a full round trip.",
+            "Leverage '2+2' means, say, 100 longs and 100 shorts, each sized at 2/100 of your equity.",
+            "Positions are all-or-nothing: fully in when a signal fires, fully out when it closes.",
+            "Surprise: that 'bang-bang' style beat smoothly adjusting positions every day."
+          ],
+          "practice": {
+            "prompt": "Why does the back-test charge a cost on every trade?",
+            "choices": [
+              "The SEC requires it",
+              "Only to slow down the computer",
+              "Real trading has fees and slippage",
+              "To make results look worse on purpose"
+            ],
+            "answerIndex": 2,
+            "explanation": "Real trades pay spreads and slippage; ignoring that would overstate profits."
+          }
+        },
+        {
+          "title": "ETFs vs. PCA",
+          "speaker": "PROF. QUANT",
+          "pages": [
+            "Most sector ETFs didn't exist before 2002, so the authors built 15 synthetic sector indices to test from 1996.",
+            "From 2002, using real ETFs did much better than the synthetic ones, likely because real funds trade and carry better price info.",
+            "After 2002, the 15-factor PCA strategy beat the ETF strategy.",
+            "Over 1997 to 2007, PCA averaged a Sharpe ratio of 1.44 and ETFs 1.1. Both faded after 2003.",
+            "Too many factors (75% of variance) lost money: leftovers got so small that costs ate them. One factor was poor too."
+          ],
+          "practice": {
+            "prompt": "Why did keeping factors for 75% of the variance lose money?",
+            "choices": [
+              "It traded too few stocks",
+              "Leftover moves got tiny, so costs ate the profit",
+              "ETFs stopped trading",
+              "The computer ran out of memory"
+            ],
+            "answerIndex": 1,
+            "explanation": "With most variance explained away, the residuals were too small to beat transaction costs."
+          }
+        },
+        {
+          "title": "Trading Time",
+          "speaker": "PROF. QUANT",
+          "pages": [
+            "New twist: measure time by shares traded instead of by the clock. The paper calls it trading time.",
+            "In practice, scale each day's return by normal volume divided by that day's actual volume.",
+            "A jump on huge volume shrinks; a move on quiet volume grows. Heavy-volume moves are often real news.",
+            "So the strategy won't short a rally on heavy volume, or buy a crash on heavy volume.",
+            "It clearly helped ETF strategies: Sharpe 1.51 from 2003 to 2007. For PCA it barely mattered."
+          ],
+          "practice": {
+            "prompt": "A stock jumps on giant volume. In trading time, that move looks...",
+            "choices": [
+              "Like a crash",
+              "Smaller, so a short signal is less likely",
+              "Exactly the same",
+              "Bigger, so short it harder"
+            ],
+            "answerIndex": 1,
+            "explanation": "High volume shrinks the volume-adjusted return, which discourages fading the move."
+          }
+        }
+      ],
+      "boss": {
+        "name": "THE OVERFITTER",
+        "questions": [
+          {
+            "prompt": "What is a back-test?",
+            "choices": [
+              "A broker's audit",
+              "Testing a website",
+              "Replaying a strategy on historical data",
+              "Trading with real money"
+            ],
+            "answerIndex": 2,
+            "explanation": "A back-test runs the rules through past data as if trading back then."
+          },
+          {
+            "prompt": "Why did the authors build synthetic sector indices?",
+            "choices": [
+              "ETFs are illegal to short",
+              "Real ETFs mostly didn't exist before 2002",
+              "To hide their data",
+              "They were cheaper"
+            ],
+            "answerIndex": 1,
+            "explanation": "Synthetic indices let them test back to 1996, before most sector ETFs existed."
+          },
+          {
+            "prompt": "Which did better after 2002?",
+            "choices": [
+              "Doing nothing",
+              "15-factor PCA",
+              "Synthetic ETFs",
+              "One-factor CAPM"
+            ],
+            "answerIndex": 1,
+            "explanation": "The 15-PCA strategy outperformed the real-ETF strategy after 2002."
+          },
+          {
+            "prompt": "What does a round trip cost in the back-test?",
+            "choices": [
+              "1%",
+              "$5 per trade",
+              "Nothing",
+              "10 basis points"
+            ],
+            "answerIndex": 3,
+            "explanation": "0.05% each way, so 10 basis points to open and close."
+          },
+          {
+            "prompt": "Trading time helped which strategies most?",
+            "choices": [
+              "Neither",
+              "Only bond strategies",
+              "PCA strategies",
+              "ETF strategies"
+            ],
+            "answerIndex": 3,
+            "explanation": "Volume-adjusted signals lifted ETF strategies to a 1.51 Sharpe ratio for 2003-2007."
+          }
+        ]
+      },
+      "facts": [
+        "The back-test assumes every trade happens at that day's closing price.",
+        "The synthetic-ETF tests reach back to 1996 and use 15 industry indices.",
+        "An S&P 500 futures hedge, adjusted daily, kept the synthetic strategy beta-neutral.",
+        "Fewer factors were needed in crises like 2002 and 2007, when a few big moods drove everything.",
+        "Leverage was only adjusted on new positions, so held stocks didn't rack up extra fees.",
+        "Dividends and interest on cash are counted in the profit equation too."
+      ]
+    },
+    {
+      "id": "august-2007",
+      "name": "World 5: August 2007",
+      "section": "Sections 7-8: 2007 and conclusions",
+      "cutscenes": [
+        {
+          "title": "A Rough Summer",
+          "speaker": "PROF. QUANT",
+          "pages": [
+            "2007 was brutal for quant funds. Stat arb strategies took a sharp loss in the second week of August.",
+            "Prices partly bounced back within about 10 days, but many funds had already cut leverage and never recovered.",
+            "The paper's back-test showed the same drop: flat early in the year, then a sudden plunge in early August.",
+            "It closely matched another study by Khandani and Lo, once you adjust for leverage: they used 4+4, this paper 2+2.",
+            "The PCA strategy held up better: about a 5% drawdown, versus about 10% for the ETF versions."
+          ],
+          "practice": {
+            "prompt": "What did many funds do after the August 2007 loss?",
+            "choices": [
+              "Switched to gold",
+              "Nothing happened to them",
+              "Cut leverage and never fully recovered",
+              "Doubled their bets"
+            ],
+            "answerIndex": 2,
+            "explanation": "Big losses forced de-leveraging, so many funds missed the rebound."
+          }
+        },
+        {
+          "title": "The Unwinding Theory",
+          "speaker": "PROF. QUANT",
+          "pages": [
+            "Why the crash? Khandani and Lo suggested a liquidity shock: lots of funds dumping similar positions at once.",
+            "Each fund holds hundreds of small longs and shorts. Exit them all together and prices get shoved hard.",
+            "The clue: Tech and Consumer Discretionary were hit harder than Financials and Real Estate.",
+            "Odd, since the crisis was about mortgages! Sectors far from subprime suffering most points to forced selling.",
+            "So the drop wasn't bad news about companies. It was a crowd of traders rushing for the same exit."
+          ],
+          "practice": {
+            "prompt": "Why do the sector results support the unwinding theory?",
+            "choices": [
+              "Sectors unrelated to subprime fell hardest",
+              "Every sector rose",
+              "Only real estate moved",
+              "Banks fell the most, as expected"
+            ],
+            "answerIndex": 0,
+            "explanation": "If news drove it, financials would suffer most. Tech and consumer stocks falling hardest suggests forced selling."
+          }
+        },
+        {
+          "title": "What We Learned",
+          "speaker": "PROF. QUANT",
+          "pages": [
+            "The recipe: split returns into market-driven parts (via ETFs or PCA) and leftovers, then trade the leftovers' snap-back.",
+            "Market-driven parts explain roughly 40% to 60% of stock wiggles. Matching that took 10 to 30 PCA factors over time.",
+            "Fewer factors were needed when fear (the VIX) ran high, and more in calm markets.",
+            "Best performers: 15 ETFs, 15 PCA factors, or enough PCA factors for about 55% of the variance.",
+            "Too few factors leave market moves in the leftovers. Too many shrink the leftovers until costs win. You beat the paper!"
+          ],
+          "practice": {
+            "prompt": "Why is using too MANY factors bad?",
+            "choices": [
+              "The math stops working",
+              "It takes too long",
+              "Leftovers get so small that costs eat the profit",
+              "ETFs run out"
+            ],
+            "answerIndex": 2,
+            "explanation": "Explaining away too much leaves tiny residuals, and transaction costs swamp them."
+          }
+        }
+      ],
+      "boss": {
+        "name": "THE LIQUIDITY CRUNCH",
+        "questions": [
+          {
+            "prompt": "When did stat arb funds take their big 2007 hit?",
+            "choices": [
+              "The second week of August",
+              "December",
+              "Every Monday",
+              "January"
+            ],
+            "answerIndex": 0,
+            "explanation": "The sharp drawdown came in the second week of August 2007."
+          },
+          {
+            "prompt": "What is the 'unwinding theory'?",
+            "choices": [
+              "Funds dumping similar positions all at once",
+              "Banks printing money",
+              "A new trading signal",
+              "A rule about watches"
+            ],
+            "answerIndex": 0,
+            "explanation": "Many funds exiting crowded positions together shoved prices around."
+          },
+          {
+            "prompt": "Which strategy had the smaller August drawdown?",
+            "choices": [
+              "ETF-based (about 10%)",
+              "They were identical",
+              "Neither lost money",
+              "PCA-based (about 5%)"
+            ],
+            "answerIndex": 3,
+            "explanation": "PCA strategies dropped about 5%, versus about 10% for ETF strategies."
+          },
+          {
+            "prompt": "When fear (the VIX) is high, the number of factors needed...",
+            "choices": [
+              "Goes down",
+              "Stays at exactly 15",
+              "Goes up",
+              "Becomes zero"
+            ],
+            "answerIndex": 0,
+            "explanation": "In crises a few big forces drive everything, so fewer factors explain the market."
+          },
+          {
+            "prompt": "Roughly how much of stock movement do market-wide factors explain?",
+            "choices": [
+              "About 5%",
+              "About 40% to 60%",
+              "None",
+              "100%"
+            ],
+            "answerIndex": 1,
+            "explanation": "The systematic part explains about half the variance of stock returns."
+          }
+        ]
+      },
+      "facts": [
+        "Khandani and Lo first reproduced the August 2007 drop in back-tests with simple contrarian strategies.",
+        "The paper's strategies bounced back from the August 2007 shock in about 10 days.",
+        "Tech and Consumer Discretionary stocks took bigger hits than Financials in August 2007.",
+        "The number of factors needed for half the market's variance swung between about 10 and 30.",
+        "The authors say their estimation method is simple and could almost certainly be improved.",
+        "The paper's data runs into early 2008, right as the bigger financial crisis began."
       ]
     }
   ]
