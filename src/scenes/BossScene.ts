@@ -6,7 +6,8 @@ import { farKey } from "../levels/themeTextures";
 import { THEMES } from "../levels/themes";
 import { NES } from "../palette";
 import { GRAVITY, JUMP_VELOCITY, PlayerController, makeOneWay, type Sprite } from "../player";
-import { advanceProgress, markCleared, unlockNote } from "../save";
+import { advanceProgress, markCleared, saveBestStars, unlockNote } from "../save";
+import { bossStars } from "../stars";
 import type { StageData } from "../stage";
 import { enablePause } from "./PauseScene";
 import {
@@ -18,6 +19,7 @@ import {
   START_LIVES,
   onceAdvance,
   panel,
+  showStars,
   textStyle,
 } from "../ui";
 
@@ -59,6 +61,7 @@ export class BossScene extends Phaser.Scene {
   private nextAttack: "charge" | "candles" = "charge";
   private drops: PendingDrop[] = [];
   private invulnerableUntil = 0;
+  private hits = 0;
   private stompableAt = 0;
 
   constructor() {
@@ -70,6 +73,7 @@ export class BossScene extends Phaser.Scene {
     const world = data.paper.worlds[data.worldIndex];
     this.fight = new BossFight(world.boss.questions);
     this.mode = "intro";
+    this.hits = 0;
     this.modeMs = INTRO_MS;
     this.nextAttack = "charge";
     this.drops = [];
@@ -300,6 +304,7 @@ export class BossScene extends Phaser.Scene {
   private damage(fromX: number): void {
     if (this.mode === "over" || this.time.now < this.invulnerableUntil) return;
     this.invulnerableUntil = this.time.now + PLAYER_INVULNERABLE_MS;
+    this.hits += 1;
     this.stage.lives -= 1;
     this.hearts.set(this.stage.lives);
     audio.playSfx("hurt");
@@ -334,12 +339,15 @@ export class BossScene extends Phaser.Scene {
     this.tweens.add({ targets: this.boss, alpha: 0, angle: 90, y: this.boss.y + 40, duration: 800 });
     panel(this, 20, PANEL_TOP, GAME_WIDTH - 40, 230);
     const heading = hasNextWorld ? "WORLD CLEAR!" : "PAPER COMPLETE!";
-    this.add.text(GAME_WIDTH / 2, PANEL_TOP + 40, heading, textStyle(32, NES.yellow)).setOrigin(0.5);
+    this.add.text(GAME_WIDTH / 2, PANEL_TOP + 32, heading, textStyle(32, NES.yellow)).setOrigin(0.5);
+    const stars = bossStars({ wrongAnswers: this.fight.wrongAnswers, hits: this.hits });
+    saveBestStars(paper.id, worldIndex, "boss", stars);
+    showStars(this, GAME_WIDTH / 2, PANEL_TOP + 72, stars);
     const message = hasNextWorld
       ? "You beat the boss. On to the next section of the paper!"
       : "You beat every world in this paper. Scholar status: legendary!";
-    this.add.text(GAME_WIDTH / 2, PANEL_TOP + 90, message, textStyle(16, NES.white, GAME_WIDTH - 100)).setOrigin(0.5);
-    new Menu(this, 280, PANEL_TOP + 140, [
+    this.add.text(GAME_WIDTH / 2, PANEL_TOP + 118, message, textStyle(16, NES.white, GAME_WIDTH - 100)).setOrigin(0.5);
+    new Menu(this, 280, PANEL_TOP + 160, [
       ...(hasNextWorld
         ? [
             {

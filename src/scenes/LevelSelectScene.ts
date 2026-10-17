@@ -4,9 +4,9 @@ import { findPaper, playablePapers } from "../content/library";
 import type { Paper } from "../content/types";
 import { levelMap, mapProgress, type MapStop } from "../levelMap";
 import { NES, css } from "../palette";
-import { loadCleared, loadProgress } from "../save";
+import { loadCleared, loadProgress, loadStars, stageKey } from "../save";
 import { isTouchDevice } from "../touchControls";
-import { GAME_WIDTH, Menu, START_LIVES, textStyle } from "../ui";
+import { GAME_WIDTH, Menu, START_LIVES, showStars, textStyle } from "../ui";
 import { listTop, paperLabel, shorten, tableLabels } from "./listLayout";
 
 // Level select: pick a paper, then a map of its worlds where every cleared
@@ -33,6 +33,7 @@ const STATE_STYLE = {
 interface StopView {
   stop: MapStop;
   box: Phaser.GameObjects.Rectangle;
+  stars: number; // best rating, 0 if never rated
 }
 
 export class LevelSelectScene extends Phaser.Scene {
@@ -72,6 +73,7 @@ export class LevelSelectScene extends Phaser.Scene {
   private showMap(paper: Paper): void {
     const back = () => this.scene.restart({});
     const map = levelMap(paper, loadCleared(), loadProgress());
+    const bestStars = loadStars()[paper.id] ?? {};
     this.add.text(GAME_WIDTH / 2, 22, "LEVEL SELECT", textStyle(24, NES.yellow)).setOrigin(0.5);
     this.add.text(GAME_WIDTH / 2, 52, shorten(paper.title, 90), textStyle(8, NES.sky)).setOrigin(0.5);
 
@@ -98,8 +100,12 @@ export class LevelSelectScene extends Phaser.Scene {
           .text(x + widths[column] / 2, y + BOX_HEIGHT / 2, stop.label, textStyle(16, style.text))
           .setOrigin(0.5);
         if (stop.state === "open") this.tweens.add({ targets: label, alpha: 0.3, duration: 500, yoyo: true, repeat: -1 });
+        // Best stars sit on the box's bottom edge (levels cleared before
+        // stars existed have none yet).
+        const stars = bestStars[stageKey(w, stop.stage)] ?? 0;
+        if (stars > 0) showStars(this, x + widths[column] / 2, y + BOX_HEIGHT, stars, 0.5);
         x += widths[column] + BOX_GAP;
-        return { stop, box };
+        return { stop, box, stars };
       });
     });
 
@@ -166,7 +172,8 @@ export class LevelSelectScene extends Phaser.Scene {
     this.selected = { row, column };
     const { x, y, width, height } = view.box;
     this.highlight.setPosition(x - 5, y - 5).setSize(width + 10, height + 10);
-    this.status.setColor(css(NES.white)).setText(`${view.stop.state === "open" ? "NEXT UP" : "CLEARED"}: ${view.stop.label}`);
+    const rating = view.stars > 0 ? `   ${view.stars}/3 STARS` : "";
+    this.status.setColor(css(NES.white)).setText(`${view.stop.state === "open" ? "NEXT UP" : "CLEARED"}: ${view.stop.label}${rating}`);
   }
 
   private choose(row: number, column: number, paper: Paper): void {

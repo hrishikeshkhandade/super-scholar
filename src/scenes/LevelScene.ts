@@ -7,11 +7,12 @@ import { themeFor, type Theme } from "../levels/themes";
 import { TILE, isSolidTile, parseLevel, type BlockContents } from "../levels/parseLevel";
 import { NES } from "../palette";
 import { GRAVITY, JUMP_VELOCITY, PlayerController, makeOneWay, type Sprite } from "../player";
-import { advanceProgress, markCleared, unlockNote } from "../save";
+import { advanceProgress, markCleared, saveBestStars, unlockNote } from "../save";
+import { COIN_GOAL, levelStars } from "../stars";
 import type { StageData } from "../stage";
 import { enablePause } from "./PauseScene";
 import { isTouchDevice } from "../touchControls";
-import { GAME_HEIGHT, GAME_WIDTH, HeartBar, MAX_LIVES, Menu, START_LIVES, panel, textStyle } from "../ui";
+import { GAME_HEIGHT, GAME_WIDTH, HeartBar, MAX_LIVES, Menu, START_LIVES, panel, showStars, textStyle } from "../ui";
 
 type StaticSprite = Phaser.Types.Physics.Arcade.SpriteWithStaticBody;
 
@@ -45,6 +46,8 @@ export class LevelScene extends Phaser.Scene {
   private factText!: Phaser.GameObjects.Text;
   private factHideTimer?: Phaser.Time.TimerEvent;
   private coins = 0;
+  private coinsInLevel = 0;
+  private hits = 0;
   private hasShield = false;
   private invulnerableUntil = 0;
   private finished = false;
@@ -56,6 +59,7 @@ export class LevelScene extends Phaser.Scene {
   create(data: StageData): void {
     this.stage = { ...data };
     this.coins = 0;
+    this.hits = data.levelHits ?? 0;
     this.hasShield = false;
     this.invulnerableUntil = 0;
     this.finished = false;
@@ -106,6 +110,7 @@ export class LevelScene extends Phaser.Scene {
       spike.body.setSize(20, 18).setOffset(6, 14);
     }
 
+    this.coinsInLevel = level.coins.length;
     const coins = this.physics.add.staticGroup();
     for (const tile of level.coins) {
       (coins.create(center(tile).x, center(tile).y, "coin1") as StaticSprite).play("coin-spin");
@@ -397,6 +402,7 @@ export class LevelScene extends Phaser.Scene {
   private damage(fromX: number): void {
     if (this.finished || this.time.now < this.invulnerableUntil) return;
     this.invulnerableUntil = this.time.now + INVULNERABLE_MS;
+    this.hits += 1;
     this.controls.knockback(fromX);
     audio.playSfx("hurt");
     this.cameras.main.shake(150, 0.01);
@@ -415,7 +421,7 @@ export class LevelScene extends Phaser.Scene {
   private fallIntoPit(): void {
     if (this.finished) return;
     audio.playSfx("fall");
-    if (this.loseLife()) this.scene.restart({ ...this.stage });
+    if (this.loseLife()) this.scene.restart({ ...this.stage, levelHits: this.hits + 1 });
   }
 
   // Returns true if the player still has lives left.
@@ -445,10 +451,23 @@ export class LevelScene extends Phaser.Scene {
     markCleared(this.stage.paper.id, this.stage.worldIndex, this.stage.checkpointsCleared);
     advanceProgress({ paperId: this.stage.paper.id, worldIndex: this.stage.worldIndex, checkpointsCleared: cleared });
     unlockNote(this.stage.paper.id, this.stage.worldIndex, "lesson", this.stage.checkpointsCleared);
-    const nextStage: StageData = { ...this.stage, checkpointsCleared: cleared };
+    const nextStage: StageData = { ...this.stage, checkpointsCleared: cleared, levelHits: 0 };
+
+    const stars = levelStars({ coinsCollected: this.coins, coinsInLevel: this.coinsInLevel, hits: this.hits });
+    saveBestStars(this.stage.paper.id, this.stage.worldIndex, this.stage.checkpointsCleared, stars);
+    // A dark band so the stars stand out from the level behind them.
+    this.add.rectangle(GAME_WIDTH / 2, 228, 360, 64, NES.black, 0.75).setScrollFactor(0).setDepth(19);
+    for (const star of showStars(this, GAME_WIDTH / 2, 214, stars)) star.setScrollFactor(0).setDepth(20);
+    const coinGoal = Math.ceil(this.coinsInLevel * COIN_GOAL);
+    this.add
+      .text(GAME_WIDTH / 2, 248, `COINS ${this.coins}/${this.coinsInLevel}   STAR AT ${coinGoal}   HITS ${this.hits}`, textStyle(8, NES.white))
+      .setOrigin(0.5)
+      .setScrollFactor(0)
+      .setDepth(20);
     const nextScene = cleared >= world.cutscenes.length ? "Boss" : "Level";
 
-    this.time.delayedCall(1200, () =>
+    // Long enough to see the stars before the lesson starts.
+    this.time.delayedCall(2200, () =>
       this.scene.start("Cutscene", {
         cutscene: world.cutscenes[this.stage.checkpointsCleared],
         lives: this.stage.lives,
@@ -465,7 +484,7 @@ export class LevelScene extends Phaser.Scene {
     panel(this, 200, 110, 400, 230).setScrollFactor(0).setDepth(20);
     this.add.text(GAME_WIDTH / 2, 150, "GAME OVER", textStyle(32, NES.red)).setOrigin(0.5).setScrollFactor(0).setDepth(20);
     const menu = new Menu(this, 260, 220, [
-      { label: "RETRY LEVEL", onSelect: () => this.scene.restart({ ...this.stage, lives: START_LIVES }) },
+      { label: "RETRY LEVEL", onSelect: () => this.scene.restart({ ...this.stage, lives: START_LIVES, levelHits: 0 }) },
       { label: "TITLE SCREEN", onSelect: () => this.scene.start("Title") },
     ]);
     menu.setDepth(21);

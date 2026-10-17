@@ -31,6 +31,7 @@ const SETTINGS_KEY = "super-scholar.settings";
 const UPLOADS_KEY = "super-scholar.uploads";
 const NOTEBOOK_KEY = "super-scholar.notebook";
 const CLEARED_KEY = "super-scholar.cleared";
+const STARS_KEY = "super-scholar.stars";
 const MAX_SAVED_UPLOADS = 3;
 const DEFAULT_SETTINGS: Settings = { textSpeed: "normal", music: true, musicStyle: "upbeat", sfx: true };
 
@@ -101,6 +102,7 @@ export function clearProgress(storage: Storage | null = browserStorage()): void 
   try {
     storage?.removeItem(PROGRESS_KEY);
     storage?.removeItem(CLEARED_KEY);
+    storage?.removeItem(STARS_KEY);
   } catch {
     // Nothing to clear if storage is unavailable.
   }
@@ -202,4 +204,40 @@ export function loadCleared(storage: Storage | null = browserStorage()): Cleared
 
 export function markCleared(paperId: string, worldIndex: number, stage: Stage, storage: Storage | null = browserStorage()): void {
   addToList(CLEARED_KEY, CLEARED_PATTERN, paperId, stageKey(worldIndex, stage), storage);
+}
+
+// Best star rating (1-3) for each level and boss, per paper, keyed like the
+// cleared list ("0:1", "0:boss").
+export type StarRecords = Record<string, Record<string, number>>;
+
+const isStarCount = (value: unknown): value is number => Number.isInteger(value) && (value as number) >= 1 && (value as number) <= 3;
+
+export function loadStars(storage: Storage | null = browserStorage()): StarRecords {
+  const value = readJson(storage, STARS_KEY);
+  if (typeof value !== "object" || value === null || Array.isArray(value)) return {};
+  const records: StarRecords = {};
+  for (const [paperId, stages] of Object.entries(value)) {
+    if (typeof stages !== "object" || stages === null || Array.isArray(stages)) continue;
+    records[paperId] = Object.fromEntries(
+      Object.entries(stages).filter((entry): entry is [string, number] => CLEARED_PATTERN.test(entry[0]) && isStarCount(entry[1])),
+    );
+  }
+  return records;
+}
+
+// Keeps the better of the old and new rating, so replays can only raise it.
+export function saveBestStars(
+  paperId: string,
+  worldIndex: number,
+  stage: Stage,
+  stars: number,
+  storage: Storage | null = browserStorage(),
+): void {
+  if (!isStarCount(stars)) return;
+  const records = loadStars(storage);
+  const paperStars = records[paperId] ?? {};
+  const key = stageKey(worldIndex, stage);
+  if ((paperStars[key] ?? 0) >= stars) return;
+  records[paperId] = { ...paperStars, [key]: stars };
+  writeJson(storage, STARS_KEY, records);
 }

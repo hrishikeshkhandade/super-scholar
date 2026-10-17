@@ -186,6 +186,15 @@ export function onceAdvance(scene: Phaser.Scene, onPress: () => void): () => voi
   return cancel;
 }
 
+// Three stars, earned ones filled, centered on x. Returns them so callers
+// can pin them to the screen or layer them.
+export function showStars(scene: Phaser.Scene, x: number, y: number, earned: number, scale = 1): Phaser.GameObjects.Image[] {
+  const spacing = 36 * scale;
+  return [0, 1, 2].map((i) =>
+    scene.add.image(x + (i - 1) * spacing, y, i < earned ? "star" : "emptyStar").setScale(scale),
+  );
+}
+
 // Draws the player's lives as a row of hearts.
 export class HeartBar {
   private hearts: Phaser.GameObjects.Image[] = [];

@@ -6,4 +6,7 @@ export interface StageData {
   worldIndex: number;
   checkpointsCleared: number;
   lives: number;
+  // Hits taken so far in this level; carried over when a pit fall restarts
+  // it, so falling still costs the "no hits" star.
+  levelHits?: number;
 }

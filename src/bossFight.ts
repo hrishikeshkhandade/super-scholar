@@ -10,6 +10,7 @@ export class BossFight {
   readonly maxHealth: number;
   health: number;
   rage = 0;
+  wrongAnswers = 0;
   private queue: Question[];
 
   constructor(questions: Question[]) {
@@ -35,6 +36,7 @@ export class BossFight {
       this.health -= 1;
     } else {
       this.rage = Math.min(this.rage + 1, MAX_RAGE);
+      this.wrongAnswers += 1;
       this.queue.push(question);
     }
     return correct;
