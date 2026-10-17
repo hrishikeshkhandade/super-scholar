@@ -3,8 +3,8 @@ import { audio } from "../audio/audio";
 import { searchPapers } from "../content/library";
 import { searchOnline, type OnlinePaper } from "../content/openAlex";
 import type { Paper } from "../content/types";
+import { startPaperOver } from "../levelMap";
 import { NES, css } from "../palette";
-import { saveProgress } from "../save";
 import { GAME_WIDTH, Menu, START_LIVES, textStyle } from "../ui";
 
 const INPUT_BOX = { x: 40, y: 64, width: GAME_WIDTH - 80, height: 40 };
@@ -141,7 +141,7 @@ export class PaperSelectScene extends Phaser.Scene {
   }
 
   private startPaper(paper: Paper): void {
-    saveProgress({ paperId: paper.id, worldIndex: 0, checkpointsCleared: 0 });
+    startPaperOver(paper);
     this.scene.start("Cutscene", {
       cutscene: paper.intro,
       lives: START_LIVES,

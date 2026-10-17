@@ -50,6 +50,7 @@ export class TitleScene extends Phaser.Scene {
           });
         },
       },
+      { label: "LEVEL SELECT", onSelect: () => this.scene.start("LevelSelect") },
       { label: "NOTEBOOK", onSelect: () => this.scene.start("Notebook") },
       { label: "SETTINGS", onSelect: () => this.scene.start("Settings") },
       { label: "ABOUT", onSelect: () => this.scene.start("About") },

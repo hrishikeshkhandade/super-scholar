@@ -3,8 +3,9 @@ import { audio } from "../audio/audio";
 import { fetchAiWorlds } from "../generator/aiClient";
 import { GenerateError, prepareGame, withAiWorlds } from "../generator/generateGame";
 import { MAX_PDF_BYTES, MAX_PDF_PAGES, readPdfLines } from "../generator/readPdf";
+import { startPaperOver } from "../levelMap";
 import { NES } from "../palette";
-import { saveProgress, saveUploadedPaper } from "../save";
+import { saveUploadedPaper } from "../save";
 import { isTouchDevice } from "../touchControls";
 import { GAME_WIDTH, Menu, START_LIVES, textStyle } from "../ui";
 
@@ -100,7 +101,7 @@ export class GenerateScene extends Phaser.Scene {
             }
           : generated;
       saveUploadedPaper(paper);
-      saveProgress({ paperId: paper.id, worldIndex: 0, checkpointsCleared: 0 });
+      startPaperOver(paper);
       audio.playSfx("powerup");
       this.scene.start("Cutscene", {
         cutscene: paper.intro,

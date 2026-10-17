@@ -7,6 +7,7 @@ import { BossScene } from "./scenes/BossScene";
 import { CutsceneScene } from "./scenes/CutsceneScene";
 import { GenerateScene } from "./scenes/GenerateScene";
 import { LevelScene } from "./scenes/LevelScene";
+import { LevelSelectScene } from "./scenes/LevelSelectScene";
 import { NotebookScene } from "./scenes/NotebookScene";
 import { PaperDetailScene } from "./scenes/PaperDetailScene";
 import { PaperSelectScene } from "./scenes/PaperSelectScene";
@@ -54,6 +55,7 @@ waitForFont().then(() => {
       AboutScene,
       CreditsScene,
       NotebookScene,
+      LevelSelectScene,
     ],
   });
   // Lets the browser console inspect the running game during development.

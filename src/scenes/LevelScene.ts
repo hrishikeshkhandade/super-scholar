@@ -7,7 +7,7 @@ import { themeFor, type Theme } from "../levels/themes";
 import { TILE, isSolidTile, parseLevel, type BlockContents } from "../levels/parseLevel";
 import { NES } from "../palette";
 import { GRAVITY, JUMP_VELOCITY, PlayerController, makeOneWay, type Sprite } from "../player";
-import { saveProgress, unlockNote } from "../save";
+import { advanceProgress, markCleared, unlockNote } from "../save";
 import type { StageData } from "../stage";
 import { enablePause } from "./PauseScene";
 import { isTouchDevice } from "../touchControls";
@@ -442,7 +442,8 @@ export class LevelScene extends Phaser.Scene {
 
     const world = this.stage.paper.worlds[this.stage.worldIndex];
     const cleared = this.stage.checkpointsCleared + 1;
-    saveProgress({ paperId: this.stage.paper.id, worldIndex: this.stage.worldIndex, checkpointsCleared: cleared });
+    markCleared(this.stage.paper.id, this.stage.worldIndex, this.stage.checkpointsCleared);
+    advanceProgress({ paperId: this.stage.paper.id, worldIndex: this.stage.worldIndex, checkpointsCleared: cleared });
     unlockNote(this.stage.paper.id, this.stage.worldIndex, "lesson", this.stage.checkpointsCleared);
     const nextStage: StageData = { ...this.stage, checkpointsCleared: cleared };
     const nextScene = cleared >= world.cutscenes.length ? "Boss" : "Level";

@@ -1,12 +1,13 @@
 import Phaser from "phaser";
 import { audio } from "../audio/audio";
-import { LIBRARY, findPaper, playablePapers } from "../content/library";
+import { findPaper, playablePapers } from "../content/library";
 import type { Paper } from "../content/types";
 import { paperProgress, progressOf, worldSections, type NotePage, type NoteSection } from "../notebook";
 import { NES, css } from "../palette";
 import { loadNotebook, type Notebook } from "../save";
 import { isTouchDevice } from "../touchControls";
 import { GAME_WIDTH, Menu, fitTextToHeight, panel, textStyle } from "../ui";
+import { listTop, paperLabel, shorten, tableLabels } from "./listLayout";
 
 // The Scholar's Notebook: review every lesson, fun fact, and question
 // unlocked so far. Three views in one scene: papers, then a paper's worlds,
@@ -17,30 +18,10 @@ interface NotebookData {
   worldIndex?: number;
 }
 
-const MAX_TITLE_CHARS = 26;
 const PAGE_BOX = { x: 20, y: 68, width: GAME_WIDTH - 40, height: 324 };
 const CHOICE_LETTERS = ["A", "B", "C", "D", "E", "F"];
 
-const shorten = (text: string, max: number) => (text.length > max ? `${text.slice(0, max - 3).trimEnd()}...` : text);
 const fraction = ({ unlocked, total }: { unlocked: number; total: number }) => `${unlocked}/${total}`;
-
-// The pixel font is monospace, so padding names with spaces lines the counts
-// up in one column. Returns the labels and the x that centers the block.
-const CHAR_WIDTH = 16;
-const CURSOR_SPACE = 28; // the menu's ">" sits this far left of the labels
-const ROW_HEIGHT = 36; // a 16px menu option plus its spacing
-const LIST_AREA = { top: 110, bottom: 430 }; // the space under the heading
-
-// The y that centers a list of this many options in the space under the heading.
-const listTop = (options: number) =>
-  Math.max(LIST_AREA.top, Math.round((LIST_AREA.top + LIST_AREA.bottom - options * ROW_HEIGHT) / 2));
-function tableLabels(rows: [string, string][]): { labels: string[]; x: number } {
-  const nameWidth = Math.max(...rows.map(([name]) => name.length));
-  const countWidth = Math.max(...rows.map(([, count]) => count.length));
-  const labels = rows.map(([name, count]) => `${name.padEnd(nameWidth)}  ${count.padStart(countWidth)}`);
-  const blockWidth = (nameWidth + 2 + countWidth) * CHAR_WIDTH + CURSOR_SPACE;
-  return { labels, x: Math.round((GAME_WIDTH - blockWidth) / 2) + CURSOR_SPACE };
-}
 
 export class NotebookScene extends Phaser.Scene {
   private notebook: Notebook = {};
@@ -81,14 +62,8 @@ export class NotebookScene extends Phaser.Scene {
 
   private showPapers(): void {
     this.heading("SCHOLAR'S NOTEBOOK", "Everything you've unlocked, to review");
-    // Uploads are tagged, since an upload can share a title with a built-in paper.
     const papers = playablePapers();
-    const { labels, x } = tableLabels(
-      papers.map((paper) => [
-        `${shorten(paper.title, MAX_TITLE_CHARS)}${LIBRARY.includes(paper) ? "" : " (UPLOAD)"}`,
-        fraction(paperProgress(paper, this.notebook)),
-      ]),
-    );
+    const { labels, x } = tableLabels(papers.map((paper) => [paperLabel(paper), fraction(paperProgress(paper, this.notebook))]));
     const items = papers.map((paper, i) => ({
       label: labels[i],
       onSelect: () => this.scene.restart({ paperId: paper.id }),

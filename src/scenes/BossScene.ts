@@ -6,7 +6,7 @@ import { farKey } from "../levels/themeTextures";
 import { THEMES } from "../levels/themes";
 import { NES } from "../palette";
 import { GRAVITY, JUMP_VELOCITY, PlayerController, makeOneWay, type Sprite } from "../player";
-import { clearProgress, saveProgress, unlockNote } from "../save";
+import { advanceProgress, markCleared, unlockNote } from "../save";
 import type { StageData } from "../stage";
 import { enablePause } from "./PauseScene";
 import {
@@ -326,8 +326,10 @@ export class BossScene extends Phaser.Scene {
     const nextWorld = worldIndex + 1;
     const hasNextWorld = nextWorld < paper.worlds.length;
     audio.playSfx("clear");
-    if (hasNextWorld) saveProgress({ paperId: paper.id, worldIndex: nextWorld, checkpointsCleared: 0 });
-    else clearProgress();
+    markCleared(paper.id, worldIndex, "boss");
+    // After the last world, progress points past the end: the paper is
+    // finished, so CONTINUE turns off but the level select stays fully lit.
+    advanceProgress({ paperId: paper.id, worldIndex: nextWorld, checkpointsCleared: 0 });
 
     this.tweens.add({ targets: this.boss, alpha: 0, angle: 90, y: this.boss.y + 40, duration: 800 });
     panel(this, 20, PANEL_TOP, GAME_WIDTH - 40, 230);
