@@ -23,6 +23,8 @@ async function waitForFont(): Promise<void> {
   await Promise.race([document.fonts.load('16px "Press Start 2P"'), timeout]);
 }
 
+const SCREEN_FADE_MS = 250;
+
 audio.unlockOnFirstInput();
 
 waitForFont().then(() => {
@@ -57,6 +59,15 @@ waitForFont().then(() => {
       NotebookScene,
       LevelSelectScene,
     ],
+  });
+  // Every screen fades in from black instead of cutting. The pause menu is
+  // left out: it draws over a running level, so fading it would black out
+  // the level underneath.
+  game.events.once(Phaser.Core.Events.READY, () => {
+    for (const scene of game.scene.scenes) {
+      if (scene.scene.key === "Pause") continue;
+      scene.events.on(Phaser.Scenes.Events.CREATE, () => scene.cameras.main.fadeIn(SCREEN_FADE_MS, 0, 0, 0));
+    }
   });
   // Lets the browser console inspect the running game during development.
   if (import.meta.env.DEV) Object.assign(window, { game });

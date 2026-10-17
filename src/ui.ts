@@ -186,6 +186,37 @@ export function onceAdvance(scene: Phaser.Scene, onPress: () => void): () => voi
   return cancel;
 }
 
+export const TITLE_CARD_MS = 1500;
+const TITLE_CARD_FADE_MS = 300;
+
+// A black "WORLD 1-2" card shown when a level or boss fight starts. The game
+// is frozen (physics paused) until it fades away, then onDone runs. Returns
+// a function that says whether the card is still up.
+export function showTitleCard(
+  scene: Phaser.Scene,
+  lines: { title: string; subtitle: string; detail?: string },
+  onDone: () => void = () => {},
+): () => boolean {
+  let showing = true;
+  scene.physics.pause();
+  const card = scene.add
+    .container(0, 0, [
+      scene.add.rectangle(0, 0, GAME_WIDTH, GAME_HEIGHT, NES.black).setOrigin(0, 0),
+      scene.add.text(GAME_WIDTH / 2, 170, lines.title, textStyle(32, NES.yellow)).setOrigin(0.5),
+      scene.add.text(GAME_WIDTH / 2, 226, lines.subtitle, textStyle(24, NES.white)).setOrigin(0.5),
+      scene.add.text(GAME_WIDTH / 2, 270, lines.detail ?? "", textStyle(16, NES.lightGray)).setOrigin(0.5),
+    ])
+    .setScrollFactor(0)
+    .setDepth(50);
+  scene.time.delayedCall(TITLE_CARD_MS, () => {
+    showing = false;
+    scene.physics.resume();
+    scene.tweens.add({ targets: card, alpha: 0, duration: TITLE_CARD_FADE_MS, onComplete: () => card.destroy() });
+    onDone();
+  });
+  return () => showing;
+}
+
 // Three stars, earned ones filled, centered on x. Returns them so callers
 // can pin them to the screen or layer them.
 export function showStars(scene: Phaser.Scene, x: number, y: number, earned: number, scale = 1): Phaser.GameObjects.Image[] {

@@ -12,7 +12,7 @@ import { COIN_GOAL, levelStars } from "../stars";
 import type { StageData } from "../stage";
 import { enablePause } from "./PauseScene";
 import { isTouchDevice } from "../touchControls";
-import { GAME_HEIGHT, GAME_WIDTH, HeartBar, MAX_LIVES, Menu, START_LIVES, panel, showStars, textStyle } from "../ui";
+import { GAME_HEIGHT, GAME_WIDTH, HeartBar, MAX_LIVES, Menu, START_LIVES, TITLE_CARD_MS, panel, showStars, showTitleCard, textStyle } from "../ui";
 
 type StaticSprite = Phaser.Types.Physics.Arcade.SpriteWithStaticBody;
 
@@ -51,6 +51,7 @@ export class LevelScene extends Phaser.Scene {
   private hasShield = false;
   private invulnerableUntil = 0;
   private finished = false;
+  private cardShowing: () => boolean = () => false;
 
   constructor() {
     super("Level");
@@ -159,7 +160,7 @@ export class LevelScene extends Phaser.Scene {
 
     this.drawHud(layout.name);
     this.createFactBanner();
-    enablePause(this, () => !this.finished);
+    enablePause(this, () => !this.finished && !this.cardShowing());
   }
 
   // Sky in NES-style color bands, then far scenery and hills that scroll
@@ -200,8 +201,21 @@ export class LevelScene extends Phaser.Scene {
     const hint = fixed(
       this.add.text(GAME_WIDTH / 2, 70, isTouchDevice() ? "TAP THE BUTTONS TO MOVE AND JUMP" : "A/D MOVE  W JUMP  S DROP  ESC PAUSE", textStyle(16, NES.white)).setOrigin(0.5).setDepth(10),
     );
-    this.tweens.add({ targets: hint, alpha: 0, delay: 4000, duration: 800 });
-    if (this.stage.worldIndex === 0 && this.stage.checkpointsCleared === 0) this.showStompTip();
+    // A pit fall restarts the level; showing the title card again every time
+    // would get in the way, so it only shows on a fresh start.
+    const freshStart = (this.stage.levelHits ?? 0) === 0;
+    const cardMs = freshStart ? TITLE_CARD_MS : 0;
+    this.tweens.add({ targets: hint, alpha: 0, delay: 4000 + cardMs, duration: 800 });
+    const firstLevel = this.stage.worldIndex === 0 && this.stage.checkpointsCleared === 0;
+    if (freshStart) {
+      this.cardShowing = showTitleCard(
+        this,
+        { title: `WORLD ${this.stage.worldIndex + 1}-${this.stage.checkpointsCleared + 1}`, subtitle: levelName.toUpperCase(), detail: world.name },
+        () => firstLevel && this.showStompTip(),
+      );
+    } else if (firstLevel) {
+      this.showStompTip();
+    }
   }
 
   // At the start of every paper: a quick reminder that bears hold fun facts.

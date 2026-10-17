@@ -18,8 +18,10 @@ import {
   QuestionPanel,
   START_LIVES,
   onceAdvance,
+  TITLE_CARD_MS,
   panel,
   showStars,
+  showTitleCard,
   textStyle,
 } from "../ui";
 
@@ -62,6 +64,7 @@ export class BossScene extends Phaser.Scene {
   private drops: PendingDrop[] = [];
   private invulnerableUntil = 0;
   private hits = 0;
+  private cardShowing: () => boolean = () => false;
   private stompableAt = 0;
 
   constructor() {
@@ -74,7 +77,8 @@ export class BossScene extends Phaser.Scene {
     this.fight = new BossFight(world.boss.questions);
     this.mode = "intro";
     this.hits = 0;
-    this.modeMs = INTRO_MS;
+    // The title card freezes the arena first, so the intro waits for it.
+    this.modeMs = INTRO_MS + TITLE_CARD_MS;
     this.nextAttack = "charge";
     this.drops = [];
     this.invulnerableUntil = 0;
@@ -119,7 +123,12 @@ export class BossScene extends Phaser.Scene {
 
     this.drawHud(world.boss.name);
     // No pausing during a question: the fight is already stopped then.
-    enablePause(this, () => this.mode !== "question" && this.mode !== "over");
+    enablePause(this, () => this.mode !== "question" && this.mode !== "over" && !this.cardShowing());
+    this.cardShowing = showTitleCard(this, {
+      title: `WORLD ${this.stage.worldIndex + 1} BOSS`,
+      subtitle: world.boss.name,
+      detail: "Stomp it to answer its questions",
+    });
   }
 
   private drawArena(): void {
@@ -141,7 +150,7 @@ export class BossScene extends Phaser.Scene {
       .text(GAME_WIDTH / 2, 130, "STOMP THE BOSS TO ANSWER!\nDODGE ITS CHARGE AND THE CANDLES", textStyle(16, NES.yellow))
       .setOrigin(0.5)
       .setAlign("center");
-    this.tweens.add({ targets: hint, alpha: 0, delay: INTRO_MS, duration: 600 });
+    this.tweens.add({ targets: hint, alpha: 0, delay: INTRO_MS + TITLE_CARD_MS, duration: 600 });
   }
 
   update(time: number, deltaMs: number): void {
