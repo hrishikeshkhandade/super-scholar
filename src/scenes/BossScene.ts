@@ -266,10 +266,13 @@ export class BossScene extends Phaser.Scene {
     const question = this.fight.current;
     if (!question) return;
     const world = this.stage.paper.worlds[this.stage.worldIndex];
-    unlockNote(this.stage.paper.id, this.stage.worldIndex, "boss", world.boss.questions.indexOf(question));
+    const questionIndex = world.boss.questions.indexOf(question);
+    unlockNote(this.stage.paper.id, this.stage.worldIndex, "boss", questionIndex);
     const questionPanel = new QuestionPanel(this, question, PANEL_TOP, (choiceIndex) => {
       questionPanel.destroy();
       const correct = this.fight.answer(choiceIndex);
+      // Tagged in the Notebook so the player can find it to study.
+      if (!correct) unlockNote(this.stage.paper.id, this.stage.worldIndex, "missed", questionIndex);
       this.showFeedback(correct, question.choices[question.answerIndex], question.explanation);
     });
   }
@@ -346,17 +349,30 @@ export class BossScene extends Phaser.Scene {
     advanceProgress({ paperId: paper.id, worldIndex: nextWorld, checkpointsCleared: 0 });
 
     this.tweens.add({ targets: this.boss, alpha: 0, angle: 90, y: this.boss.y + 40, duration: 800 });
-    panel(this, 20, PANEL_TOP, GAME_WIDTH - 40, 230);
+    // With misses to review, the menu has a third option, so the panel grows upward.
+    const missed = this.fight.missed;
+    const extra = missed.length > 0 ? 36 : 0;
+    const top = PANEL_TOP - extra;
+    panel(this, 20, top, GAME_WIDTH - 40, 230 + extra);
     const heading = hasNextWorld ? "WORLD CLEAR!" : "PAPER COMPLETE!";
-    this.add.text(GAME_WIDTH / 2, PANEL_TOP + 32, heading, textStyle(32, NES.yellow)).setOrigin(0.5);
+    this.add.text(GAME_WIDTH / 2, top + 32, heading, textStyle(32, NES.yellow)).setOrigin(0.5);
     const stars = bossStars({ wrongAnswers: this.fight.wrongAnswers, hits: this.hits });
     saveBestStars(paper.id, worldIndex, "boss", stars);
-    showStars(this, GAME_WIDTH / 2, PANEL_TOP + 72, stars);
+    showStars(this, GAME_WIDTH / 2, top + 72, stars);
     const message = hasNextWorld
       ? "You beat the boss. On to the next section of the paper!"
       : "You beat every world in this paper. Scholar status: legendary!";
-    this.add.text(GAME_WIDTH / 2, PANEL_TOP + 118, message, textStyle(16, NES.white, GAME_WIDTH - 100)).setOrigin(0.5);
-    new Menu(this, 280, PANEL_TOP + 160, [
+    this.add.text(GAME_WIDTH / 2, top + 118, message, textStyle(16, NES.white, GAME_WIDTH - 100)).setOrigin(0.5);
+    new Menu(this, 280, top + 160, [
+      ...(missed.length > 0
+        ? [
+            {
+              label: `REVIEW MISSES (${missed.length})`,
+              onSelect: () =>
+                this.scene.start("QuizReview", { missed, paper, nextWorld: hasNextWorld ? nextWorld : undefined }),
+            },
+          ]
+        : []),
       ...(hasNextWorld
         ? [
             {

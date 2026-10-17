@@ -168,10 +168,11 @@ function addToList(key: string, pattern: RegExp, paperId: string, entry: string,
 // as entries like "0:lesson:2" (world 0, lesson 2). It is separate from
 // progress, so resetting progress keeps everything already learned.
 
-export type NoteKind = "lesson" | "fact" | "boss";
+// "missed" marks a boss question the player once got wrong.
+export type NoteKind = "lesson" | "fact" | "boss" | "missed";
 export type Notebook = Record<string, string[]>;
 
-const NOTE_PATTERN = /^\d{1,3}:(lesson|fact|boss):\d{1,3}$/;
+const NOTE_PATTERN = /^\d{1,3}:(lesson|fact|boss|missed):\d{1,3}$/;
 
 export const noteKey = (worldIndex: number, kind: NoteKind, index: number) => `${worldIndex}:${kind}:${index}`;
 

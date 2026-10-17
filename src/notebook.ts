@@ -52,7 +52,7 @@ export function worldSections(paper: Paper, worldIndex: number, notebook: Notebo
   world.boss.questions.forEach((question, i) =>
     cards.push(
       has("boss", i)
-        ? { heading: `BOSS QUESTION ${i + 1}`, text: "", locked: false, question }
+        ? { heading: `BOSS QUESTION ${i + 1}${has("missed", i) ? " (MISSED)" : ""}`, text: "", locked: false, question }
         : locked(`BOSS QUESTION ${i + 1}`, `Face ${world.boss.name} to unlock this card.`),
     ),
   );

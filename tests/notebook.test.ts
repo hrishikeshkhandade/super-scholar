@@ -67,4 +67,15 @@ describe("Scholar's Notebook", () => {
     storage.setItem("super-scholar.notebook", JSON.stringify({ a: ["0:lesson:1", "<script>", 5], b: "nope" }));
     expect(loadNotebook(storage)).toEqual({ a: ["0:lesson:1"] });
   });
+
+  it("tags boss questions the player got wrong as MISSED", () => {
+    const storage = memoryStorage();
+    unlockNote(paper.id, 0, "boss", 0, storage);
+    unlockNote(paper.id, 0, "boss", 1, storage);
+    unlockNote(paper.id, 0, "missed", 1, storage);
+    const bossCards = worldSections(paper, 0, loadNotebook(storage))[2].pages.filter((page) => page.heading.startsWith("BOSS"));
+    expect(bossCards[0].heading).toBe("BOSS QUESTION 1");
+    expect(bossCards[1].heading).toBe("BOSS QUESTION 2 (MISSED)");
+  });
 });
+

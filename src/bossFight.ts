@@ -11,6 +11,8 @@ export class BossFight {
   health: number;
   rage = 0;
   wrongAnswers = 0;
+  // Each question answered wrong at least once, in the order first missed.
+  readonly missed: Question[] = [];
   private queue: Question[];
 
   constructor(questions: Question[]) {
@@ -37,6 +39,7 @@ export class BossFight {
     } else {
       this.rage = Math.min(this.rage + 1, MAX_RAGE);
       this.wrongAnswers += 1;
+      if (!this.missed.includes(question)) this.missed.push(question);
       this.queue.push(question);
     }
     return correct;

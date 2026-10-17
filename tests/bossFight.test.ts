@@ -41,4 +41,20 @@ describe("BossFight", () => {
     expect(fight.answer(0)).toBe(false);
     expect(fight.health).toBe(0);
   });
+
+  it("remembers each missed question once, in the order missed", () => {
+    const q1 = { prompt: "One?", choices: ["a", "b"], answerIndex: 0, explanation: "" };
+    const q2 = { prompt: "Two?", choices: ["a", "b"], answerIndex: 1, explanation: "" };
+    const fight = new BossFight([q1, q2]);
+    // A missed question goes to the back of the line.
+    fight.answer(1); // q1 wrong -> [q2, q1]
+    fight.answer(0); // q2 wrong -> [q1, q2]
+    fight.answer(1); // q1 wrong again -> [q2, q1]
+    fight.answer(1); // q2 right -> [q1]
+    fight.answer(0); // q1 right
+    expect(fight.defeated).toBe(true);
+    expect(fight.missed).toEqual([q1, q2]);
+    expect(fight.wrongAnswers).toBe(3);
+  });
 });
+
