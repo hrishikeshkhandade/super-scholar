@@ -34,12 +34,20 @@ type StaticSprite = Phaser.Types.Physics.Arcade.SpriteWithStaticBody;
 const FLOOR_Y = 12 * TILE;
 const PANEL_TOP = 200;
 const BAR = { x: 480, y: 34, width: 300, height: 16 };
+// Tuned to be a fun obstacle, not a wall: the game is about enjoying a hard
+// paper, so a player still learning the answers should be able to win.
+// Wrong answers make the boss a little angrier (rage), never much harder.
 const INTRO_MS = 2000;
-const TELEGRAPH_MS = 700;
-const STUN_MS = 900;
-const CANDLE_WARNING_MS = 800;
-const PLAYER_INVULNERABLE_MS = 1200;
+const TELEGRAPH_MS = 1100; // shaking before a charge
+const STUN_MS = 1600; // dizzy and harmless after hitting a wall
+const CANDLE_WARNING_MS = 1200; // red marker before a candle falls
+const PLAYER_INVULNERABLE_MS = 1500;
 const STOMP_COOLDOWN_MS = 1500;
+const WALK_SPEED = 50;
+const CHARGE_SPEED = 280;
+const RAGE_SPEEDUP = 0.12; // each rage level makes it 12% faster
+const ATTACK_EVERY_MS = 3200;
+const RAGE_ATTACK_SOONER_MS = 300;
 
 interface PendingDrop {
   x: number;
@@ -175,7 +183,7 @@ export class BossScene extends Phaser.Scene {
         if (this.modeMs <= 0) this.startWalking();
         break;
       case "walk":
-        this.boss.setVelocityX(towardPlayer * (60 + this.rage * 30));
+        this.boss.setVelocityX(towardPlayer * WALK_SPEED * (1 + this.rage * RAGE_SPEEDUP));
         this.attackMs -= deltaMs;
         if (this.attackMs <= 0) this.startAttack();
         break;
@@ -186,7 +194,7 @@ export class BossScene extends Phaser.Scene {
         if (this.modeMs <= 0) {
           this.mode = "charge";
           this.modeMs = 2500;
-          this.boss.setVelocityX(towardPlayer * (380 + this.rage * 60));
+          this.boss.setVelocityX(towardPlayer * CHARGE_SPEED * (1 + this.rage * RAGE_SPEEDUP));
         }
         break;
       case "charge":
@@ -206,7 +214,7 @@ export class BossScene extends Phaser.Scene {
 
   private startWalking(): void {
     this.mode = "walk";
-    this.attackMs = Math.max(2400 - this.rage * 400, 1000);
+    this.attackMs = ATTACK_EVERY_MS - this.rage * RAGE_ATTACK_SOONER_MS;
     this.boss.clearTint();
   }
 
@@ -221,7 +229,7 @@ export class BossScene extends Phaser.Scene {
     // Candle rain: the boss jumps and red candles fall where warnings flash.
     this.nextAttack = "charge";
     if (this.boss.body.blocked.down) this.boss.setVelocityY(-650);
-    const count = 3 + this.rage * 2;
+    const count = 2 + this.rage;
     for (let i = 0; i < count; i++) {
       const x = Phaser.Math.Between(40, GAME_WIDTH - 40);
       const marker = this.add.rectangle(x, FLOOR_Y - 3, 28, 6, NES.red).setAlpha(0.8);
