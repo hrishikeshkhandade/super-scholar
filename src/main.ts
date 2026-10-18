@@ -5,6 +5,7 @@ import { AboutScene, CreditsScene } from "./scenes/AboutScene";
 import { BootScene } from "./scenes/BootScene";
 import { BossScene } from "./scenes/BossScene";
 import { CutsceneScene } from "./scenes/CutsceneScene";
+import { FeedbackScene } from "./scenes/FeedbackScene";
 import { GenerateScene } from "./scenes/GenerateScene";
 import { LevelScene } from "./scenes/LevelScene";
 import { LevelSelectScene } from "./scenes/LevelSelectScene";
@@ -60,6 +61,7 @@ waitForFont().then(() => {
       NotebookScene,
       LevelSelectScene,
       QuizReviewScene,
+      FeedbackScene,
     ],
   });
   // Every screen fades in from black instead of cutting. The pause menu is

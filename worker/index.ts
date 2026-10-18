@@ -1,9 +1,10 @@
 import { handleAiGame } from "../server/aiGame";
+import { handleFeedback } from "../server/feedback";
 import { handleFetchPaper } from "../server/fetchPaper";
 
 // The Cloudflare Worker behind the site. Game files (HTML, JS, images) are
 // served straight from Cloudflare's static assets; only /api/ requests run
-// this code: paper downloads and AI-written worlds.
+// this code: paper downloads, AI-written worlds, and classmate feedback.
 
 interface RateLimiter {
   limit(options: { key: string }): Promise<{ success: boolean }>;
@@ -15,7 +16,9 @@ interface Env {
     get(key: string, type: "json"): Promise<unknown>;
     put(key: string, value: string): Promise<void>;
   };
+  FEEDBACK: { put(key: string, value: string): Promise<void> };
   DOWNLOAD_LIMITER?: RateLimiter;
+  FEEDBACK_LIMITER?: RateLimiter;
   AI_LIMITER?: RateLimiter;
   GEMINI_API_KEY?: string;
   GROQ_API_KEY?: string;
@@ -59,6 +62,10 @@ export default {
         put: (key: string, value: string) => env.AI_WORLDS.put(key, value),
       };
       return withHeaders(await handleAiGame(request, { geminiKey: env.GEMINI_API_KEY, groqKey: env.GROQ_API_KEY, store }));
+    }
+    if (pathname === "/api/feedback") {
+      if (!(await allowed(env.FEEDBACK_LIMITER, request))) return withHeaders(tooMany());
+      return withHeaders(await handleFeedback(request, env.FEEDBACK));
     }
     if (pathname.startsWith("/api/")) return withHeaders(Response.json({ error: "Not found." }, { status: 404 }));
     return env.ASSETS.fetch(request);

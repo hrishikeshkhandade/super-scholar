@@ -4,17 +4,20 @@ import worker from "../worker/index";
 // A fake Cloudflare environment: game files, saved results, and limiters.
 function fakeEnv(options: { allow?: boolean; saved?: unknown } = {}) {
   const puts: string[] = [];
+  const feedbackPuts: string[] = [];
   const env = {
     ASSETS: { fetch: async () => new Response("<html>game</html>") },
     AI_WORLDS: {
       get: async () => options.saved ?? null,
       put: async (key: string) => void puts.push(key),
     },
+    FEEDBACK: { put: async (key: string) => void feedbackPuts.push(key) },
     DOWNLOAD_LIMITER: { limit: async () => ({ success: options.allow ?? true }) },
+    FEEDBACK_LIMITER: { limit: async () => ({ success: options.allow ?? true }) },
     AI_LIMITER: { limit: async () => ({ success: options.allow ?? true }) },
     GEMINI_API_KEY: "test-key-not-real",
   };
-  return { env, puts };
+  return { env, puts, feedbackPuts };
 }
 
 const aiRequest = (body: unknown) =>
@@ -57,4 +60,18 @@ describe("Cloudflare worker", () => {
     expect(await response.json()).toEqual({ worlds: saved.worlds, cached: true });
     expect(puts).toEqual([]);
   });
+
+  it("saves valid feedback and refuses empty or broken forms", async () => {
+    const { env, feedbackPuts } = fakeEnv();
+    const send = (body: unknown) =>
+      worker.fetch(new Request("https://game.test/api/feedback", { method: "POST", body: JSON.stringify(body) }), env);
+    const good = await send({ ratings: { fun: 5, learned: 4 }, answers: { best: "The boss fight!" }, device: "keyboard" });
+    expect(good.status).toBe(200);
+    expect(feedbackPuts).toHaveLength(1);
+    expect((await send({ ratings: {}, answers: {} })).status).toBe(400);
+    expect((await send({ ratings: { fun: 9 } })).status).toBe(400);
+    expect((await send({ answers: { best: "x".repeat(301) } })).status).toBe(400);
+    expect(feedbackPuts).toHaveLength(1);
+  });
 });
+

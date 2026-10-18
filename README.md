@@ -34,11 +34,20 @@ This runs the tests, builds, and publishes `dist/` as static files plus the Work
 
 The first time on a new machine, run `npx wrangler login`. The AI keys are Cloudflare secrets, set from this folder with `npx wrangler secret put GEMINI_API_KEY` and `npx wrangler secret put GROQ_API_KEY` (paste the key when asked).
 
+## Classmate feedback
+
+Players can send feedback from **FEEDBACK** on the title menu (three 1-5 ratings, three short answers, an optional first name). It is saved in a Cloudflare KV store. To read it all, with average ratings:
+
+```bash
+npm run feedback
+```
+
 ## Security
 
 - No secrets live in this repository. The AI keys (`GEMINI_API_KEY`, `GROQ_API_KEY`, both free tier) are Cloudflare Worker secrets, read only by the server code, and never sent to the browser. Never paste them into code, chat, or a commit.
 - `public/_headers` sets security headers for the site (the Worker adds its own to `/api/` responses), including a Content Security Policy that only allows this site's own scripts, Google Fonts, and the OpenAlex API.
 - `fetchPaper` only downloads PDF links OpenAlex lists for the requested paper ID, accepts only GET, checks the file is a PDF, caps it at 20 MB, and is rate-limited per visitor.
+- `feedback` accepts only POST, checks every field (ratings 1-5, answers up to 300 characters, an optional name up to 40), refuses empty forms, and is rate-limited to about 3 sends a minute per visitor.
 - `aiGame` accepts only POST, checks the request's size and shape, is rate-limited to about 4 papers a minute per visitor (Cloudflare's limiter is approximate), and saves each result under a SHA-256 fingerprint of the exact text sent, so a request can never overwrite another paper's saved worlds. Everything the AI returns is checked (lengths, choices, answers) by the server and again by the game; anything that fails falls back to the rules-made version.
 
 ## Credits

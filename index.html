@@ -13,6 +13,23 @@
     <div id="game">
       <input id="search-input" type="search" placeholder="Search papers..." autocomplete="off" hidden />
       <input id="pdf-input" type="file" accept="application/pdf,.pdf" hidden />
+      <!-- Classmate feedback, laid over the game by FeedbackScene. Sent with fetch, never submitted. -->
+      <form id="feedback-form" hidden novalidate>
+        <h2>FEEDBACK</h2>
+        <p class="note">Thanks for playing! Answer whatever you like.</p>
+        <fieldset data-rating="fun"><legend>How fun was it?</legend></fieldset>
+        <fieldset data-rating="learned"><legend>Did you learn something from the paper?</legend></fieldset>
+        <fieldset data-rating="easy"><legend>Was it easy to figure out what to do?</legend></fieldset>
+        <label>Best part?<textarea name="best" maxlength="300" rows="2"></textarea></label>
+        <label>What was confusing or annoying?<textarea name="confusing" maxlength="300" rows="2"></textarea></label>
+        <label>One thing you'd change?<textarea name="change" maxlength="300" rows="2"></textarea></label>
+        <label>Your first name (optional)<input name="name" maxlength="40" autocomplete="off" /></label>
+        <div class="actions">
+          <button type="button" id="feedback-send">SEND</button>
+          <button type="button" id="feedback-back">BACK</button>
+        </div>
+        <p id="feedback-status" role="status"></p>
+      </form>
     </div>
     <script type="module" src="/src/main.ts"></script>
   </body>

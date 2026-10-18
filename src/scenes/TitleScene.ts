@@ -8,7 +8,8 @@ import { GAME_WIDTH, Menu, START_LIVES, textStyle, type MenuItem } from "../ui";
 import { LAST_QUERY_KEY } from "./PaperSelectScene";
 
 const CHAR_WIDTH = 16; // the pixel font is monospace
-const ROW_HEIGHT = 36; // a 16px option plus 20px spacing
+const MENU_SPACING = 14;
+const ROW_HEIGHT = 16 + MENU_SPACING; // a 16px option plus its spacing
 const MENU_AREA = { top: 136, bottom: 412 }; // between the subtitle and the hint
 const SPRITE_GAP = 130;
 
@@ -52,6 +53,7 @@ export class TitleScene extends Phaser.Scene {
       },
       { label: "LEVEL SELECT", onSelect: () => this.scene.start("LevelSelect") },
       { label: "NOTEBOOK", onSelect: () => this.scene.start("Notebook") },
+      { label: "FEEDBACK", onSelect: () => this.scene.start("Feedback") },
       { label: "SETTINGS", onSelect: () => this.scene.start("Settings") },
       { label: "ABOUT", onSelect: () => this.scene.start("About") },
       { label: "CREDITS", onSelect: () => this.scene.start("Credits", { from: "Title" }) },
@@ -61,8 +63,8 @@ export class TitleScene extends Phaser.Scene {
     // subtitle and the hint. The bear and the player stand the same distance
     // out on each side, level with the middle of the menu.
     const menuWidth = Math.max(...items.map((item) => item.label.length)) * CHAR_WIDTH;
-    const menuTop = Math.round((MENU_AREA.top + MENU_AREA.bottom - (items.length * ROW_HEIGHT - 20)) / 2);
-    const menu = new Menu(this, GAME_WIDTH / 2, menuTop, items, { align: "center" });
+    const menuTop = Math.round((MENU_AREA.top + MENU_AREA.bottom - (items.length * ROW_HEIGHT - MENU_SPACING)) / 2);
+    const menu = new Menu(this, GAME_WIDTH / 2, menuTop, items, { align: "center", spacing: MENU_SPACING });
     const middle = (menuTop + menu.bottom) / 2;
     this.add.sprite(GAME_WIDTH / 2 - menuWidth / 2 - SPRITE_GAP, middle, "bear-walk1").setScale(2).play("bear-walk");
     this.add.image(GAME_WIDTH / 2 + menuWidth / 2 + SPRITE_GAP, middle, "player-idle").setScale(2);

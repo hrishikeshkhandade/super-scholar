@@ -64,3 +64,127 @@ canvas {
   user-select: text;
   -webkit-user-select: text;
 }
+
+/* The feedback form sits over the game canvas (FeedbackScene sets its
+   position and --scale) and scrolls if it doesn't fit. */
+#feedback-form {
+  position: absolute;
+  box-sizing: border-box;
+  overflow-y: auto;
+  touch-action: pan-y;
+  user-select: text;
+  -webkit-user-select: text;
+  padding: calc(16px * var(--scale, 1)) calc(32px * var(--scale, 1));
+  background: #0000bc;
+  color: #fcfcfc;
+  font: calc(12px * var(--scale, 1)) / 1.6 "Press Start 2P", monospace;
+}
+
+#feedback-form[hidden] {
+  display: none;
+}
+
+#feedback-form h2 {
+  margin: 0;
+  text-align: center;
+  color: #f8b800;
+  font-size: calc(24px * var(--scale, 1));
+}
+
+#feedback-form .note {
+  margin: 0.5em 0 1em;
+  text-align: center;
+  color: #3cbcfc;
+}
+
+#feedback-form fieldset {
+  margin: 0 0 0.8em;
+  padding: 0;
+  border: 0;
+}
+
+#feedback-form legend {
+  margin-bottom: 0.4em;
+}
+
+#feedback-form fieldset button {
+  width: 3em;
+  margin-right: 0.5em;
+}
+
+#feedback-form label {
+  display: block;
+  margin-bottom: 0.8em;
+}
+
+#feedback-form textarea,
+#feedback-form input {
+  display: block;
+  box-sizing: border-box;
+  width: 100%;
+  margin-top: 0.4em;
+  padding: 0.5em;
+  border: calc(4px * var(--scale, 1)) solid #fcfcfc;
+  background: #000000;
+  color: #fcfcfc;
+  font: inherit;
+  resize: none;
+  outline: none;
+}
+
+#feedback-form textarea:focus,
+#feedback-form input:focus {
+  border-color: #f8b800;
+}
+
+#feedback-form button {
+  padding: 0.6em 0.8em;
+  border: calc(4px * var(--scale, 1)) solid #fcfcfc;
+  background: #000000;
+  color: #fcfcfc;
+  font: inherit;
+  cursor: pointer;
+}
+
+#feedback-form button:focus-visible,
+#feedback-form button:hover {
+  border-color: #f8b800;
+  color: #f8b800;
+}
+
+#feedback-form fieldset button[aria-pressed="true"] {
+  background: #f8b800;
+  border-color: #f8b800;
+  color: #000000;
+}
+
+#feedback-form .actions {
+  display: flex;
+  gap: 1em;
+  justify-content: center;
+  margin-top: 1em;
+}
+
+#feedback-form #feedback-status {
+  min-height: 1.6em;
+  text-align: center;
+  color: #b8f818;
+}
+
+#feedback-form #feedback-status.error {
+  color: #f87858;
+}
+
+/* Phones: finger-sized buttons, and 16px text boxes so iPhones don't zoom
+   in when one is tapped. */
+@media (pointer: coarse) {
+  #feedback-form button {
+    min-width: 40px;
+    min-height: 40px;
+  }
+
+  #feedback-form textarea,
+  #feedback-form input {
+    font-size: 16px;
+  }
+}
