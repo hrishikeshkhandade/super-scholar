@@ -62,9 +62,15 @@ export async function handleFetchPaper(request: Request): Promise<Response> {
         headers: { "user-agent": USER_AGENT, accept: "application/pdf,*/*" },
         signal: AbortSignal.timeout(8000),
       });
-      if (!response.ok) continue;
+      if (!response.ok) {
+        console.warn(`${new URL(url).host} answered ${response.status}`);
+        continue;
+      }
       const stream = await pdfStream(response);
-      if (!stream) continue;
+      if (!stream) {
+        console.warn(`${new URL(url).host} didn't send a PDF`);
+        continue;
+      }
       return new Response(stream, {
         headers: {
           "content-type": "application/pdf",
@@ -75,8 +81,9 @@ export async function handleFetchPaper(request: Request): Promise<Response> {
           "x-content-type-options": "nosniff",
         },
       });
-    } catch {
+    } catch (failure) {
       // That copy timed out or refused; try the next one.
+      console.warn(`${new URL(url).host} failed: ${failure instanceof Error ? failure.message : String(failure)}`);
     }
   }
   return error(404, "No free copy of this paper could be downloaded.");

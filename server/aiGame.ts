@@ -126,6 +126,11 @@ async function worldsFor(request: AiRequest, settings: AiGameSettings): Promise<
 
   const ais = providers(settings);
   const worlds = await Promise.all(request.sections.map((_, i) => writeWorld(request, i, ais)));
+  // A world can fail once by bad luck (a busy AI, an answer that breaks a
+  // rule), so give any missing ones a second try before falling back.
+  const missing = worlds.map((world, i) => (world === null && request.sections[i].excerpt.trim() ? i : -1)).filter((i) => i >= 0);
+  const retried = await Promise.all(missing.map((i) => writeWorld(request, i, ais)));
+  missing.forEach((i, n) => (worlds[i] = retried[n]));
   // Only complete results are saved, so a later try can fill any gaps.
   if (worlds.every((world, i) => world !== null || !request.sections[i].excerpt.trim())) {
     await store?.put(key, JSON.stringify({ worlds })).catch((failure) => console.warn(`couldn't save result: ${describe(failure)}`));
