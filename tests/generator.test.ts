@@ -132,4 +132,21 @@ describe("generator pieces", () => {
     expect(text).not.toContain("declares");
     expect(text).not.toContain("A subsection title");
   });
+
+  // Regression (Bitcoin whitepaper): big math symbols repeated in a formula
+  // were taken as the main section headings, so the real numbered sections
+  // were thrown away and the paper "had too few key terms".
+  it("doesn't mistake big formula pieces for section headings", () => {
+    const lines: TextLine[] = [{ text: "How Plants Make Food From Light", size: 14, page: 1 }];
+    Object.entries(SECTIONS).forEach(([heading, sentences], i) => {
+      lines.push({ text: heading.replace(/^(\d+) /, "$1. "), size: 11.5, page: i + 1 });
+      sentences.forEach((sentence) => lines.push({ text: sentence, size: 10, page: i + 1 }));
+      // Each formula is different, like in the real paper.
+      lines.push({ text: `q z${i} = { 1 if p ≤ q`, size: 29.9, page: i + 1 });
+      lines.push({ text: `if p > q${i} }`, size: 29.9, page: i + 1 });
+    });
+    const outline = outlinePaper(lines);
+    expect(outline.sections.map((section) => section.heading)).toEqual(["1. Introduction", "2. The light reactions", "3. The Calvin cycle"]);
+  });
 });
+

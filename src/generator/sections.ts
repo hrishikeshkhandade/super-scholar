@@ -38,6 +38,14 @@ function removeNoise(lines: TextLine[]): TextLine[] {
   return lines.filter((line) => !/^\d{1,4}$/.test(line.text) && (counts.get(line.text) ?? 0) < 3);
 }
 
+// Headings are made of words. Big formula pieces like "q z = { 1 if p ≤ q"
+// are set in large fonts too, but are mostly symbols and short letters.
+function looksLikeWords(text: string): boolean {
+  const visible = text.replace(/\s/g, "");
+  const letters = (visible.match(/[A-Za-z]/g) ?? []).length;
+  return /[A-Za-z]{3,}/.test(text) && letters >= visible.length * 0.6;
+}
+
 function isTopLevel(heading: string): boolean {
   return !/^\d+\.\d+/.test(heading);
 }
@@ -89,7 +97,7 @@ export function outlinePaper(allLines: TextLine[]): PaperOutline {
   // sizes are subsections folded into their parent. An author name or page
   // number in a bigger font then can't become a world.
   const candidate = (line: TextLine) =>
-    line.size >= body * 1.12 && line.text.length <= 90 && !titleLines.includes(line);
+    line.size >= body * 1.12 && line.text.length <= 90 && !titleLines.includes(line) && looksLikeWords(line.text);
   const sizeCounts = new Map<number, number>();
   for (const line of lines.filter(candidate)) sizeCounts.set(line.size, (sizeCounts.get(line.size) ?? 0) + 1);
   const topSize = [...sizeCounts].filter(([, count]) => count >= 2).sort((a, b) => b[0] - a[0])[0]?.[0];
