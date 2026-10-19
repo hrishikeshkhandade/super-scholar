@@ -1,5 +1,6 @@
 import Phaser from "phaser";
 import { audio } from "../audio/audio";
+import { burst } from "../effects";
 import { BossFight } from "../bossFight";
 import { TILE } from "../levels/parseLevel";
 import { farKey } from "../levels/themeTextures";
@@ -294,6 +295,7 @@ export class BossScene extends Phaser.Scene {
         duration: 300,
       });
       this.flash(this.boss);
+      burst(this, this.boss.x, this.boss.y - 20, [NES.red, NES.yellow, NES.white], { count: 24, speed: 240 });
     } else {
       this.rageText.setText(`RAGE ${"!".repeat(this.rage)}`);
       this.boss.setTint(NES.salmon);

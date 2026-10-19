@@ -1,5 +1,6 @@
 import Phaser from "phaser";
 import { audio } from "../audio/audio";
+import { burst } from "../effects";
 import { hashString, seededRandom } from "../generator/questions";
 import { layoutFor } from "../levels/chooseLayout";
 import { farKey, groundKey, groundTopKey, hillsKey } from "../levels/themeTextures";
@@ -287,6 +288,7 @@ export class LevelScene extends Phaser.Scene {
     const falling = this.player.body.velocity.y > 0;
     if (falling && this.player.body.bottom <= bubble.body.top + 14) {
       audio.playSfx("stomp");
+      burst(this, bubble.x, bubble.y, [NES.sky, NES.white], { count: 16, gravity: 200 });
       this.controls.bounce(JUMP_VELOCITY * 0.7);
       this.floatText(bubble.x, bubble.y - 20, "BUBBLE POPPED!", NES.sky);
       this.addCoins(1);
@@ -311,6 +313,7 @@ export class LevelScene extends Phaser.Scene {
     const contents = block.getData("contents") as BlockContents;
     if (contents === "coin") {
       this.addCoins(1);
+      burst(this, block.x, block.y - TILE, [NES.yellow, NES.white], { count: 6, speed: 100 });
       const coin = this.add.sprite(block.x, block.y - TILE, "coin1").play("coin-spin");
       this.tweens.add({ targets: coin, y: coin.y - 48, alpha: 0, duration: 500, onComplete: () => coin.destroy() });
     } else {
@@ -345,6 +348,7 @@ export class LevelScene extends Phaser.Scene {
   }
 
   private collectCoin(coin: StaticSprite): void {
+    burst(this, coin.x, coin.y, [NES.yellow, NES.white], { count: 6, speed: 100, lifespanMs: 300 });
     coin.destroy();
     this.addCoins(1);
   }
@@ -367,6 +371,7 @@ export class LevelScene extends Phaser.Scene {
     if (falling && fromAbove) {
       bear.body.enable = false;
       audio.playSfx("stomp");
+      burst(this, bear.x, bear.y, [NES.brown, NES.tan, NES.white]);
       bear.anims.stop();
       bear.setTexture("bear-flat").setY(bear.y + 8);
       this.tweens.add({ targets: bear, alpha: 0, delay: 400, duration: 300, onComplete: () => bear.destroy() });
