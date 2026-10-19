@@ -7,6 +7,13 @@ describe.each(LIBRARY)("paper $id", (paper) => {
   it("passes every content rule", () => {
     expect(validatePaper(paper)).toEqual([]);
   });
+
+  it("has real authors, a year, and boss names that fit the health bar", () => {
+    expect(paper.authors.length).toBeGreaterThan(0);
+    expect(paper.year).toBeGreaterThan(1900);
+    // 18 characters at 16px end by x=768, clear of the 800px screen edge.
+    for (const world of paper.worlds) expect(world.boss.name.length, world.boss.name).toBeLessThanOrEqual(18);
+  });
 });
 
 describe("the built-in paper", () => {

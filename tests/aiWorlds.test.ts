@@ -101,6 +101,33 @@ describe("AI world checks", () => {
   });
 });
 
+describe("copying checks", () => {
+  const paperText = "Old blocks can be compacted by stubbing off branches of the tree to save disk space.";
+  const copyingSection = { heading: "Disk space", excerpt: paperText };
+
+  it("drops facts and pages that copy eight or more words from the paper", () => {
+    const reply = aiReply();
+    reply.facts.push("Old blocks can be compacted by stubbing off branches of the tree!");
+    reply.lessons[0].pages.push("Old blocks can be compacted by stubbing off branches of the tree.");
+    const world = parseAiWorld(reply, copyingSection, 0)!;
+    expect(world.facts).toHaveLength(2);
+    expect(world.cutscenes[0].pages).toHaveLength(3);
+    expect(JSON.stringify(world)).not.toContain("stubbing off branches");
+  });
+
+  it("rejects a world whose practice question copies the paper, so it gets rewritten", () => {
+    const reply = aiReply();
+    reply.lessons[1].practice = { ...question(9), question: "Why can old blocks be compacted by stubbing off branches of the tree?" };
+    expect(parseAiWorld(reply, copyingSection, 0)).toBeUndefined();
+  });
+
+  it("allows short shared phrases like technical terms", () => {
+    const reply = aiReply();
+    reply.facts.push("Stubbing off branches saves space!");
+    expect(parseAiWorld(reply, copyingSection, 0)!.facts).toContain("Stubbing off branches saves space!");
+  });
+});
+
 describe("mixing AI worlds into a game", () => {
   const prepared = prepareGame(fakePaper(), "plants.pdf");
 

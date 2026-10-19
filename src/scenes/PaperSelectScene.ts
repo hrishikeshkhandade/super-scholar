@@ -1,6 +1,6 @@
 import Phaser from "phaser";
 import { audio } from "../audio/audio";
-import { searchPapers } from "../content/library";
+import { LIBRARY, searchPapers } from "../content/library";
 import { searchOnline, type OnlinePaper } from "../content/openAlex";
 import type { Paper } from "../content/types";
 import { startPaperOver } from "../levelMap";
@@ -11,7 +11,11 @@ const INPUT_BOX = { x: 40, y: 64, width: GAME_WIDTH - 80, height: 40 };
 const SEARCH_DELAY_MS = 500; // wait for a pause in typing before searching online
 const MIN_ONLINE_QUERY = 3;
 const LINE_CHARS = 40;
-const MAX_LISTED_PAPERS = 4; // as many as fit on screen with UPLOAD and BACK
+// The list's height budget between UPLOAD and BACK: ready papers take one
+// line each, online results two, so as many as fit are shown.
+const LIST_ROOM = 208;
+const ONE_LINE_ROW = 30;
+const TWO_LINE_ROW = 56;
 export const LAST_QUERY_KEY = "lastSearchQuery";
 
 function truncate(text: string, length: number): string {
@@ -125,13 +129,16 @@ export class PaperSelectScene extends Phaser.Scene {
   }
 
   private showResults(): void {
+    const ready = this.localResults.slice(0, Math.floor(LIST_ROOM / ONE_LINE_ROW));
+    const onlineRoom = Math.floor((LIST_ROOM - ready.length * ONE_LINE_ROW) / TWO_LINE_ROW);
     this.menu.setItems([
       { label: "+ UPLOAD A PDF\n  Turn any paper into a game", onSelect: () => this.chooseUpload() },
-      ...this.localResults.slice(0, MAX_LISTED_PAPERS).map((paper) => ({
-        label: `* ${truncate(paper.title, LINE_CHARS - 2)}\n  ${truncate(`READY - ${paper.authors.length > 0 ? byline(paper.authors, paper.year) : "your upload"}`, LINE_CHARS - 2)}`,
+      ...ready.map((paper) => ({
+        // Ready-to-play papers (built in or uploaded) fit on one line each.
+        label: `* ${truncate(paper.title, LINE_CHARS - 10)} - ${LIBRARY.includes(paper) ? "READY" : "UPLOAD"}`,
         onSelect: () => this.startPaper(paper),
       })),
-      ...this.onlineResults.slice(0, Math.max(MAX_LISTED_PAPERS - this.localResults.length, 0)).map((paper) => ({
+      ...this.onlineResults.slice(0, onlineRoom).map((paper) => ({
         // "FREE PDF" up front means it can be played right away.
         label: `${truncate(paper.title, LINE_CHARS)}\n${truncate(`${paper.pdfUrl ? "FREE PDF - " : ""}${byline(paper.authors, paper.year)}`, LINE_CHARS)}`,
         onSelect: () => this.scene.start("PaperDetail", { paper }),

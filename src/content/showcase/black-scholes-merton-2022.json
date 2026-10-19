@@ -1,0 +1,660 @@
+{
+  "id": "black-scholes-merton-2022",
+  "title": "A Modified Black-Scholes-Merton Model for Option Pricing",
+  "authors": [
+    "Paula Morales-Bañuelos",
+    "Nelson Muriel",
+    "Guillermo Fernández-Anaya"
+  ],
+  "year": 2022,
+  "subject": "Quantitative Finance",
+  "summary": "Explains the Black-Scholes-Merton formula for pricing options, where it falls short, and a modified version that fits real markets better.",
+  "intro": {
+    "title": "A New Quest",
+    "speaker": "PROF. QUANT",
+    "pages": [
+      "Welcome, scholar! Today's paper: \"A Modified Black-Scholes-Merton Model for Option Pricing\".",
+      "It is 16 pages long. I turned it into 5 worlds: The Pricing Quest, The Time & Memory Maze, Conformable Time Lab, The Volatility Lab, Market Flex Quest.",
+      "An AI helped me explain this paper in plain words. AI can slip up, so check anything important against the paper.",
+      "Move with A and D, jump with W. Stomp bears for fun facts, and reach each flag for a lesson. Go!"
+    ]
+  },
+  "worlds": [
+    {
+      "id": "world-1",
+      "name": "World 1: The Pricing Quest",
+      "section": "Introduction",
+      "cutscenes": [
+        {
+          "title": "Pricing Mystery",
+          "speaker": "PROF. QUANT",
+          "pages": [
+            "Welcome, brave adventurer! Financial derivatives are special contracts whose price depends entirely on another asset, like a company's stock.",
+            "Because stock prices jump around in wild and unpredictable ways, figuring out a fair price for these contracts is a tricky puzzle.",
+            "The classic math model, known as BSM, tries to solve this puzzle. But it assumes things never change, which causes problems in real life."
+          ],
+          "practice": {
+            "prompt": "Why is figuring out the price of a financial derivative tricky?",
+            "choices": [
+              "Because the math uses zero numbers",
+              "Because markets are always closed",
+              "Because contracts have no underlying asset",
+              "Because stock prices jump around wildly"
+            ],
+            "answerIndex": 3,
+            "explanation": "Derivatives depend on underlying stocks, and stock prices move in volatile, unpredictable ways."
+          }
+        },
+        {
+          "title": "Fixing Constant Flaws",
+          "speaker": "PROF. QUANT",
+          "pages": [
+            "The classic BSM model assumes that risk-free interest rates and stock volatility stay totally constant over time.",
+            "In reality, risk and interest rates shift constantly! Critics point out this major flaw makes the classic model fail in many real markets.",
+            "Some scientists swapped standard randomness for fractional motion to remember past price trends, while others tried iterative procedures."
+          ],
+          "practice": {
+            "prompt": "What is a major criticism of the classic BSM model?",
+            "choices": [
+              "It ignores the underlying stock entirely",
+              "It requires too many physical computers",
+              "It assumes interest rates and volatility never change",
+              "It only works on weekends"
+            ],
+            "answerIndex": 2,
+            "explanation": "The classic model relies on the assumption that volatility and risk-free rates are constant over time."
+          }
+        },
+        {
+          "title": "The Conformable Upgrade",
+          "speaker": "PROF. QUANT",
+          "pages": [
+            "Our paper introduces a fresh contender: the conformable BSM model, designed to give us much better flexibility in emerging markets.",
+            "We test three contenders side-by-side: classic BSM, long-memory fractional BSM, and our shiny new conformable BSM."
+          ],
+          "practice": {
+            "prompt": "How did the new conformable BSM perform against the other models?",
+            "choices": [
+              "It failed completely on day one",
+              "It performed exactly the same as classic BSM",
+              "It was slower than manual calculation",
+              "It outperformed them in most scenarios"
+            ],
+            "answerIndex": 3,
+            "explanation": "The empirical findings show the conformable BSM outperforms the older models in most scenarios."
+          }
+        }
+      ],
+      "facts": [
+        "Financial derivatives change in value based on an underlying security, making their pricing quite tricky.",
+        "The classic BSM model assumes that risk-free interest rates and volatility never change.",
+        "Fractional motion uses a non-local operator to help models remember past price trends.",
+        "Researchers tested three different pricing models side-by-side in a semi-strong efficient market.",
+        "The newly proposed conformable BSM model beat the older models in most test scenarios!"
+      ],
+      "boss": {
+        "name": "THE VOLATILITY IMP",
+        "questions": [
+          {
+            "prompt": "What makes pricing financial derivatives difficult according to our journey?",
+            "choices": [
+              "Computers cannot handle multiplication",
+              "Too many regulations closing the markets",
+              "The lack of any underlying financial assets",
+              "Wild and unpredictable stock price movements"
+            ],
+            "answerIndex": 3,
+            "explanation": "Derivatives depend on underlying securities that have volatile and unpredictable price movements."
+          },
+          {
+            "prompt": "Which assumption of the classic BSM model is most widely criticized?",
+            "choices": [
+              "That all traders use the exact same computer",
+              "Constant volatility and risk-free interest rates",
+              "That markets only operate at night",
+              "That stock prices always go straight down"
+            ],
+            "answerIndex": 1,
+            "explanation": "Critics frequently attack the assumption that volatility and risk-free rates stay constant over time."
+          },
+          {
+            "prompt": "What is the main perk of using fractional motion in price dynamics?",
+            "choices": [
+              "It guarantees zero risk for all traders",
+              "It completely removes the need for math",
+              "It stops the stock market from ever crashing",
+              "It models long memory of past price movements"
+            ],
+            "answerIndex": 3,
+            "explanation": "The non-locality of the fractional operator serves as a tool for modeling long memory in price dynamics."
+          },
+          {
+            "prompt": "How did the authors evaluate the newly proposed conformable BSM model?",
+            "choices": [
+              "Through an empirical comparison with two other models",
+              "By ignoring all historical financial data",
+              "By guessing prices based on weather patterns",
+              "By running a video game simulation"
+            ],
+            "answerIndex": 0,
+            "explanation": "The paper conducts an empirical comparison of the classic, fractional, and conformable BSM models."
+          }
+        ]
+      }
+    },
+    {
+      "id": "world-2",
+      "name": "World 2: The Time & Memory Maze",
+      "section": "Previous Models and Methods",
+      "cutscenes": [
+        {
+          "title": "Fixing the Classic Formula",
+          "speaker": "PROF. QUANT",
+          "pages": [
+            "Welcome, students! The classic pricing formula assumes everything stays constant, which is a bit too rigid for real life.",
+            "To fix this, smart folks tried letting parameters change smoothly as time moves forward.",
+            "This lets our pricing tool adapt to how traders actually expect securities to behave in the wild."
+          ],
+          "practice": {
+            "prompt": "Why did researchers introduce time-varying parameters into the classic pricing formula?",
+            "choices": [
+              "To make the math much harder",
+              "To remove all risk from trading",
+              "To match changing market expectations",
+              "To speed up computer processing"
+            ],
+            "answerIndex": 2,
+            "explanation": "Allowing parameters to change with time helps the model capture real-world market behavior and views."
+          }
+        },
+        {
+          "title": "The Memory Trap of Fractions",
+          "speaker": "PROF. QUANT",
+          "pages": [
+            "Next, people tried using fractional math to track long-range dependence, or long memory, in asset prices.",
+            "Think of memory like an elephant that remembers every past wiggle, creating slow decay in data.",
+            "Sadly, this memory adds a tricky extra parameter and gobbles up computer power like a hungry monster!"
+          ],
+          "practice": {
+            "prompt": "What is a major downside of using fractional derivatives in asset pricing models?",
+            "choices": [
+              "They ignore all past price data",
+              "They are too simple to calculate",
+              "They always predict zero volatility",
+              "They demand heavy computer resources"
+            ],
+            "answerIndex": 3,
+            "explanation": "Fractional derivatives have non-local memory, making calculations numerically challenging and heavy on resources."
+          }
+        },
+        {
+          "title": "Conformable to the Rescue",
+          "speaker": "PROF. QUANT",
+          "pages": [
+            "Enter conformable derivatives! These clever tools avoid the heavy baggage of long-range memory.",
+            "They keep all the nice, simple rules of regular calculus that we already know and love.",
+            "That means you get flexibility without burning out your computer trying to calculate past echoes!"
+          ],
+          "practice": {
+            "prompt": "How do conformable derivatives differ from fractional derivatives?",
+            "choices": [
+              "They lack long-range memory",
+              "They cannot be computed at all",
+              "They require infinite past data",
+              "They throw out all calculus rules"
+            ],
+            "answerIndex": 0,
+            "explanation": "Unlike fractional derivatives, conformable derivatives do not exhibit non-local memory, making them much easier to use."
+          }
+        }
+      ],
+      "facts": [
+        "Classic pricing models assume parameters never change, which is like predicting weather without seasons.",
+        "Fractional math gives formulas a long memory, remembering price wiggles from way back when.",
+        "Long memory in math sounds cool, but it acts like a nuisance parameter that drains computer power.",
+        "Conformable derivatives dodge heavy memory traps while keeping standard calculus rules safe.",
+        "Choosing the right math operator can turn a slow, crashing computer model into a smooth runner."
+      ],
+      "boss": {
+        "name": "THE BROWNIAN BEAST",
+        "questions": [
+          {
+            "prompt": "What was the main goal of adding time-varying coefficients to the traditional pricing model?",
+            "choices": [
+              "To eliminate the need for any equations",
+              "To create permanent long-range memory",
+              "To drop all security prices to zero",
+              "To capture changing market views over time"
+            ],
+            "answerIndex": 3,
+            "explanation": "Time-varying coefficients let the model reflect how the market views the future behavior of assets."
+          },
+          {
+            "prompt": "Why can fractional Brownian motion cause headaches for financial mathematicians?",
+            "choices": [
+              "It only works for exactly half a day",
+              "It introduces a tricky nuisance parameter",
+              "It makes all asset returns negative",
+              "It completely erases recent price drops"
+            ],
+            "answerIndex": 1,
+            "explanation": "Long memory introduces a nuisance parameter (H) that makes estimation a much harder task."
+          },
+          {
+            "prompt": "What makes conformable derivatives computationally friendlier than fractional ones?",
+            "choices": [
+              "They ignore time entirely",
+              "They rely on non-local past operators",
+              "They preserve normal integer-order rules",
+              "They use random number generators"
+            ],
+            "answerIndex": 2,
+            "explanation": "Conformable derivatives keep all rules of integer-order derivatives valid, making computations much simpler."
+          },
+          {
+            "prompt": "If a derivative operator is non-local, what does that mean for calculations?",
+            "choices": [
+              "It assumes prices never fluctuate",
+              "It refuses to run on modern computers",
+              "It calculates based on values far away",
+              "It only looks at values right now"
+            ],
+            "answerIndex": 2,
+            "explanation": "Non-local operators calculate points based on values far away, creating heavy computational memory needs."
+          },
+          {
+            "prompt": "What is the biggest overall trade-off when picking a derivative type for market pricing?",
+            "choices": [
+              "Printer ink versus screen pixels",
+              "Stock volume versus coin weight",
+              "Speed versus memory and complexity",
+              "Color versus black and white graphs"
+            ],
+            "answerIndex": 2,
+            "explanation": "You trade off capturing complex memory effects against the heavy computational cost and estimation difficulty."
+          }
+        ]
+      }
+    },
+    {
+      "id": "world-3",
+      "name": "World 3: Conformable Time Lab",
+      "section": "Solving the BSM with Time-Varying Parameters via Conformable Calculus",
+      "cutscenes": [
+        {
+          "title": "Variable Switch Trick",
+          "speaker": "PROF. QUANT",
+          "pages": [
+            "Welcome, students! Today we look at a special math trick called the conformable derivative.",
+            "Think of it as simply swapping your variables to see the pricing puzzle in a brand new way.",
+            "Applying this neat trick to our classic pricing formula helps us unlock fresh insights."
+          ],
+          "practice": {
+            "prompt": "What is the main purpose of using a conformable derivative in our model?",
+            "choices": [
+              "To change variables and gain new insights",
+              "To replace the need for computers",
+              "To make stock prices go straight up",
+              "To completely eliminate market risk"
+            ],
+            "answerIndex": 0,
+            "explanation": "Just like changing variables in regular math, it gives us a fresh viewpoint on the formula."
+          }
+        },
+        {
+          "title": "Time-Varying Gear Shift",
+          "speaker": "PROF. QUANT",
+          "pages": [
+            "Real markets do not stay still, so our formula needs parameters that change over time.",
+            "By plugging our special derivative into the equation, we can tackle these moving targets.",
+            "This lets us adapt the classic pricing setup to handle shifting real-world conditions."
+          ],
+          "practice": {
+            "prompt": "Why do we need time-varying parameters in our pricing equation?",
+            "choices": [
+              "To match the speed of internet trades",
+              "It is a rule required by the government",
+              "Real financial markets are constantly changing",
+              "Because static numbers break calculators"
+            ],
+            "answerIndex": 2,
+            "explanation": "Markets shift constantly, so our parameters must change over time to keep pace."
+          }
+        },
+        {
+          "title": "Short-Term Polynomial Curves",
+          "speaker": "PROF. QUANT",
+          "pages": [
+            "To make our moving equation actually work, we need a structure for these changing functions.",
+            "Real data tests show that order-two polynomials fit short-term trends very well.",
+            "These curved shapes capture how volatility and interest rates move in the near future."
+          ],
+          "practice": {
+            "prompt": "What mathematical shape works best to represent short-term rates and volatility?",
+            "choices": [
+              "Order-two polynomials",
+              "Random scatter plots",
+              "Perfect straight lines",
+              "Static constant numbers"
+            ],
+            "answerIndex": 0,
+            "explanation": "Data suggests order-two polynomials are quite suitable for short-term rate and volatility."
+          }
+        }
+      ],
+      "facts": [
+        "A conformable derivative acts just like a clever variable swap in classic calculus.",
+        "Real markets change constantly, so our math parameters must also shift over time.",
+        "Order-two polynomials help us map out short-term market behavior accurately.",
+        "Classic pricing formulas often struggle when applied directly to emerging markets.",
+        "Testing our new theoretical models with real data bridges math and reality."
+      ],
+      "boss": {
+        "name": "THE FRACTION FIEND",
+        "questions": [
+          {
+            "prompt": "How does the conformable derivative function primarily relate to classic calculus?",
+            "choices": [
+              "It removes all risk from options",
+              "It acts as a change of variables",
+              "It replaces calculus entirely",
+              "It only works with negative numbers"
+            ],
+            "answerIndex": 1,
+            "explanation": "The text notes that the conformable derivative can be seen as a change of variables."
+          },
+          {
+            "prompt": "What specific shape is suggested by empirical analysis for short-term parameters?",
+            "choices": [
+              "Order-two polynomials",
+              "Cubic wave functions",
+              "Exponential decay loops",
+              "A single flat line"
+            ],
+            "answerIndex": 0,
+            "explanation": "An empirical analysis suggests order-two polynomials are suitable for short-term functions."
+          },
+          {
+            "prompt": "What is the ultimate goal of building this modified model for our equation?",
+            "choices": [
+              "To make the pricing model applicable and useful",
+              "To prove math papers are always wrong",
+              "To slow down high frequency traders",
+              "To make every option free of charge"
+            ],
+            "answerIndex": 0,
+            "explanation": "To make the theoretical result applicable, we determine a structure for these functions."
+          }
+        ]
+      }
+    },
+    {
+      "id": "world-4",
+      "name": "World 4: The Volatility Lab",
+      "section": "Empirical Analysis",
+      "cutscenes": [
+        {
+          "title": "Checking for Jumpy Prices",
+          "speaker": "PROF. QUANT",
+          "pages": [
+            "Financial markets often show 'ARCH effects,' which is just a fancy way of saying price jumps tend to cluster together.",
+            "We use the Lagrange multiplier test to confirm if these clusters exist before we start building our math model.",
+            "Think of it like checking if a road is bumpy before deciding how fast you can drive your car safely."
+          ],
+          "practice": {
+            "prompt": "Why do we test for ARCH effects before modeling prices?",
+            "choices": [
+              "To calculate the total share count",
+              "To see if the market is closed",
+              "To detect clusters of price volatility",
+              "To find the cheapest stock available"
+            ],
+            "answerIndex": 2,
+            "explanation": "Testing for ARCH effects helps us understand if volatility comes in waves, which is crucial for accurate predictions."
+          }
+        },
+        {
+          "title": "Smoothing Out the Curves",
+          "speaker": "PROF. QUANT",
+          "pages": [
+            "Market data is messy, so we use a quadratic regression to draw a smooth curve through the noisy volatility points.",
+            "This turns unpredictable data into a clean, flexible math equation we can actually solve.",
+            "It acts like a filter, stripping away random background noise to show the true trend beneath."
+          ],
+          "practice": {
+            "prompt": "What is the main purpose of using a quadratic regression on volatility data?",
+            "choices": [
+              "To increase the speed of the computer",
+              "To eliminate all future market risk",
+              "To make the data look more colorful",
+              "To create a smooth trend from noisy data"
+            ],
+            "answerIndex": 3,
+            "explanation": "Regression helps us fit a clean curve to data points, making it easier to use in our pricing model."
+          }
+        },
+        {
+          "title": "The Conformal Advantage",
+          "speaker": "PROF. QUANT",
+          "pages": [
+            "Our new model, the 'Conformal' approach, adapts better to emerging markets than the classic, rigid BSM formula.",
+            "By comparing it against older models, we see it consistently produces smaller errors across different time lengths.",
+            "It is like upgrading from a fixed-gear bike to one with gears that shift perfectly for any hill."
+          ],
+          "practice": {
+            "prompt": "How does the conformal model perform compared to the classic BSM?",
+            "choices": [
+              "It only works on government bonds",
+              "It is much slower at calculating",
+              "It consistently has smaller errors",
+              "It has larger errors in all tests"
+            ],
+            "answerIndex": 2,
+            "explanation": "The study shows the conformal model is more accurate, leading to smaller pricing errors than the traditional BSM."
+          }
+        }
+      ],
+      "facts": [
+        "The model uses 28-day treasury bond yields as a stand-in for the risk-free interest rate.",
+        "Even when models look different on paper, their variance estimates can end up being identical.",
+        "Higher maturity dates for options actually lead to less messy, more stable estimates.",
+        "Market efficiency doesn't stop price clusters from appearing in the data.",
+        "The conformal model rarely gets beaten by the classic BSM or fractional models."
+      ],
+      "boss": {
+        "name": "THE SMILE SPECTER",
+        "questions": [
+          {
+            "prompt": "If you ignore ARCH effects, what happens to your model?",
+            "choices": [
+              "It crashes the stock market",
+              "It prices options too cheaply",
+              "It becomes perfectly accurate",
+              "It fails to account for volatility"
+            ],
+            "answerIndex": 3,
+            "explanation": "Ignoring ARCH effects means you miss the clustering of volatility, leading to poor model performance."
+          },
+          {
+            "prompt": "Why use a polynomial trend in our calculations?",
+            "choices": [
+              "To predict the exact future price",
+              "To replace the need for GARCH",
+              "To simplify time-varying parameters",
+              "To increase the number of shares"
+            ],
+            "answerIndex": 2,
+            "explanation": "Polynomials help us handle parameters that change over time in a way the math can handle."
+          },
+          {
+            "prompt": "What does a 'smaller error' mean for a trader?",
+            "choices": [
+              "The market becomes less efficient",
+              "They make less money overall",
+              "They lose the option contract",
+              "Their pricing model is more precise"
+            ],
+            "answerIndex": 3,
+            "explanation": "Smaller errors indicate that the model's predicted price is much closer to reality."
+          },
+          {
+            "prompt": "What is the role of GJR-GARCH in this process?",
+            "choices": [
+              "To test for treasury bond yields",
+              "To estimate the volatility process",
+              "To calculate the share price",
+              "To replace the need for Bloomberg"
+            ],
+            "answerIndex": 1,
+            "explanation": "GJR-GARCH is used to estimate the underlying volatility of the assets."
+          },
+          {
+            "prompt": "When does the conformal model shine?",
+            "choices": [
+              "When data has no ARCH effects",
+              "Only for 17-day options",
+              "Only when markets are closed",
+              "In emerging, flexible markets"
+            ],
+            "answerIndex": 3,
+            "explanation": "The model was specifically designed to provide flexibility for emerging markets where old models fail."
+          }
+        ]
+      }
+    },
+    {
+      "id": "world-5",
+      "name": "World 5: Market Flex Quest",
+      "section": "Conclusions",
+      "cutscenes": [
+        {
+          "title": "Why Old Models Falter",
+          "speaker": "PROF. QUANT",
+          "pages": [
+            "Traditional pricing tools assume markets are perfect and mature.",
+            "In places like Mexico, companies often have managers who act like owners.",
+            "This lack of separation makes standard math formulas fail to track prices well."
+          ],
+          "practice": {
+            "prompt": "Why do standard models struggle in emerging markets?",
+            "choices": [
+              "Not enough traders",
+              "Computers are too slow",
+              "Lack of manager-stockholder split",
+              "Too many public firms"
+            ],
+            "answerIndex": 2,
+            "explanation": "When managers and owners are the same, the market behaves differently than the traditional model expects."
+          }
+        },
+        {
+          "title": "The Conformable Tweak",
+          "speaker": "PROF. QUANT",
+          "pages": [
+            "We use something called conformable calculus to add flexibility.",
+            "Think of it as adding a 'wiggle room' knob to the old math formula.",
+            "This knob lets our model adapt to the unique quirks of developing markets."
+          ],
+          "practice": {
+            "prompt": "What is the role of the conformable parameter?",
+            "choices": [
+              "To reduce transaction costs",
+              "To speed up trading platforms",
+              "To adjust the model for market quirks",
+              "To predict future stock crashes"
+            ],
+            "answerIndex": 2,
+            "explanation": "The parameter acts like a knob to fine-tune the model, making it more flexible for specific market conditions."
+          }
+        },
+        {
+          "title": "Winning the Accuracy Race",
+          "speaker": "PROF. QUANT",
+          "pages": [
+            "Our new model was tested against older ones in many different scenarios.",
+            "It provided the best results in over 90% of our test cases.",
+            "While promising, we still need more data to prove it works everywhere."
+          ],
+          "practice": {
+            "prompt": "How did the new model perform in testing?",
+            "choices": [
+              "It was best in over 90% of cases",
+              "It was equal to the old model",
+              "It failed in most scenarios",
+              "It only worked on weekends"
+            ],
+            "answerIndex": 0,
+            "explanation": "The modified model outperformed traditional methods in the vast majority of test cases."
+          }
+        }
+      ],
+      "facts": [
+        "Our model hit the bullseye in over 90% of tested market scenarios.",
+        "A 'conformable parameter' near 0.8 seems to be the sweet spot for these calculations.",
+        "In Mexico, nearly 72% of firms don't clearly separate managers from owners.",
+        "This is the first study to apply this math to real-world financial data.",
+        "We used public data from Yahoo Finance and Bloomberg terminals for our research."
+      ],
+      "boss": {
+        "name": "THE MARKET MAKER",
+        "questions": [
+          {
+            "prompt": "If a market has a strong divide between owners and managers, what happens?",
+            "choices": [
+              "The need for flexibility decreases",
+              "The conformable model is useless",
+              "The market is less predictable",
+              "Standard models work perfectly"
+            ],
+            "answerIndex": 0,
+            "explanation": "Standard models are built for such markets, so the need for extra 'conformable' flexibility is lower."
+          },
+          {
+            "prompt": "Why is the conformable parameter not fixed at a single value?",
+            "choices": [
+              "Because the math is broken",
+              "Because the law forbids it",
+              "Because markets have variability",
+              "Because computers cannot handle it"
+            ],
+            "answerIndex": 2,
+            "explanation": "Market conditions change, so the parameter must be flexible to account for that variability."
+          },
+          {
+            "prompt": "What is the next step for this research?",
+            "choices": [
+              "Ignore transaction costs",
+              "Stop testing the model",
+              "Only trade in mature markets",
+              "Use more robust statistics"
+            ],
+            "answerIndex": 3,
+            "explanation": "The authors noted that more robust statistical procedures are needed for future research."
+          },
+          {
+            "prompt": "What is the main benefit of the conformable derivative operator?",
+            "choices": [
+              "It makes trading faster",
+              "It eliminates all risk",
+              "It removes the need for data",
+              "It allows for better model fit"
+            ],
+            "answerIndex": 3,
+            "explanation": "It adds flexibility to the pricing equation, allowing it to fit actual market data much better."
+          },
+          {
+            "prompt": "What does the 72% figure regarding Mexican firms imply?",
+            "choices": [
+              "Strong institutional maturity",
+              "Too many shareholders",
+              "High market efficiency",
+              "A lack of developed market structure"
+            ],
+            "answerIndex": 3,
+            "explanation": "The overlap of interests indicates a less developed market structure compared to mature ones."
+          }
+        ]
+      }
+    }
+  ]
+}

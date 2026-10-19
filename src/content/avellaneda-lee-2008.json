@@ -659,7 +659,7 @@
         }
       ],
       "boss": {
-        "name": "THE LIQUIDITY CRUNCH",
+        "name": "THE MARGIN CALL",
         "questions": [
           {
             "prompt": "When did stat arb funds take their big 2007 hit?",

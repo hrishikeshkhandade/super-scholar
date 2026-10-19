@@ -1,0 +1,553 @@
+{
+  "id": "gan-2014",
+  "title": "Generative Adversarial Nets",
+  "authors": [
+    "Ian J. Goodfellow",
+    "Jean Pouget-Abadie",
+    "Mehdi Mirza",
+    "Bing Xu",
+    "David Warde-Farley",
+    "Sherjil Ozair",
+    "Aaron Courville",
+    "Yoshua Bengio"
+  ],
+  "year": 2014,
+  "subject": "Machine Learning",
+  "summary": "Trains two networks against each other, a forger that makes fake data and a detective that spots fakes, until the fakes look real.",
+  "intro": {
+    "title": "A New Quest",
+    "speaker": "PROF. QUANT",
+    "pages": [
+      "Welcome, scholar! Today's paper: \"Generative Adversarial Nets\".",
+      "It is 9 pages long. I turned it into 4 worlds: The Adversarial Arena, The Counterfeiter Duel, The Testing Lab, The Final Boss Arena.",
+      "An AI helped me explain this paper in plain words. AI can slip up, so check anything important against the paper.",
+      "Move with A and D, jump with W. Stomp bears for fun facts, and reach each flag for a lesson. Go!"
+    ]
+  },
+  "worlds": [
+    {
+      "id": "world-1",
+      "name": "World 1: The Adversarial Arena",
+      "section": "Introduction",
+      "cutscenes": [
+        {
+          "title": "Beyond Simple Labels",
+          "speaker": "PROF. QUANT",
+          "pages": [
+            "Most AI today is a 'classifier'. It looks at a picture and tells you if it's a cat or a dog.",
+            "This is great for sorting data, but it doesn't create anything new. It just puts things in boxes.",
+            "We want to move past labeling. We want our machines to learn how to dream up their own data."
+          ],
+          "practice": {
+            "prompt": "If a machine is only a classifier, what is its main limitation?",
+            "choices": [
+              "It is too slow to run on PCs",
+              "It requires too much electricity",
+              "It can only see black and white",
+              "It cannot generate new data samples"
+            ],
+            "answerIndex": 3,
+            "explanation": "Classifiers are designed to sort existing data, not to create fresh, original examples from scratch."
+          }
+        },
+        {
+          "title": "The Old Way's Heavy Baggage",
+          "speaker": "PROF. QUANT",
+          "pages": [
+            "Older models like Deep Belief Networks are complex hybrids. They are slow and hard to train.",
+            "Many old methods use 'Markov chains'. Think of this as a long, random walk to find an answer.",
+            "This random walk makes training very sluggish and mathematically messy. We need a cleaner path."
+          ],
+          "practice": {
+            "prompt": "Why are Markov chains a problem for older AI models?",
+            "choices": [
+              "They refuse to use labels",
+              "They require slow, random searching",
+              "They are too simple to learn",
+              "They only work on small computers"
+            ],
+            "answerIndex": 1,
+            "explanation": "Markov chains rely on long, random sequences that make the learning process computationally expensive and slow."
+          }
+        },
+        {
+          "title": "The New Generative Path",
+          "speaker": "PROF. QUANT",
+          "pages": [
+            "We use back-propagation to teach our machine. This is like grading a test and adjusting the answers.",
+            "Our new system doesn't need those slow random walks. It learns directly from feedback.",
+            "By avoiding complex approximations, our model stays fast and efficient. It's a much smoother ride."
+          ],
+          "practice": {
+            "prompt": "How does back-propagation help our new generative machine?",
+            "choices": [
+              "It removes the need for labels",
+              "It allows for direct error correction",
+              "It makes the machine stop learning",
+              "It forces the machine to guess"
+            ],
+            "answerIndex": 1,
+            "explanation": "Back-propagation lets the model learn from errors, allowing it to improve directly without needing slow random search methods."
+          }
+        }
+      ],
+      "facts": [
+        "Most AI success stories so far are just fancy sorting machines called discriminative models.",
+        "Markov chains are like wandering through a maze blindfolded just to find a single exit.",
+        "Some older models are so complex they feel like building a house with two different blueprints.",
+        "Noise-contrastive estimation is a fancy way of saying we compare real data to random static.",
+        "Our new approach ditches the complex math of older models to keep things fast and simple."
+      ],
+      "boss": {
+        "name": "THE COUNTERFEITER",
+        "questions": [
+          {
+            "prompt": "Why is our new model faster than a Deep Belief Network?",
+            "choices": [
+              "It uses only one type of math",
+              "It ignores all input labels",
+              "It avoids slow Markov chain steps",
+              "It uses fewer total layers"
+            ],
+            "answerIndex": 2,
+            "explanation": "By removing the need for Markov chains, we bypass the sluggish random processes that slow down older, hybrid models."
+          },
+          {
+            "prompt": "What is the primary goal of a generative machine?",
+            "choices": [
+              "To sort data into folders",
+              "To label input data correctly",
+              "To identify hidden patterns",
+              "To create new, realistic samples"
+            ],
+            "answerIndex": 3,
+            "explanation": "Unlike discriminative models that label input, generative machines are built to produce new, original data."
+          },
+          {
+            "prompt": "What does 'back-propagation' do in this context?",
+            "choices": [
+              "It creates noise for the model",
+              "It hides the model's logic",
+              "It labels the incoming data",
+              "It fixes mistakes during training"
+            ],
+            "answerIndex": 3,
+            "explanation": "It's the mechanism that updates the model based on its errors, helping it get better at creating data."
+          },
+          {
+            "prompt": "Why do we avoid 'approximate inference'?",
+            "choices": [
+              "It is too easy to solve",
+              "It makes the training process messy",
+              "It requires too many labels",
+              "It doesn't work on computers"
+            ],
+            "answerIndex": 1,
+            "explanation": "Approximations often introduce unnecessary complexity, which makes the learning process less precise and harder to manage."
+          },
+          {
+            "prompt": "How does our model differ from a simple classifier?",
+            "choices": [
+              "It cannot handle high-dimensional data",
+              "It is much slower to train",
+              "It uses Markov chains",
+              "It is a generative machine"
+            ],
+            "answerIndex": 3,
+            "explanation": "A classifier sorts data, while our machine generates it, changing the focus from sorting to creating."
+          }
+        ]
+      }
+    },
+    {
+      "id": "world-2",
+      "name": "World 2: The Counterfeiter Duel",
+      "section": "Adversarial nets",
+      "cutscenes": [
+        {
+          "title": "Two Neural Networks",
+          "speaker": "PROF. QUANT",
+          "pages": [
+            "Welcome to our game level! Here, we build forgers and detectives using artificial neural networks.",
+            "A neural network is just a computer brain made of connected layers, capable of learning patterns.",
+            "We use a pair of these networks, playing a competitive game against each other to improve."
+          ],
+          "practice": {
+            "prompt": "What are the two networks doing in this framework?",
+            "choices": [
+              "Playing a competitive game",
+              "Cooperating to bake a cake",
+              "Running a search engine",
+              "Solving a math puzzle together"
+            ],
+            "answerIndex": 0,
+            "explanation": "They play against each other like a forger and a detective!"
+          }
+        },
+        {
+          "title": "Taking Turns Carefully",
+          "speaker": "PROF. QUANT",
+          "pages": [
+            "Training both networks all the way to perfection in one go takes way too much computer power.",
+            "Instead, we take small steps, updating the networks iteratively rather than finishing inner loops.",
+            "If we trained the detective completely first, it would just memorize the exact dataset and fail."
+          ],
+          "practice": {
+            "prompt": "Why shouldn't we train the detective completely in an inner loop?",
+            "choices": [
+              "It takes too much time and causes overfitting",
+              "The computer screen will turn blue",
+              "It makes the game too easy",
+              "The forger will disappear forever"
+            ],
+            "answerIndex": 0,
+            "explanation": "Doing so is computationally prohibitive and leads to overfitting on finite data."
+          }
+        },
+        {
+          "title": "The Learning Journey",
+          "speaker": "PROF. QUANT",
+          "pages": [
+            "Sometimes the forger's feedback signal gets too weak, making it hard for it to learn new tricks.",
+            "We use mini-batches of data and a hyperparameter called k to control how much the detective trains.",
+            "Even though it has tricky critical points, this setup works surprisingly well in real practice!"
+          ],
+          "practice": {
+            "prompt": "What does the hyperparameter k control in the training process?",
+            "choices": [
+              "The size of the computer memory",
+              "The color of the game graphics",
+              "The speed of the internet connection",
+              "The number of steps for the detective"
+            ],
+            "answerIndex": 3,
+            "explanation": "The parameter k tells us how many steps to apply to the discriminator."
+          }
+        }
+      ],
+      "facts": [
+        "Training the detective completely in an inner loop would cause bad overfitting on finite data.",
+        "We use a hyperparameter called k to set the number of steps for the detective.",
+        "Multilayer perceptrons bring multiple critical points into our parameter space.",
+        "Despite lacking strict theoretical guarantees, multilayer perceptrons work amazingly well!",
+        "Mini-batch stochastic gradient descent helps us train these competing models smoothly."
+      ],
+      "boss": {
+        "name": "THE DISCRIMINATOR",
+        "questions": [
+          {
+            "prompt": "What happens if we train the detective to perfection in every single inner loop?",
+            "choices": [
+              "Nothing changes at all",
+              "The forger becomes a genius instantly",
+              "It overfits on finite datasets",
+              "The computer runs twice as fast"
+            ],
+            "answerIndex": 2,
+            "explanation": "Trying to finish the detective's training too early causes overfitting and wastes compute."
+          },
+          {
+            "prompt": "Which term describes the step count assigned to the detective during training?",
+            "choices": [
+              "A random seed generator",
+              "The loss function multiplier",
+              "A hyperparameter named k",
+              "An unrolled network weight"
+            ],
+            "answerIndex": 2,
+            "explanation": "The number of steps applied to the discriminator is a hyperparameter denoted by k."
+          },
+          {
+            "prompt": "Why do multilayer perceptrons make a good choice despite theoretical challenges?",
+            "choices": [
+              "Their practical performance is excellent",
+              "They never make any mistakes",
+              "They have zero critical points",
+              "They require no training time"
+            ],
+            "answerIndex": 0,
+            "explanation": "Even though they lack theoretical guarantees, their practical performance is outstanding."
+          },
+          {
+            "prompt": "How are the two main models structured in this framework setup?",
+            "choices": [
+              "As simple lookup tables",
+              "As multilayer perceptrons",
+              "As Markov chains",
+              "As random number lists"
+            ],
+            "answerIndex": 1,
+            "explanation": "The adversarial framework is most straightforward when both models are multilayer perceptrons."
+          },
+          {
+            "prompt": "What algorithm drives this minibatch stochastic training process?",
+            "choices": [
+              "The Markov method",
+              "Algorithm 1",
+              "Equation infinity",
+              "The unrolled inference protocol"
+            ],
+            "answerIndex": 1,
+            "explanation": "Algorithm 1 formally presents the minibatch stochastic gradient descent training procedure."
+          }
+        ]
+      }
+    },
+    {
+      "id": "world-3",
+      "name": "World 3: The Testing Lab",
+      "section": "Experiments",
+      "cutscenes": [
+        {
+          "title": "Building the AI Brain",
+          "speaker": "PROF. QUANT",
+          "pages": [
+            "Welcome to our final lab! Here, our creator duo uses special mathematical switches to pass signals through their digital brains.",
+            "The creator uses rectifier linear and sigmoid functions for the forger, while the critic uses maxout switches.",
+            "We even drop out random connections during training so the critic stays sharp and never relies too heavily on one clue!"
+          ],
+          "practice": {
+            "prompt": "Why do we use dropout training on the critic network?",
+            "choices": [
+              "To make it slower",
+              "To keep it sharp and avoid reliance on single clues",
+              "To delete the forger",
+              "To increase memory usage"
+            ],
+            "answerIndex": 1,
+            "explanation": "Dropping random connections stops the critic from getting lazy or overly reliant on specific data points."
+          }
+        },
+        {
+          "title": "Grading the Forger",
+          "speaker": "PROF. QUANT",
+          "pages": [
+            "How do we know the forger is doing a good job? We look at log-likelihood scores on test datasets like MNIST.",
+            "Sometimes measuring exact likelihood is tough, so we use a validation set method with a bit of variance to estimate it."
+          ],
+          "practice": {
+            "prompt": "What is a known drawback of our current likelihood estimation method?",
+            "choices": [
+              "It always gives a zero score",
+              "It has high variance in high-dimensional spaces",
+              "It takes too many GPUs",
+              "It only works on audio files"
+            ],
+            "answerIndex": 1,
+            "explanation": "The text notes this estimation method has somewhat high variance and struggles in high dimensional spaces."
+          }
+        },
+        {
+          "title": "Checking for Copycats",
+          "speaker": "PROF. QUANT",
+          "pages": [
+            "Can we prove the forger is truly creative and not just photocopying the training manual?",
+            "Look at the rightmost column in our image display! We find the nearest training example next to each new sample.",
+            "Since they differ, we prove the system generates brand new original creations instead of just memorizing the answer key."
+          ],
+          "practice": {
+            "prompt": "What does showing the nearest training example next to a generated sample prove?",
+            "choices": [
+              "The model failed completely",
+              "The model memorized everything",
+              "The model creates new data instead of memorizing",
+              "The dataset is corrupted"
+            ],
+            "answerIndex": 2,
+            "explanation": "Displaying the closest real training item next to our fake sample proves the AI isn't just copying."
+          }
+        }
+      ],
+      "facts": [
+        "We use special math switches like rectifiers, sigmoids, and maxout to power our digital brains.",
+        "Dropout training randomly turns off critic connections so it stays sharp and never gets lazy.",
+        "Measuring exact likelihood for some generative models can be surprisingly tricky and messy.",
+        "Our image displays show actual raw samples from the model, not boring conditional means.",
+        "We check the nearest training neighbor to guarantee our AI is inventing, not just plagiarizing!"
+      ],
+      "boss": {
+        "name": "THE MODE COLLAPSER",
+        "questions": [
+          {
+            "prompt": "What is the primary purpose of applying dropout during the training of the critic?",
+            "choices": [
+              "To prevent cheating",
+              "To keep the critic sharp and prevent memorization",
+              "To reduce image resolution",
+              "To speed up generation"
+            ],
+            "answerIndex": 1,
+            "explanation": "Dropout prevents the critic from relying too much on specific pathways, keeping its evaluation sharp."
+          },
+          {
+            "prompt": "Why can evaluating likelihood sometimes be tricky for these generative models?",
+            "choices": [
+              "Exact likelihood is often intractable",
+              "Datasets are always tiny",
+              "Weights are always negative",
+              "Computers lack memory"
+            ],
+            "answerIndex": 0,
+            "explanation": "The text notes that for various generative models, the exact likelihood is not tractable."
+          },
+          {
+            "prompt": "What kind of activations did the critic net use in the experiments?",
+            "choices": [
+              "Only sigmoid activations",
+              "Maxout activations",
+              "Linear math only",
+              "No activations"
+            ],
+            "answerIndex": 1,
+            "explanation": "The excerpt explicitly states the discriminator net used maxout activations."
+          },
+          {
+            "prompt": "What limitation does our likelihood estimation method have in complex environments?",
+            "choices": [
+              "It only works on text",
+              "It requires infinite data",
+              "It has high variance in high-dimensional spaces",
+              "It crashes the computer"
+            ],
+            "answerIndex": 2,
+            "explanation": "Estimating likelihood this way has somewhat high variance and struggles in high dimensional spaces."
+          }
+        ]
+      }
+    },
+    {
+      "id": "world-4",
+      "name": "World 4: The Final Boss Arena",
+      "section": "Conclusions and future work",
+      "cutscenes": [
+        {
+          "title": "Randomness and Rules",
+          "speaker": "PROF. QUANT",
+          "pages": [
+            "Welcome to the final stretch! Today we mix pure randomness with strict rules.",
+            "We turn stiff networks into loose, bouncy ones that capture real chaos.",
+            "Think of it like adding rolling dice to a recipe book for endless variety."
+          ],
+          "practice": {
+            "prompt": "Why do we add random chance to our deterministic rules?",
+            "choices": [
+              "To break the neural network",
+              "To slow down the computer",
+              "To make the system completely random",
+              "To capture real-world chaos and variety"
+            ],
+            "answerIndex": 3,
+            "explanation": "Adding randomness helps our model capture real-world variety instead of just rigid, exact copies."
+          }
+        },
+        {
+          "title": "Semi-Supervised Magic",
+          "speaker": "PROF. QUANT",
+          "pages": [
+            "What happens when you have hardly any labeled training data?",
+            "Your clever discriminator steps up to extract useful features from unlabelled stuff.",
+            "It acts like a smart tutor helping your classifier learn with almost no hints."
+          ],
+          "practice": {
+            "prompt": "How does the system help classifiers when labels are super rare?",
+            "choices": [
+              "By deleting the unlabelled data",
+              "By using features from the discriminator",
+              "By guessing every single label",
+              "By asking humans for help"
+            ],
+            "answerIndex": 1,
+            "explanation": "The discriminator learns rich features from unlabeled data, which boosts classifier performance."
+          }
+        },
+        {
+          "title": "Brewing Up Success",
+          "speaker": "PROF. QUANT",
+          "pages": [
+            "This paper proved that playing games to train networks actually works great.",
+            "Science takes teamwork, shared code, and good typesetting tools too.",
+            "Even local brewpubs helped fuel the creative fire behind this big breakthrough!"
+          ],
+          "practice": {
+            "prompt": "What did the paper ultimately prove about adversarial modeling?",
+            "choices": [
+              "That computers cannot learn alone",
+              "That game theory always fails",
+              "That data is no longer needed",
+              "That the framework is totally viable"
+            ],
+            "answerIndex": 3,
+            "explanation": "The paper successfully demonstrated that the adversarial framework is a viable, working approach!"
+          }
+        }
+      ],
+      "facts": [
+        "Adversarial nets let us build fuzzy, random extensions of strict models.",
+        "Discriminators can boost classifiers even when labels are super rare.",
+        "The authors thanked a local brewpub for fueling their creative ideas.",
+        "Arnaud Bergeron swooped in to save the day with LaTeX typesetting support.",
+        "Yann Dauphin generously shared his special Parzen window evaluation code."
+      ],
+      "boss": {
+        "name": "THE MINIMAX KING",
+        "questions": [
+          {
+            "prompt": "What is the main takeaway regarding the adversarial framework?",
+            "choices": [
+              "It proves viable and useful",
+              "It only works on paper",
+              "It replaces all math",
+              "It is totally unviable"
+            ],
+            "answerIndex": 0,
+            "explanation": "The paper successfully demonstrated that the adversarial modeling framework is viable."
+          },
+          {
+            "prompt": "How can the discriminator help classifiers in semi-supervised learning?",
+            "choices": [
+              "By hiding the training data",
+              "By sharing its learned features",
+              "By changing the loss function",
+              "By doing all the grading"
+            ],
+            "answerIndex": 1,
+            "explanation": "Features extracted by the discriminator can boost classifier performance with limited labels."
+          },
+          {
+            "prompt": "What kind of extension do adversarial nets provide to MP-DBM?",
+            "choices": [
+              "A slow manual one",
+              "A rigid deterministic one",
+              "A stochastic one",
+              "A completely random one"
+            ],
+            "answerIndex": 2,
+            "explanation": "They implement a stochastic (randomized) extension of the deterministic MP-DBM."
+          },
+          {
+            "prompt": "What fun external source helped spark creativity for the authors?",
+            "choices": [
+              "An arcade machine",
+              "A secret laboratory",
+              "Les Trois Brasseurs",
+              "A random coffee shop"
+            ],
+            "answerIndex": 2,
+            "explanation": "The authors specifically thanked Les Trois Brasseurs for stimulating their creativity."
+          },
+          {
+            "prompt": "Why is utilizing unlabelled data helpful in this setup?",
+            "choices": [
+              "Labeled data is often limited",
+              "Labels are always wrong",
+              "It saves computer memory",
+              "It removes the need for training"
+            ],
+            "answerIndex": 0,
+            "explanation": "When limited labeled data is available, unlabelled data features help improve performance."
+          }
+        ]
+      }
+    }
+  ]
+}

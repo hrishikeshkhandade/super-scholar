@@ -5,7 +5,7 @@ import { parseAiWorld, type AiRequest } from "./aiWorlds";
 // wrong (offline, out of quota, a bad answer) just means no AI worlds, and
 // the game keeps its rules-made ones.
 
-const AI_TIMEOUT_MS = 65_000;
+const AI_TIMEOUT_MS = 90_000; // the server may rewrite worlds that copy the paper
 
 export async function fetchAiWorlds(request: AiRequest, cancel: AbortSignal): Promise<(World | undefined)[]> {
   try {

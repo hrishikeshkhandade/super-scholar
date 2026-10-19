@@ -1,0 +1,520 @@
+{
+  "id": "bitcoin-2008",
+  "title": "Bitcoin: A Peer-to-Peer Electronic Cash System",
+  "authors": [
+    "Satoshi Nakamoto"
+  ],
+  "year": 2008,
+  "subject": "Cryptocurrency",
+  "summary": "Proposes digital money that people can send directly to each other, with no bank in the middle, using a shared chain of proof-of-work.",
+  "intro": {
+    "title": "A New Quest",
+    "speaker": "PROF. QUANT",
+    "pages": [
+      "Welcome, scholar! Today's paper: \"Bitcoin: A Peer-to-Peer Electronic Cash System\".",
+      "It is 9 pages long. I turned it into 4 worlds: Digital Cash Quest, The Proof-of-Work Mines, The Disk Diet, The Masked Ledger.",
+      "An AI helped me explain this paper in plain words. AI can slip up, so check anything important against the paper.",
+      "Move with A and D, jump with W. Stomp bears for fun facts, and reach each flag for a lesson. Go!"
+    ]
+  },
+  "worlds": [
+    {
+      "id": "world-1",
+      "name": "World 1: Digital Cash Quest",
+      "section": "Introduction",
+      "cutscenes": [
+        {
+          "title": "The Trouble With Trust",
+          "speaker": "PROF. QUANT",
+          "pages": [
+            "Welcome, friends! I'm Prof. Quant. Today we look at why buying stuff online is a bit clunky.",
+            "Right now, we rely on banks and credit card companies to handle every single web payment.",
+            "Because middlemen step in to settle fights, you can never have a truly final, non-reversible deal.",
+            "Merchants must ask for extra personal info just to stay safe, baking fraud right into the system!"
+          ],
+          "practice": {
+            "prompt": "Why do online merchants have to ask customers for extra personal details in a traditional bank-based system?",
+            "choices": [
+              "Because payments can be reversed",
+              "To speed up shipping times",
+              "To open a physical bank branch",
+              "To pay state sales tax"
+            ],
+            "answerIndex": 0,
+            "explanation": "Since banks can reverse payments, merchants face fraud risks and must collect extra info to protect themselves."
+          }
+        },
+        {
+          "title": "Coins and Cheaters",
+          "speaker": "PROF. QUANT",
+          "pages": [
+            "What if a coin was just a digital chain of signatures, passing ownership from one person to the next?",
+            "You can check the math to see who owned the coin last. Neat, right?",
+            "Ah, but here's the catch! How do you know the seller didn't spend the exact same coin twice somewhere else?",
+            "Usually, a central mint checks every single transaction to stop this sneaky trick known as double-spending."
+          ],
+          "practice": {
+            "prompt": "What is the main danger when a payee receives a digital coin directly from a previous owner?",
+            "choices": [
+              "Internet connection might drop",
+              "The owner might double-spend it",
+              "The file size might be too large",
+              "The digital signature will expire"
+            ],
+            "answerIndex": 1,
+            "explanation": "Without a central check, a dishonest owner could try to spend the same digital coin with two different people."
+          }
+        },
+        {
+          "title": "Time Stamping Magic",
+          "speaker": "PROF. QUANT",
+          "pages": [
+            "To ditch the central mint, everyone needs to agree on which transaction happened first.",
+            "Meet the timestamp server! It takes a batch of data, scrambles it into a unique code called a hash, and publishes it.",
+            "Each new timestamp links to the previous one, locking the exact order of events into an unbreakable chain.",
+            "As long as honest folks control the majority of computer power, we can prove what happened without any boss!"
+          ],
+          "practice": {
+            "prompt": "How does a timestamp server prove that a piece of data existed at a specific moment in time?",
+            "choices": [
+              "By hashing it and publishing the code",
+              "By emailing a receipt to a bank",
+              "By printing it in a phone book",
+              "By notarizing it with a lawyer"
+            ],
+            "answerIndex": 0,
+            "explanation": "It takes the data, creates a hash, and publishes it widely so everyone can see it was locked in at that time."
+          }
+        }
+      ],
+      "facts": [
+        "Online commerce relies almost entirely on trusted third-party financial institutions to process payments.",
+        "Completely non-reversible internet transactions are nearly impossible under traditional banking models.",
+        "An electronic coin is defined simply as a chain of digital signatures passed from owner to owner.",
+        "A traditional mint checks every single transaction to ensure no coin gets spent twice.",
+        "A timestamp server links data hashes together, making each new timestamp reinforce all the ones before it."
+      ],
+      "boss": {
+        "name": "THE DOUBLE SPENDER",
+        "questions": [
+          {
+            "prompt": "Why can't we have completely non-reversible web payments using standard financial institutions?",
+            "choices": [
+              "Digital signatures always expire daily",
+              "Computers are not fast enough yet",
+              "Banks must mediate disputes and reverse deals",
+              "Banks charge too much interest"
+            ],
+            "answerIndex": 2,
+            "explanation": "Financial institutions must step in to settle arguments, which makes completely non-reversible transactions impossible."
+          },
+          {
+            "prompt": "What traditional method is normally used to prevent someone from double-spending a digital coin?",
+            "choices": [
+              "Locking computers in a secure vault",
+              "Requiring a signature from the police",
+              "Charging a 50 percent fee on transfers",
+              "A central authority or mint checking it"
+            ],
+            "answerIndex": 3,
+            "explanation": "A central mint normally checks every transaction and issues brand new coins to stop double-spending."
+          },
+          {
+            "prompt": "What is the primary purpose of publishing a hash through a timestamp server?",
+            "choices": [
+              "To hide user identities completely",
+              "To speed up computer processors",
+              "To prove data existed at a specific time",
+              "To generate free internet data"
+            ],
+            "answerIndex": 2,
+            "explanation": "Publishing the hash proves the data existed at that time because it had to be inside to get that exact code."
+          }
+        ]
+      }
+    },
+    {
+      "id": "world-2",
+      "name": "World 2: The Proof-of-Work Mines",
+      "section": "Proof-of-Work",
+      "cutscenes": [
+        {
+          "title": "The Digital Scavenger Hunt",
+          "speaker": "PROF. QUANT",
+          "pages": [
+            "To keep our records safe, we use a digital puzzle called Proof-of-Work.",
+            "Imagine a lock that only opens if you find a specific secret code by guessing millions of combinations.",
+            "This 'nonce' is a number you change over and over until the resulting hash starts with a bunch of zeros.",
+            "It takes a lot of computer power to find this, so it proves you did real work."
+          ],
+          "practice": {
+            "prompt": "Why does a computer need to do so much work to find the right nonce?",
+            "choices": [
+              "To increase the internet speed",
+              "To make it hard to cheat",
+              "To encrypt the user's password",
+              "To prove it has enough memory"
+            ],
+            "answerIndex": 1,
+            "explanation": "Solving the puzzle is hard, but checking the answer is easy. This makes it impossible for attackers to fake the record quickly."
+          }
+        },
+        {
+          "title": "Choosing the Longest Path",
+          "speaker": "PROF. QUANT",
+          "pages": [
+            "Sometimes two different blocks are found at the same time, creating a split in the path.",
+            "Nodes, or the computers in our network, always follow the longest chain they see.",
+            "If a shorter path exists, it gets abandoned when a longer, more verified path appears.",
+            "The longest chain is the winner because it represents the most total computer effort spent."
+          ],
+          "practice": {
+            "prompt": "What happens if a node finds two different versions of the next block?",
+            "choices": [
+              "It works on the first one received",
+              "It picks one at random",
+              "It deletes both blocks",
+              "It crashes immediately"
+            ],
+            "answerIndex": 0,
+            "explanation": "Nodes work on the first version they get but keep the other one in case it ends up becoming part of a longer chain later."
+          }
+        },
+        {
+          "title": "Mining for Rewards",
+          "speaker": "PROF. QUANT",
+          "pages": [
+            "Why would anyone spend money on computers to run this network?",
+            "The first transaction in every block creates brand new coins for the person who solved the puzzle.",
+            "This is like gold miners digging for treasure; it pays them for their hard work.",
+            "Over time, fees from transactions will replace these new coins as the main reward."
+          ],
+          "practice": {
+            "prompt": "How do miners get paid if there is no bank handing out money?",
+            "choices": [
+              "They earn coins by solving blocks",
+              "They steal from other users",
+              "The government sends them checks",
+              "They charge monthly subscriptions"
+            ],
+            "answerIndex": 0,
+            "explanation": "The network automatically issues new coins to the miner who successfully solves the block, acting as an incentive to keep going."
+          }
+        }
+      ],
+      "facts": [
+        "Mining is compared to gold miners spending resources to add new gold to the world's supply.",
+        "Changing a past block requires redoing the work for that block and every single one after it.",
+        "A node can leave the network and rejoin later, just by looking for the longest chain.",
+        "If you pay a fee on a transaction, that extra amount goes to the miner as a reward.",
+        "An attacker's odds of overtaking the honest chain shrink very fast as the chain gets longer."
+      ],
+      "boss": {
+        "name": "THE HASH GOLEM",
+        "questions": [
+          {
+            "prompt": "Why can't an attacker easily change a transaction from three blocks ago?",
+            "choices": [
+              "The hash is already deleted",
+              "They would need to redo all current work",
+              "They need a password from the bank",
+              "The network blocks their IP"
+            ],
+            "answerIndex": 1,
+            "explanation": "To change a past block, an attacker must redo the work for that block and every block added since, which is practically impossible."
+          },
+          {
+            "prompt": "What ensures the network agrees on the truth?",
+            "choices": [
+              "A pre-set list of rules",
+              "The longest chain of work",
+              "The fastest internet speed",
+              "A central voting committee"
+            ],
+            "answerIndex": 1,
+            "explanation": "The longest chain represents the majority of honest CPU power, making it the accepted source of truth."
+          },
+          {
+            "prompt": "What is a nonce used for in this system?",
+            "choices": [
+              "Calculating transaction fees",
+              "Encrypting private messages",
+              "Finding the required zero bits",
+              "Identifying the user's name"
+            ],
+            "answerIndex": 2,
+            "explanation": "Miners increment the nonce until the block's hash meets the difficulty requirement of having a specific number of leading zeros."
+          },
+          {
+            "prompt": "How does the system prevent inflation forever?",
+            "choices": [
+              "It burns coins randomly",
+              "It limits total computer power",
+              "It stops creating new coins eventually",
+              "It requires a central bank"
+            ],
+            "answerIndex": 2,
+            "explanation": "Once a set number of coins are out, the reward transitions to transaction fees only, keeping the system inflation-free."
+          },
+          {
+            "prompt": "What happens if a node receives two branches of equal length?",
+            "choices": [
+              "The network shuts down",
+              "It waits for a new block to break the tie",
+              "It rejects both branches",
+              "It asks the user to pick one"
+            ],
+            "answerIndex": 1,
+            "explanation": "The tie is broken as soon as the next proof-of-work is found, making one branch longer than the other."
+          }
+        ]
+      }
+    },
+    {
+      "id": "world-3",
+      "name": "World 3: The Disk Diet",
+      "section": "Reclaiming Disk Space",
+      "cutscenes": [
+        {
+          "title": "Shrinking Old Blocks",
+          "speaker": "PROF. QUANT",
+          "pages": [
+            "Hey class! Prof. Quant here to help you save hard drive space.",
+            "Once a coin transaction is buried deep under new blocks, we don't need the old spent details anymore.",
+            "We can chop off those old branches in a process called compacting to save valuable space!"
+          ],
+          "practice": {
+            "prompt": "When is it safe to discard old spent transaction details?",
+            "choices": [
+              "Only when the computer restarts",
+              "Never, we must keep everything",
+              "Right after a single block is made",
+              "When buried under enough blocks"
+            ],
+            "answerIndex": 3,
+            "explanation": "Once a transaction is buried deep enough, old data can be tossed out to save disk space."
+          }
+        },
+        {
+          "title": "Lightweight Checking",
+          "speaker": "PROF. QUANT",
+          "pages": [
+            "Did you know a tiny block header is only about 80 bytes?",
+            "Because headers are so small, you can check payments without downloading the whole giant network node.",
+            "Businesses wanting extra speed and security might still run full nodes, though!"
+          ],
+          "practice": {
+            "prompt": "How big is a typical block header without transactions?",
+            "choices": [
+              "Zero bytes always",
+              "About 80 bytes",
+              "Exactly 80 megabytes",
+              "One whole gigabyte"
+            ],
+            "answerIndex": 1,
+            "explanation": "A stripped-down block header is roughly 80 bytes, making light checks super easy."
+          }
+        },
+        {
+          "title": "Splitting and Combining Coins",
+          "speaker": "PROF. QUANT",
+          "pages": [
+            "Making a separate transaction for every tiny cent would be super clumsy.",
+            "Instead, transactions use multiple inputs and outputs to easily split and combine value.",
+            "We never need a standalone history copy because complex branching is totally fine!"
+          ],
+          "practice": {
+            "prompt": "How do transactions handle splitting and combining value?",
+            "choices": [
+              "By deleting old coin histories",
+              "By making a transfer for every cent",
+              "Through a central bank approval",
+              "Using multiple inputs and outputs"
+            ],
+            "answerIndex": 3,
+            "explanation": "Transactions use multiple inputs and outputs so you don't need a separate transfer for every cent."
+          }
+        }
+      ],
+      "facts": [
+        "Old transaction history can be safely deleted once buried under enough new blocks.",
+        "A block header with zero transactions is roughly 80 bytes tiny.",
+        "You do not need to run a full heavy network node just to verify payments.",
+        "Transactions use multiple inputs and outputs to easily split and combine money.",
+        "Complex transaction branching never requires extracting a complete standalone history."
+      ],
+      "boss": {
+        "name": "THE MERKLE TREANT",
+        "questions": [
+          {
+            "prompt": "What happens to old spent transactions after they are buried under enough blocks?",
+            "choices": [
+              "They are discarded to save disk space",
+              "They are locked forever in a vault",
+              "They are printed out on paper receipts",
+              "They are doubled in value automatically"
+            ],
+            "answerIndex": 0,
+            "explanation": "Buried transactions can be discarded to free up storage space."
+          },
+          {
+            "prompt": "Roughly how large is a block header when all transactions are removed?",
+            "choices": [
+              "80 megabytes",
+              "80 bytes",
+              "80 kilobytes",
+              "80 gigabytes"
+            ],
+            "answerIndex": 1,
+            "explanation": "A block header without transactions weighs in at about 80 bytes."
+          },
+          {
+            "prompt": "Why do transactions use multiple inputs and outputs?",
+            "choices": [
+              "To split and combine value without separate cents transfers",
+              "To force everyone to run a full node",
+              "To confuse sneaky hackers on the network",
+              "To make the block headers bigger than 80 bytes"
+            ],
+            "answerIndex": 0,
+            "explanation": "Multiple inputs and outputs let you easily split and combine value without clumsy individual cent transfers."
+          },
+          {
+            "prompt": "Who might still prefer running a full network node instead of a light check?",
+            "choices": [
+              "Students taking a quick pop quiz",
+              "Businesses receiving frequent payments",
+              "Nobody, full nodes are totally illegal",
+              "Miners who only care about block headers"
+            ],
+            "answerIndex": 1,
+            "explanation": "Frequent payment businesses want independent security and quick verification."
+          },
+          {
+            "prompt": "Is complex transaction branching (fan-out) a problem for this system?",
+            "choices": [
+              "Yes, it requires 80 gigabytes per branch",
+              "No, it is handled fine without standalone history copies",
+              "Only if honest nodes lose control",
+              "Yes, it crashes the entire network instantly"
+            ],
+            "answerIndex": 1,
+            "explanation": "Fan-out is not a problem, and you never need a complete standalone history copy."
+          }
+        ]
+      }
+    },
+    {
+      "id": "world-4",
+      "name": "World 4: The Masked Ledger",
+      "section": "Privacy",
+      "cutscenes": [
+        {
+          "title": "Keeping Identities Secret",
+          "speaker": "PROF. QUANT",
+          "pages": [
+            "Welcome player! I'm Prof. Quant. Regular banks keep your info private by locking it away with a trusted company.",
+            "Our digital cash system does privacy differently. Everyone sees money moves, but names are hidden behind numbers.",
+            "To keep snoops from connecting your payments together, you must use a brand new cryptographic key pair for every single deal!"
+          ],
+          "practice": {
+            "prompt": "Why should you use a brand new key pair for every transaction?",
+            "choices": [
+              "To keep deals from linking to a common owner",
+              "To double the amount of coins you own",
+              "To make your computer run much faster",
+              "To unlock extra bonus levels"
+            ],
+            "answerIndex": 0,
+            "explanation": "Fresh key pairs act like firewalls, stopping snoops from linking your separate purchases to your real identity."
+          }
+        },
+        {
+          "title": "The Multi-Input Trap",
+          "speaker": "PROF. QUANT",
+          "pages": [
+            "Sometimes you need to combine a few past payments to make a bigger purchase. We call these multi-input transactions.",
+            "Even with secret keys, combining inputs leaves a tiny clue. It proves those funding sources belong to the exact same person.",
+            "If a snoop figures out just one of your keys, they might trace all your linked history. Privacy gets tricky here!"
+          ],
+          "practice": {
+            "prompt": "What is the main privacy risk of multi-input transactions?",
+            "choices": [
+              "They slow down the peer-to-peer network",
+              "They force you to use a traditional bank",
+              "They completely erase your digital coins",
+              "They reveal that their inputs share an owner"
+            ],
+            "answerIndex": 3,
+            "explanation": "Combining inputs leaks a connection, meaning if one key is cracked, related transactions might be exposed."
+          }
+        },
+        {
+          "title": "Beating the Secret Cheat",
+          "speaker": "PROF. QUANT",
+          "pages": [
+            "Imagine a sneaky player tries building a secret side-chain to double-spend coins they already handed over.",
+            "They can't invent free money or steal your funds, but they can try rewriting their own history in secret.",
+            "You stay safe by waiting for extra blocks to stack up. As more blocks pile on, the cheat's chance of winning drops to zero!"
+          ],
+          "practice": {
+            "prompt": "What can a dishonest player achieve by building a secret side-chain?",
+            "choices": [
+              "Shut down the entire peer-to-peer network",
+              "Steal coins belonging to completely random users",
+              "Try to take back money they recently spent",
+              "Create unlimited free money out of thin air"
+            ],
+            "answerIndex": 2,
+            "explanation": "Cheaters cannot create magic money or steal from others; they can only attempt to reverse their own recent payments."
+          }
+        }
+      ],
+      "facts": [
+        "Traditional banks protect privacy by restricting information access to just the involved parties.",
+        "Using a fresh key pair for every transaction acts as a firewall against snoops.",
+        "Multi-input transactions inevitably reveal that their funding sources share an owner.",
+        "A dishonest sender trying to rewrite history is mathematically modeled as a Gambler's Ruin problem.",
+        "Waiting for z blocks to link after your payment causes the fraud probability to drop exponentially."
+      ],
+      "boss": {
+        "name": "THE 51% ATTACKER",
+        "questions": [
+          {
+            "prompt": "What unavoidable event links transactions together even when using cryptography?",
+            "choices": [
+              "Using multi-input transactions that share an owner",
+              "Waiting for z blocks to pile up on the chain",
+              "Sending coins to a financial institution",
+              "Leaving and rejoining the peer network"
+            ],
+            "answerIndex": 0,
+            "explanation": "Combining multiple inputs necessarily shows they were controlled by the same person, risking privacy if a key is exposed."
+          },
+          {
+            "prompt": "Can a dishonest node secretly building an alternate chain create arbitrary money out of thin air?",
+            "choices": [
+              "Yes, if they work fast enough in secret",
+              "Yes, because the network structure is minimal",
+              "No, honest nodes will reject invalid transactions",
+              "Only if they control all network CPU power"
+            ],
+            "answerIndex": 2,
+            "explanation": "The system rules stop arbitrary changes; honest nodes will never accept invalid blocks or fake money."
+          },
+          {
+            "prompt": "What mathematical game describes an attacker trying to catch up to the honest chain from a deficit?",
+            "choices": [
+              "An infinite loop of cryptographic hashing",
+              "A linear cryptographic key guessing race",
+              "A zero-sum digital poker tournament",
+              "A Binomial Random Walk and Gambler's Ruin"
+            ],
+            "answerIndex": 3,
+            "explanation": "The race between chains mirrors a Binomial Random Walk, and catching up is analogous to the Gambler's Ruin problem."
+          }
+        ]
+      }
+    }
+  ]
+}

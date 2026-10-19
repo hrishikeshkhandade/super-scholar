@@ -1,0 +1,554 @@
+{
+  "id": "attention-2017",
+  "title": "Attention Is All You Need",
+  "authors": [
+    "Ashish Vaswani",
+    "Noam Shazeer",
+    "Niki Parmar",
+    "Jakob Uszkoreit",
+    "Llion Jones",
+    "Aidan N. Gomez",
+    "Łukasz Kaiser",
+    "Illia Polosukhin"
+  ],
+  "year": 2017,
+  "subject": "Machine Learning",
+  "summary": "Introduces the Transformer, a neural network that reads whole sentences at once using attention instead of recurrence, the basis of today's large language models.",
+  "intro": {
+    "title": "A New Quest",
+    "speaker": "PROF. QUANT",
+    "pages": [
+      "Welcome, scholar! Today's paper: \"Attention Is All You Need\".",
+      "It is 15 pages long. I turned it into 4 worlds: The Endless Queue, The Attention Arena, The Training Grounds, The Speed Transformer.",
+      "An AI helped me explain this paper in plain words. AI can slip up, so check anything important against the paper.",
+      "Move with A and D, jump with W. Stomp bears for fun facts, and reach each flag for a lesson. Go!"
+    ]
+  },
+  "worlds": [
+    {
+      "id": "world-1",
+      "name": "World 1: The Endless Queue",
+      "section": "Introduction",
+      "cutscenes": [
+        {
+          "title": "The Waiting Line Trap",
+          "speaker": "PROF. QUANT",
+          "pages": [
+            "Welcome student! I am Prof. Quant. Traditional AI reads sentences like a single file line, one word at a time.",
+            "We call this sequential computation. It is like passing a secret message down a very long row of whispering students.",
+            "Because of this line-up, the computer must wait for word one before looking at word two. It is terribly slow!"
+          ],
+          "practice": {
+            "prompt": "Why do older AI models take so long to process a sentence?",
+            "choices": [
+              "They use too many colorful graphics",
+              "They forget to turn on the computer",
+              "They read the end of the sentence first",
+              "They process words one by one in a strict line"
+            ],
+            "answerIndex": 3,
+            "explanation": "Older models process data sequentially, meaning they must wait for each word in the line before moving on."
+          }
+        },
+        {
+          "title": "The Memory Gap",
+          "speaker": "PROF. QUANT",
+          "pages": [
+            "Imagine reading a huge book. By the time you reach the last page, you might forget the very first sentence.",
+            "Older models struggle the exact same way. When words are too far apart in a sentence, the AI loses track of their connection.",
+            "Even when these models used a helper tool called attention, they still kept the slow line-up trap attached."
+          ],
+          "practice": {
+            "prompt": "What happens when words are far apart in older models?",
+            "choices": [
+              "The words turn into numbers",
+              "It becomes hard to connect their meanings",
+              "The computer explodes instantly",
+              "The font size automatically increases"
+            ],
+            "answerIndex": 1,
+            "explanation": "Passing information through a long chain of words makes it hard for the model to remember distant connections."
+          }
+        },
+        {
+          "title": "Spotlight on Self-Attention",
+          "speaker": "PROF. QUANT",
+          "pages": [
+            "Meet self-attention, also known as intra-attention! It is a clever trick that connects every word in a sequence at once.",
+            "Instead of waiting in a slow line, every word can look at every other word simultaneously to grasp the whole picture.",
+            "We built a brand new design called the Transformer using only this spotlight trick, tossing out the old line-up completely!"
+          ],
+          "practice": {
+            "prompt": "How does self-attention improve upon older methods?",
+            "choices": [
+              "It makes the computer screen brighter",
+              "It relates different positions in a sequence together",
+              "It translates only single letters",
+              "It deletes hard words from the text"
+            ],
+            "answerIndex": 1,
+            "explanation": "Self-attention relates different positions of a single sequence directly, building a richer representation without the wait."
+          }
+        }
+      ],
+      "facts": [
+        "Old AI models read sentences like a stubborn single-file line of kids waiting for lunch.",
+        "Trying to remember a word far away in a long sentence is like shouting a secret across a hurricane.",
+        "Self-attention lets every single word in a sentence chat with all the other words at the exact same time.",
+        "Past models paired attention with slow helper networks, like putting a sports engine on a wooden cart.",
+        "The Transformer design ditches the old sequential waiting game entirely to speed things up."
+      ],
+      "boss": {
+        "name": "THE RNN SNAIL",
+        "questions": [
+          {
+            "prompt": "What is the main bottleneck of traditional sequence models?",
+            "choices": [
+              "Reading books upside down",
+              "Using too much electricity",
+              "Not having enough memory chips installed",
+              "Sequential computation along symbol positions"
+            ],
+            "answerIndex": 3,
+            "explanation": "Sequential computation forces the model to process steps in a strict order, creating a major slowdown."
+          },
+          {
+            "prompt": "What does self-attention (intra-attention) actually do?",
+            "choices": [
+              "Translates languages without a dictionary",
+              "Calculates a representation by relating sequence positions",
+              "Speeds up the computer fan",
+              "Hides difficult words from the user"
+            ],
+            "answerIndex": 1,
+            "explanation": "It relates different positions of a single sequence to build a cohesive view of the data."
+          },
+          {
+            "prompt": "Why did previous attention mechanisms still suffer from connection issues?",
+            "choices": [
+              "They only worked on numbers",
+              "The ink was too faint",
+              "They ran without electricity",
+              "They were built inside recurrent networks"
+            ],
+            "answerIndex": 3,
+            "explanation": "Using attention alongside recurrent networks meant the underlying sequential bottleneck remained."
+          },
+          {
+            "prompt": "What makes distant word dependencies hard for recurrent models?",
+            "choices": [
+              "The step-by-step chain of computation",
+              "Computers dislike long sentences",
+              "The dictionary is too heavy",
+              "The font is too small"
+            ],
+            "answerIndex": 0,
+            "explanation": "Passing data step-by-step over long distances causes the signal to degrade or get lost."
+          },
+          {
+            "prompt": "What is the big promise of the Transformer architecture?",
+            "choices": [
+              "Replacing human writers",
+              "Dispensing with recurrence entirely",
+              "Only reading short phrases",
+              "Using zero computer memory"
+            ],
+            "answerIndex": 1,
+            "explanation": "The Transformer relies solely on attention mechanisms, dropping recurrence and convolutions completely."
+          }
+        ]
+      }
+    },
+    {
+      "id": "world-2",
+      "name": "World 2: The Attention Arena",
+      "section": "Model Architecture",
+      "cutscenes": [
+        {
+          "title": "The Transformer Blueprint",
+          "speaker": "PROF. QUANT",
+          "pages": [
+            "Welcome to the Arena! Our model is a stack of layers designed to process information in parallel rather than one piece at a time.",
+            "We use an encoder to understand the input and a decoder to generate the output, both built from identical blocks.",
+            "Each block contains sub-layers that help the data flow cleanly, ensuring the model stays stable during training."
+          ],
+          "practice": {
+            "prompt": "Why does the model use identical stacks of layers instead of different ones?",
+            "choices": [
+              "To make it slower",
+              "To save electricity",
+              "To keep the structure simple",
+              "To confuse the user"
+            ],
+            "answerIndex": 2,
+            "explanation": "Using identical layers creates a consistent, modular design that is easier to build and scale."
+          }
+        },
+        {
+          "title": "Multi-Head Focus",
+          "speaker": "PROF. QUANT",
+          "pages": [
+            "Imagine looking at a sentence with eight different magnifying glasses at once. That is multi-head attention.",
+            "Each 'head' focuses on a different part of the meaning, like grammar in one and word relationships in another.",
+            "By pooling these views, the model understands complex patterns better than any single focus could."
+          ],
+          "practice": {
+            "prompt": "What is the main benefit of using multiple attention heads?",
+            "choices": [
+              "It removes all errors",
+              "It doubles the memory",
+              "It allows parallel focus",
+              "It makes the text shorter"
+            ],
+            "answerIndex": 2,
+            "explanation": "Multiple heads allow the model to look at different parts of the data simultaneously, capturing various types of relationships."
+          }
+        },
+        {
+          "title": "Mapping the Sequence",
+          "speaker": "PROF. QUANT",
+          "pages": [
+            "Words don't have inherent positions in our math, so we inject 'positional encodings' to show where each word sits.",
+            "This tells the model the difference between 'the cat ate the fish' and 'the fish ate the cat'.",
+            "We also use residual connections, which act like express lanes for data to skip over complex layers if needed."
+          ],
+          "practice": {
+            "prompt": "Why do we add positional information to the input?",
+            "choices": [
+              "To change the word meanings",
+              "To help order matter",
+              "To increase the size",
+              "To color code the text"
+            ],
+            "answerIndex": 1,
+            "explanation": "Without positional encodings, the model would treat a sentence like a bag of words, ignoring the critical order of the sequence."
+          }
+        }
+      ],
+      "facts": [
+        "The Transformer uses 8 parallel attention heads to see the big picture.",
+        "Residual connections act like shortcuts to keep data flowing smoothly.",
+        "Positional encoding is the secret sauce that teaches the model word order.",
+        "Attention heads are surprisingly good at learning sentence structure automatically.",
+        "The model uses the same weight matrix in multiple spots to stay efficient."
+      ],
+      "boss": {
+        "name": "THE HYDRA OF HEADS",
+        "questions": [
+          {
+            "prompt": "What happens if we remove the residual connections?",
+            "choices": [
+              "The model gets faster",
+              "The output becomes random",
+              "Data flow becomes unstable",
+              "It uses less memory"
+            ],
+            "answerIndex": 2,
+            "explanation": "Residual connections allow information to pass through layers easily, preventing the loss of important signals during training."
+          },
+          {
+            "prompt": "How does multi-head attention improve long-range dependencies?",
+            "choices": [
+              "By deleting the decoder",
+              "By shortening the path length",
+              "By adding more memory",
+              "By ignoring long words"
+            ],
+            "answerIndex": 1,
+            "explanation": "Attention allows any position to connect to any other directly, making the 'distance' between related words very short."
+          },
+          {
+            "prompt": "Why does the decoder mask future positions?",
+            "choices": [
+              "To reduce complexity",
+              "To speed up the GPU",
+              "To save space",
+              "To prevent cheating"
+            ],
+            "answerIndex": 3,
+            "explanation": "The model cannot 'see' the future words it is about to generate, so it masks them to keep the training honest."
+          },
+          {
+            "prompt": "What is the role of the encoder-decoder connection?",
+            "choices": [
+              "To store the input",
+              "To encrypt the data",
+              "To map input to output",
+              "To delete the input"
+            ],
+            "answerIndex": 2,
+            "explanation": "The decoder uses the encoder's output to understand the original input while generating the translation."
+          },
+          {
+            "prompt": "Why do we use the same dimension for all layers?",
+            "choices": [
+              "To use fewer GPUs",
+              "To limit the model",
+              "To keep math consistent",
+              "To save on ink"
+            ],
+            "answerIndex": 2,
+            "explanation": "Having a fixed dimension (d_model = 512) makes it easy to pass data between layers without complex resizing."
+          }
+        ]
+      }
+    },
+    {
+      "id": "world-3",
+      "name": "World 3: The Training Grounds",
+      "section": "Training",
+      "cutscenes": [
+        {
+          "title": "Prep School: Cutting Up Words",
+          "speaker": "PROF. QUANT",
+          "pages": [
+            "Welcome student! Before our AI can learn languages, we chop text into bite-sized pieces called tokens using smart splitting tricks.",
+            "For English and German, we use a shared dictionary of about 37,000 text chunks. For French, we use a 32,000 word-piece dictionary!",
+            "Sentences are grouped by length so our batches fit nicely together like books of similar sizes on a shelf."
+          ],
+          "practice": {
+            "prompt": "Why do we group sentence pairs by approximate length into batches?",
+            "choices": [
+              "To save computer electricity",
+              "To make the dictionary smaller",
+              "To make training run smoother",
+              "To translate faster later"
+            ],
+            "answerIndex": 2,
+            "explanation": "Grouping similar lengths helps keep the training process organized and efficient."
+          }
+        },
+        {
+          "title": "Sweat and Checkpoints",
+          "speaker": "PROF. QUANT",
+          "pages": [
+            "Our base model trains for 100,000 steps, taking about 12 hours total. Each tiny step takes less than half a second!",
+            "Bigger models take a whole second per step. We also use dropout, a clever trick that drops random connections to keep our model from cheating.",
+            "At the end, we don't just pick one final model. We average the last few saved checkpoints to get our best superhero brain!"
+          ],
+          "practice": {
+            "prompt": "What is the main benefit of using dropout during training?",
+            "choices": [
+              "It shrinks the vocabulary size",
+              "It increases the batch length",
+              "It prevents the model from over-fitting",
+              "It speeds up every training step"
+            ],
+            "answerIndex": 2,
+            "explanation": "Dropout randomly turns off connections, which stops the model from memorizing and helps it generalize."
+          }
+        },
+        {
+          "title": "The Grammar Gym",
+          "speaker": "PROF. QUANT",
+          "pages": [
+            "Testing our model's limits, we threw grammar parsing tasks at it using Wall Street Journal sentences.",
+            "Even when trained on a tiny dataset of just 40,000 sentences, our Transformer beat older parsers easily!",
+            "When we tried different numbers of attention heads, we learned that too many or too few hurt performance. Balance is key!"
+          ],
+          "practice": {
+            "prompt": "What happened when the model used too many attention heads?",
+            "choices": [
+              "The vocabulary expanded",
+              "Training speed doubled",
+              "It required zero checkpoints",
+              "Translation quality dropped off"
+            ],
+            "answerIndex": 3,
+            "explanation": "The text notes that quality drops off with too many heads, proving that finding the right balance is tricky."
+          }
+        }
+      ],
+      "facts": [
+        "Base models train for 100,000 steps, which takes about 12 hours of total workout time.",
+        "English and German share a cozy vocabulary dictionary of about 37,000 tokens.",
+        "A tiny dataset of just 40K sentences was enough to beat older complex parsers.",
+        "We average the last 20 checkpoints together to craft a super smart big model.",
+        "Each step for our base model takes a speedy 0.4 seconds to complete."
+      ],
+      "boss": {
+        "name": "THE WARMUP WARDEN",
+        "questions": [
+          {
+            "prompt": "How are sentences initially broken down before entering our model?",
+            "choices": [
+              "Using random punctuation marks",
+              "By slicing every word into single letters",
+              "Using byte-pair encoding into tokens",
+              "Into full paragraphs at a time"
+            ],
+            "answerIndex": 2,
+            "explanation": "Sentences are encoded using byte-pair encoding to create manageable tokens."
+          },
+          {
+            "prompt": "What is done to create the final base model instead of trusting just one save file?",
+            "choices": [
+              "Running it for 12 extra hours",
+              "Averaging the last 5 checkpoints",
+              "Dropping all attention heads",
+              "Combining 100,000 random steps"
+            ],
+            "answerIndex": 1,
+            "explanation": "The base model's final weights are an average of its last 5 saved snapshots, taken 10 minutes apart."
+          },
+          {
+            "prompt": "Why did tweaking the number of attention heads show mixed results?",
+            "choices": [
+              "It made the model run infinitely",
+              "Too many or too few hurt quality",
+              "It changed the vocabulary size",
+              "It removed the need for dropout"
+            ],
+            "answerIndex": 1,
+            "explanation": "Both single-head and too many heads performed worse, showing compatibility is delicate."
+          },
+          {
+            "prompt": "How did the Transformer perform on Penn Treebank parsing with only 40K sentences?",
+            "choices": [
+              "It used a 37K French vocabulary",
+              "It required 3.5 days on GPUs",
+              "It failed completely without 36M",
+              "It outperformed older models"
+            ],
+            "answerIndex": 3,
+            "explanation": "The Transformer outperformed the Berkeley-Parser even when trained on only 40K sentences."
+          }
+        ]
+      }
+    },
+    {
+      "id": "world-4",
+      "name": "World 4: The Speed Transformer",
+      "section": "Conclusion",
+      "cutscenes": [
+        {
+          "title": "Ditching the Old Lane",
+          "speaker": "PROF. QUANT",
+          "pages": [
+            "Traditional AI models processed words one by one, like a person walking through a maze.",
+            "This slow, step-by-step method acts like a bottleneck for learning.",
+            "The Transformer throws this away, letting the model look at all words at once."
+          ],
+          "practice": {
+            "prompt": "Why does processing words all at once help the model?",
+            "choices": [
+              "It confuses the model",
+              "It makes words longer",
+              "It uses less memory",
+              "It removes the bottleneck"
+            ],
+            "answerIndex": 3,
+            "explanation": "Looking at everything simultaneously allows the model to work faster than waiting for one word to finish before starting the next."
+          }
+        },
+        {
+          "title": "Winning the Race",
+          "speaker": "PROF. QUANT",
+          "pages": [
+            "We tested our new model on huge language translation challenges.",
+            "It beat previous champions that used complex, older structures.",
+            "Our model even outperformed groups of multiple models working together."
+          ],
+          "practice": {
+            "prompt": "How did the Transformer perform against older models?",
+            "choices": [
+              "It was slightly slower",
+              "It lost to ensembles",
+              "It tied with them",
+              "It set a new record"
+            ],
+            "answerIndex": 3,
+            "explanation": "The Transformer outperformed previous top-tier models and even groups of models, establishing a new state-of-the-art result."
+          }
+        },
+        {
+          "title": "Future Frontiers",
+          "speaker": "PROF. QUANT",
+          "pages": [
+            "We want to make sure the model does not have to act in a strict sequence.",
+            "This means finding ways to generate text more freely.",
+            "We are also eager to see how this tech solves problems beyond just translation."
+          ],
+          "practice": {
+            "prompt": "What is a main goal for future research on these models?",
+            "choices": [
+              "Reducing translation quality",
+              "Applying them to new tasks",
+              "Removing all attention",
+              "Making them strictly sequential"
+            ],
+            "answerIndex": 1,
+            "explanation": "The team is excited to apply their attention-based models to various new tasks beyond their initial translation success."
+          }
+        }
+      ],
+      "facts": [
+        "The Transformer trains way faster than older models using recurrent or convolutional layers.",
+        "It beat the previous best scores on both English-to-German and English-to-French translations.",
+        "The model outperformed even ensembles, which are groups of models working as a team.",
+        "The researchers released their training code publicly on GitHub for everyone to use.",
+        "The team aims to make AI generation less sequential to improve performance even further."
+      ],
+      "boss": {
+        "name": "THE BLEU BEAST",
+        "questions": [
+          {
+            "prompt": "Why is the Transformer faster than older models?",
+            "choices": [
+              "It processes data in parallel",
+              "It ignores the input",
+              "It uses fewer words",
+              "It only works on English"
+            ],
+            "answerIndex": 0,
+            "explanation": "By moving away from sequential processing, it can handle data in parallel, drastically cutting down training time."
+          },
+          {
+            "prompt": "What does 'state of the art' mean in this context?",
+            "choices": [
+              "The slowest version",
+              "The highest quality result",
+              "A painting of a robot",
+              "An old method"
+            ],
+            "answerIndex": 1,
+            "explanation": "It refers to the highest level of performance currently achieved by any model in that field."
+          },
+          {
+            "prompt": "What is an ensemble in AI?",
+            "choices": [
+              "A translation error",
+              "A type of computer hardware",
+              "A group of models working together",
+              "A single model"
+            ],
+            "answerIndex": 2,
+            "explanation": "An ensemble combines several models to try and get a better result than any single model could alone."
+          },
+          {
+            "prompt": "What is a key focus for future Transformer improvements?",
+            "choices": [
+              "Avoiding translation tasks",
+              "Reducing the need for sequences",
+              "Deleting the source code",
+              "Making it more sequential"
+            ],
+            "answerIndex": 1,
+            "explanation": "The researchers explicitly state that making generation less sequential is one of their next big goals."
+          },
+          {
+            "prompt": "Which of these is true about the Transformer's impact?",
+            "choices": [
+              "It only works on German",
+              "It requires more time to train",
+              "It performs worse than old models",
+              "It sets new translation records"
+            ],
+            "answerIndex": 3,
+            "explanation": "The Transformer established new high scores on major translation tasks, proving its superiority over older designs."
+          }
+        ]
+      }
+    }
+  ]
+}
