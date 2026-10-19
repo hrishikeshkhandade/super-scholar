@@ -1,13 +1,13 @@
 import Phaser from "phaser";
 import { audio } from "../audio/audio";
 import { NES } from "../palette";
-import { loadSettings, saveSettings } from "../save";
+import { VOLUME_LEVELS, loadSettings, saveSettings } from "../save";
 import { addTapButton, isTouchDevice } from "../touchControls";
-import { GAME_HEIGHT, GAME_WIDTH, Menu, panel, textStyle } from "../ui";
+import { GAME_HEIGHT, GAME_WIDTH, Menu, panel, textStyle, volumeLabel } from "../ui";
 
 // Shown on top of a paused level or boss fight. Esc or P resumes.
 
-const onOff = (value: boolean) => (value ? "ON" : "OFF");
+const nextVolume = (volume: number) => VOLUME_LEVELS[(VOLUME_LEVELS.indexOf(volume) + 1) % VOLUME_LEVELS.length];
 
 export class PauseScene extends Phaser.Scene {
   private from = "";
@@ -27,21 +27,22 @@ export class PauseScene extends Phaser.Scene {
     const menu = new Menu(this, 280, 180, [
       { label: "RESUME", onSelect: () => this.resume() },
       {
-        label: `MUSIC: ${onOff(settings.music)}`,
+        label: `MUSIC: ${volumeLabel(settings.musicVolume)}`,
         onSelect: () => {
-          settings.music = !settings.music;
+          settings.musicVolume = nextVolume(settings.musicVolume);
           saveSettings(settings);
           audio.applySettings(settings);
-          menu.setLabel(1, `MUSIC: ${onOff(settings.music)}`);
+          menu.setLabel(1, `MUSIC: ${volumeLabel(settings.musicVolume)}`);
         },
       },
       {
-        label: `SOUND: ${onOff(settings.sfx)}`,
+        label: `SOUND: ${volumeLabel(settings.sfxVolume)}`,
         onSelect: () => {
-          settings.sfx = !settings.sfx;
+          settings.sfxVolume = nextVolume(settings.sfxVolume);
           saveSettings(settings);
           audio.applySettings(settings);
-          menu.setLabel(2, `SOUND: ${onOff(settings.sfx)}`);
+          audio.playSfx("coin"); // a quick blip at the new volume
+          menu.setLabel(2, `SOUND: ${volumeLabel(settings.sfxVolume)}`);
         },
       },
       {

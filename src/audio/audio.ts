@@ -67,7 +67,8 @@ class AudioEngine {
   applySettings(settings: Settings): void {
     const styleChanged = settings.musicStyle !== this.settings.musicStyle;
     this.settings = { ...settings };
-    if (!settings.music) this.stopMusic();
+    this.applyVolumes();
+    if (settings.musicVolume === 0) this.stopMusic();
     else if (this.songName && (styleChanged || !this.timer)) this.startSong(this.songName);
   }
 
@@ -76,11 +77,17 @@ class AudioEngine {
   playMusic(name: SongName): void {
     if (name === this.songName && this.timer) return;
     this.songName = name;
-    if (this.settings.music) this.startSong(name);
+    if (this.settings.musicVolume > 0) this.startSong(name);
+  }
+
+  // 100% is the original loudness; lower levels scale it down.
+  private applyVolumes(): void {
+    if (this.musicGain) this.musicGain.gain.value = (MUSIC_VOLUME * this.settings.musicVolume) / 100;
+    if (this.sfxGain) this.sfxGain.gain.value = (SFX_VOLUME * this.settings.sfxVolume) / 100;
   }
 
   playSfx(name: SfxName): void {
-    if (!this.settings.sfx || !this.context || this.context.state !== "running") return;
+    if (this.settings.sfxVolume === 0 || !this.context || this.context.state !== "running") return;
     const t = this.context.currentTime;
     switch (name) {
       case "move":
@@ -160,7 +167,8 @@ class AudioEngine {
     const data = this.noise.getChannelData(0);
     for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
 
-    if (this.songName && this.settings.music) this.startSong(this.songName);
+    this.applyVolumes();
+    if (this.songName && this.settings.musicVolume > 0) this.startSong(this.songName);
   }
 
   private startSong(name: SongName): void {

@@ -16,9 +16,9 @@ export type TextSpeed = "slow" | "normal" | "fast";
 
 export interface Settings {
   textSpeed: TextSpeed;
-  music: boolean;
+  musicVolume: number; // 0 (off) to 100, in VOLUME_LEVELS steps
   musicStyle: MusicStyle;
-  sfx: boolean;
+  sfxVolume: number;
 }
 
 export const MUSIC_STYLES: MusicStyle[] = ["upbeat", "tradingFloor"];
@@ -33,7 +33,16 @@ const NOTEBOOK_KEY = "super-scholar.notebook";
 const CLEARED_KEY = "super-scholar.cleared";
 const STARS_KEY = "super-scholar.stars";
 const MAX_SAVED_UPLOADS = 3;
-const DEFAULT_SETTINGS: Settings = { textSpeed: "normal", music: true, musicStyle: "upbeat", sfx: true };
+// 100% is the game's original loudness.
+export const VOLUME_LEVELS = [0, 25, 50, 75, 100];
+const DEFAULT_SETTINGS: Settings = { textSpeed: "normal", musicVolume: 100, musicStyle: "upbeat", sfxVolume: 100 };
+
+// A saved volume, or an on/off switch from saves made before volume levels.
+function volumeFrom(value: unknown, legacySwitch: unknown, fallback: number): number {
+  if (VOLUME_LEVELS.includes(value as number)) return value as number;
+  if (typeof legacySwitch === "boolean") return legacySwitch ? 100 : 0;
+  return fallback;
+}
 
 type Storage = Pick<globalThis.Storage, "getItem" | "setItem" | "removeItem">;
 
@@ -109,12 +118,12 @@ export function clearProgress(storage: Storage | null = browserStorage()): void 
 }
 
 export function loadSettings(storage: Storage | null = browserStorage()): Settings {
-  const value = (readJson(storage, SETTINGS_KEY) ?? {}) as Partial<Settings>;
+  const value = (readJson(storage, SETTINGS_KEY) ?? {}) as Partial<Settings> & { music?: unknown; sfx?: unknown };
   return {
     textSpeed: TEXT_SPEEDS.includes(value.textSpeed!) ? value.textSpeed! : DEFAULT_SETTINGS.textSpeed,
-    music: typeof value.music === "boolean" ? value.music : DEFAULT_SETTINGS.music,
+    musicVolume: volumeFrom(value.musicVolume, value.music, DEFAULT_SETTINGS.musicVolume),
     musicStyle: MUSIC_STYLES.includes(value.musicStyle!) ? value.musicStyle! : DEFAULT_SETTINGS.musicStyle,
-    sfx: typeof value.sfx === "boolean" ? value.sfx : DEFAULT_SETTINGS.sfx,
+    sfxVolume: volumeFrom(value.sfxVolume, value.sfx, DEFAULT_SETTINGS.sfxVolume),
   };
 }
 

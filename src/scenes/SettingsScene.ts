@@ -1,11 +1,10 @@
 import Phaser from "phaser";
 import { audio } from "../audio/audio";
 import { NES } from "../palette";
-import { MUSIC_STYLES, TEXT_SPEEDS, clearProgress, loadSettings, saveSettings, type Settings } from "../save";
-import { GAME_WIDTH, Menu, textStyle } from "../ui";
+import { MUSIC_STYLES, TEXT_SPEEDS, VOLUME_LEVELS, clearProgress, loadSettings, saveSettings, type Settings } from "../save";
+import { GAME_WIDTH, Menu, textStyle, volumeLabel } from "../ui";
 
 const STYLE_LABELS = { upbeat: "UPBEAT", tradingFloor: "TRADING FLOOR" } as const;
-const onOff = (value: boolean) => (value ? "ON" : "OFF");
 
 export class SettingsScene extends Phaser.Scene {
   constructor() {
@@ -23,9 +22,9 @@ export class SettingsScene extends Phaser.Scene {
 
     const labels = (s: Settings) => [
       `TEXT SPEED: ${s.textSpeed.toUpperCase()}`,
-      `MUSIC: ${onOff(s.music)}`,
+      `MUSIC: ${volumeLabel(s.musicVolume)}`,
       `MUSIC STYLE: ${STYLE_LABELS[s.musicStyle]}`,
-      `SOUND EFFECTS: ${onOff(s.sfx)}`,
+      `SOUND EFFECTS: ${volumeLabel(s.sfxVolume)}`,
     ];
     const update = (change: Partial<Settings>, message: string) => {
       Object.assign(settings, change);
@@ -39,16 +38,25 @@ export class SettingsScene extends Phaser.Scene {
 
     const menu = new Menu(this, 150, 110, [
       { label: speedLabel, onSelect: () => update({ textSpeed: next(TEXT_SPEEDS, settings.textSpeed) }, "Saved") },
-      { label: musicLabel, onSelect: () => update({ music: !settings.music }, "Saved") },
+      {
+        label: musicLabel,
+        onSelect: () => update({ musicVolume: next(VOLUME_LEVELS, settings.musicVolume) }, "Saved"),
+      },
       {
         label: styleLabel,
         onSelect: () =>
           update(
             { musicStyle: next(MUSIC_STYLES, settings.musicStyle) },
-            settings.music ? "Saved - previewing now" : "Saved - turn music on to hear it",
+            settings.musicVolume > 0 ? "Saved - previewing now" : "Saved - turn music up to hear it",
           ),
       },
-      { label: sfxLabel, onSelect: () => update({ sfx: !settings.sfx }, "Saved") },
+      {
+        label: sfxLabel,
+        onSelect: () => {
+          update({ sfxVolume: next(VOLUME_LEVELS, settings.sfxVolume) }, "Saved");
+          audio.playSfx("coin"); // a quick blip at the new volume
+        },
+      },
       {
         label: "RESET PROGRESS",
         onSelect: () => {

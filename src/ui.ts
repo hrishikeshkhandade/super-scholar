@@ -6,6 +6,9 @@ import { FONT, NES, css } from "./palette";
 export const GAME_WIDTH = 800;
 export const GAME_HEIGHT = 450;
 export const MAX_LIVES = 5;
+
+// "OFF" or "75%", for the music and sound settings.
+export const volumeLabel = (volume: number) => (volume === 0 ? "OFF" : `${volume}%`);
 export const START_LIVES = 3;
 
 export function textStyle(

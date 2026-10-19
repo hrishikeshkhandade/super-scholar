@@ -39,8 +39,8 @@ describe("save data", () => {
 
   it("starts with default settings and remembers changes", () => {
     const storage = memoryStorage();
-    expect(loadSettings(storage)).toEqual({ textSpeed: "normal", music: true, musicStyle: "upbeat", sfx: true });
-    const changed = { textSpeed: "fast", music: false, musicStyle: "tradingFloor", sfx: false } as const;
+    expect(loadSettings(storage)).toEqual({ textSpeed: "normal", musicVolume: 100, musicStyle: "upbeat", sfxVolume: 100 });
+    const changed = { textSpeed: "fast", musicVolume: 25, musicStyle: "tradingFloor", sfxVolume: 0 } as const;
     saveSettings(changed, storage);
     expect(loadSettings(storage)).toEqual(changed);
   });
@@ -48,10 +48,17 @@ describe("save data", () => {
   it("keeps old saves working and ignores bad setting values", () => {
     const storage = memoryStorage();
     storage.setItem("super-scholar.settings", JSON.stringify({ textSpeed: "slow" }));
-    expect(loadSettings(storage)).toEqual({ textSpeed: "slow", music: true, musicStyle: "upbeat", sfx: true });
-    storage.setItem("super-scholar.settings", JSON.stringify({ music: "loud", musicStyle: "jazz" }));
-    expect(loadSettings(storage).music).toBe(true);
-    expect(loadSettings(storage).musicStyle).toBe("upbeat");
+    expect(loadSettings(storage)).toEqual({ textSpeed: "slow", musicVolume: 100, musicStyle: "upbeat", sfxVolume: 100 });
+    storage.setItem("super-scholar.settings", JSON.stringify({ musicVolume: 33, sfxVolume: "loud", musicStyle: "jazz" }));
+    expect(loadSettings(storage)).toMatchObject({ musicVolume: 100, sfxVolume: 100, musicStyle: "upbeat" });
+  });
+
+  // Saves from before volume levels had on/off switches; they carry over
+  // (on = full volume, as before; off stays off).
+  it("turns old on/off sound settings into volumes", () => {
+    const storage = memoryStorage();
+    storage.setItem("super-scholar.settings", JSON.stringify({ music: false, sfx: true }));
+    expect(loadSettings(storage)).toMatchObject({ musicVolume: 0, sfxVolume: 100 });
   });
 
   it("still works when storage is unavailable", () => {
