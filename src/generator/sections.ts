@@ -17,6 +17,8 @@ export interface PaperOutline {
 
 const END_HEADINGS = /^(\d+\.?\s*)?(references|bibliography|acknowledg(e)?ments?|appendix|recommended reading|further reading|notes|competing interests|conflicts? of interest|funding|author contributions|data availability)\b/i;
 const NUMBERED_HEADING = /^(\d+(\.\d+)*\.?|[IVX]+\.)\s+[A-Z][^.!?]{2,70}$/;
+const ARXIV_STAMP = /^arXiv:\S+/i;
+const REFERENCES_LINE = /^(\d+\.?\s*)?(references|bibliography)$/i;
 const STANDARD_HEADING = /^(introduction|background|related work|methods?|results|discussion|conclusions?|summary)\b/i;
 
 // The font size used by most of the text, weighted by how much text uses it.
@@ -86,8 +88,8 @@ export function outlinePaper(allLines: TextLine[]): PaperOutline {
   const body = bodyFontSize(lines);
   const vocabulary = wordSet(lines);
 
-  // Title: the biggest text on the first page.
-  const firstPage = lines.filter((line) => line.page === 1 && line.text.length > 3);
+  // Title: the biggest text on the first page (not arXiv's sideways stamp).
+  const firstPage = lines.filter((line) => line.page === 1 && line.text.length > 3 && !ARXIV_STAMP.test(line.text));
   const titleSize = Math.max(...firstPage.map((line) => line.size), 0);
   const titleLines = firstPage.filter((line) => line.size === titleSize);
   const title = titleSize > body * 1.15 ? titleLines.map((line) => line.text).join(" ") : undefined;
@@ -98,8 +100,12 @@ export function outlinePaper(allLines: TextLine[]): PaperOutline {
   // number in a bigger font then can't become a world.
   const candidate = (line: TextLine) =>
     line.size >= body * 1.12 && line.text.length <= 90 && !titleLines.includes(line) && looksLikeWords(line.text);
+  // Only text before References decides the heading sizes: appendices often
+  // have big figure labels that aren't headings at all.
+  const referencesAt = lines.findIndex((line) => REFERENCES_LINE.test(line.text));
+  const beforeEnd = referencesAt >= 0 ? lines.slice(0, referencesAt) : lines;
   const sizeCounts = new Map<number, number>();
-  for (const line of lines.filter(candidate)) sizeCounts.set(line.size, (sizeCounts.get(line.size) ?? 0) + 1);
+  for (const line of beforeEnd.filter(candidate)) sizeCounts.set(line.size, (sizeCounts.get(line.size) ?? 0) + 1);
   const topSize = [...sizeCounts].filter(([, count]) => count >= 2).sort((a, b) => b[0] - a[0])[0]?.[0];
   const useNumbered = topSize === undefined;
   const sameSize = (a: number, b: number) => Math.abs(a - b) < 0.5;
@@ -148,7 +154,7 @@ export function outlinePaper(allLines: TextLine[]): PaperOutline {
     const sub = !top && isSub(line);
     // References and other end matter stop the lessons, whatever their size
     // or numbering (some papers set "References" in plain bold body text).
-    const standaloneReferences = /^(\d+\.?\s*)?(references|bibliography)$/i.test(line.text);
+    const standaloneReferences = REFERENCES_LINE.test(line.text);
     if (standaloneReferences || ((top || sub || candidate(line)) && END_HEADINGS.test(line.text))) break;
     if (top) {
       if (previousWasTop && heading && continues(heading, line)) {

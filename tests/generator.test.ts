@@ -148,5 +148,25 @@ describe("generator pieces", () => {
     const outline = outlinePaper(lines);
     expect(outline.sections.map((section) => section.heading)).toEqual(["1. Introduction", "2. The light reactions", "3. The Calvin cycle"]);
   });
+
+  // Regression ("Attention Is All You Need" on arXiv): the vertical arXiv
+  // stamp was taken as the title, and big figure labels after References
+  // were taken as the main heading size, so no sections were found.
+  it("ignores the arXiv stamp and big figure text after References", () => {
+    const lines: TextLine[] = [
+      { text: "How Plants Make Food From Light", size: 17.2, page: 1 },
+      { text: "arXiv:1706.03762v7 [cs.CL] 2 Aug 2023", size: 20, page: 1 },
+    ];
+    Object.entries(SECTIONS).forEach(([heading, sentences], i) => {
+      lines.push({ text: heading, size: 12, page: i + 1 });
+      sentences.forEach((sentence) => lines.push({ text: sentence, size: 10, page: i + 1 }));
+    });
+    lines.push({ text: "References", size: 12, page: 9 });
+    lines.push({ text: "Input-Input Layer5", size: 19.6, page: 10 });
+    lines.push({ text: "<pad> Input-Input Layer5", size: 19.6, page: 11 });
+    const outline = outlinePaper(lines);
+    expect(outline.title).toBe("How Plants Make Food From Light");
+    expect(outline.sections.map((section) => section.heading)).toEqual(["1 Introduction", "2 The light reactions", "3 The Calvin cycle"]);
+  });
 });
 
