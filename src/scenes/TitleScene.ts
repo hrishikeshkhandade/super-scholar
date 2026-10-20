@@ -15,12 +15,15 @@ import { LAST_QUERY_KEY } from "./PaperSelectScene";
 
 const SCENE_THEME = THEMES.find((theme) => theme.name === "forest") ?? THEMES[0];
 const GROUND_TOP = GAME_HEIGHT - 2 * TILE; // two rows of ground tiles
-const BOX = { width: 304, top: 156, padding: 22 };
+// The sign's top sits below where the sky's teal band ends (y=180), so it
+// stands in front of the mountains without cutting across the sky.
+const BOX = { width: 304, top: 196, padding: 18 };
 const POST = { width: 14, inset: 48 }; // the sign's two wooden posts
 const MENU_SPACING = 14;
-const ROW_Y = GAME_HEIGHT - 26; // the row of extra-option buttons, on the ground
-const ROW_GAP = 12;
-const BUTTON_PADDING = { x: 10, y: 6 };
+const STRIP_HEIGHT = 30; // the slim dark bar along the bottom
+const ROW_Y = GAME_HEIGHT - STRIP_HEIGHT / 2;
+const ROW_GAP = 28; // between options, with a small dot in the middle
+const TAP_PADDING = { x: 10, y: 7 }; // invisible, for an easier tap target
 
 export class TitleScene extends Phaser.Scene {
   constructor() {
@@ -151,29 +154,28 @@ export class TitleScene extends Phaser.Scene {
 class ExtraRow {
   onLeave: () => void = () => {};
   private readonly texts: Phaser.GameObjects.Text[] = [];
-  private readonly frames: Phaser.GameObjects.Rectangle[] = [];
+  private readonly underline: Phaser.GameObjects.Rectangle;
   private focused = -1;
 
   constructor(
     scene: Phaser.Scene,
     private readonly items: MenuItem[],
   ) {
-    // Each option is a small framed button, so they read as clickable.
+    // A slim dark bar, like a status bar, so the options stand out from the
+    // ground without heavy boxes. The chosen one turns yellow and underlined.
+    scene.add.rectangle(0, GAME_HEIGHT - STRIP_HEIGHT, GAME_WIDTH, STRIP_HEIGHT, NES.black, 0.7).setOrigin(0, 0);
     const labels = items.map((item) =>
       scene.add
         .text(0, ROW_Y, item.label, textStyle(16, NES.white))
         .setOrigin(0, 0.5)
-        .setPadding(BUTTON_PADDING.x, BUTTON_PADDING.y, BUTTON_PADDING.x, BUTTON_PADDING.y)
-        .setDepth(1)
+        .setPadding(TAP_PADDING.x, TAP_PADDING.y, TAP_PADDING.x, TAP_PADDING.y)
         .setInteractive({ useHandCursor: true }),
     );
     const width = labels.reduce((sum, label) => sum + label.width, 0) + ROW_GAP * (labels.length - 1);
     let x = (GAME_WIDTH - width) / 2;
     labels.forEach((label, i) => {
       label.setX(x);
-      this.frames.push(
-        scene.add.rectangle(x, ROW_Y, label.width, label.height, NES.black).setOrigin(0, 0.5).setStrokeStyle(2, NES.white),
-      );
+      if (i > 0) scene.add.rectangle(x - ROW_GAP / 2, ROW_Y, 4, 4, NES.gray);
       x += label.width + ROW_GAP;
       label.on("pointerover", () => this.highlight(i));
       label.on("pointerout", () => this.highlight(this.focused));
@@ -191,6 +193,7 @@ class ExtraRow {
       else return;
       event.preventDefault();
     };
+    this.underline = scene.add.rectangle(0, ROW_Y + 11, 10, 2, NES.yellow).setOrigin(0, 0.5).setVisible(false);
     scene.input.keyboard?.on("keydown", onKey);
     scene.events.once(Phaser.Scenes.Events.SHUTDOWN, () => scene.input.keyboard?.off("keydown", onKey));
   }
@@ -207,11 +210,10 @@ class ExtraRow {
   }
 
   private highlight(index: number): void {
-    this.texts.forEach((text, i) => {
-      const color = i === index ? NES.yellow : NES.white;
-      text.setColor(css(color));
-      this.frames[i].setStrokeStyle(2, color);
-    });
+    this.texts.forEach((text, i) => text.setColor(css(i === index ? NES.yellow : NES.white)));
+    const chosen = this.texts[index];
+    this.underline.setVisible(chosen !== undefined);
+    if (chosen) this.underline.setPosition(chosen.x + TAP_PADDING.x, ROW_Y + 11).setSize(chosen.width - TAP_PADDING.x * 2, 2);
   }
 
   private choose(index: number): void {
