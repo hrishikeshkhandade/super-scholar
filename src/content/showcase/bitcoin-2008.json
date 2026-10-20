@@ -492,12 +492,12 @@
             "explanation": "Combining multiple inputs necessarily shows they were controlled by the same person, risking privacy if a key is exposed."
           },
           {
-            "prompt": "Can a dishonest node secretly building an alternate chain create arbitrary money out of thin air?",
+            "prompt": "Can an attacker with a secret chain create money out of thin air?",
             "choices": [
-              "Yes, if they work fast enough in secret",
-              "Yes, because the network structure is minimal",
-              "No, honest nodes will reject invalid transactions",
-              "Only if they control all network CPU power"
+              "Yes, if they work fast enough",
+              "Yes, the network is too simple",
+              "No, honest nodes reject invalid blocks",
+              "Only with all of the network's CPU"
             ],
             "answerIndex": 2,
             "explanation": "The system rules stop arbitrary changes; honest nodes will never accept invalid blocks or fake money."

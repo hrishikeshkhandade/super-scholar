@@ -8,6 +8,7 @@ import { loadNotebook, type Notebook } from "../save";
 import { isTouchDevice } from "../touchControls";
 import { GAME_WIDTH, Menu, fitTextToHeight, panel, textStyle } from "../ui";
 import { listTop, paperLabel, shorten, tableLabels } from "./listLayout";
+import { drawMenuBackdrop } from "./backdrop";
 
 // The Scholar's Notebook: review every lesson, fun fact, and question
 // unlocked so far. Three views in one scene: papers, then a paper's worlds,
@@ -18,7 +19,7 @@ interface NotebookData {
   worldIndex?: number;
 }
 
-const PAGE_BOX = { x: 20, y: 68, width: GAME_WIDTH - 40, height: 324 };
+const PAGE_BOX = { x: 24, y: 66, width: GAME_WIDTH - 48, height: 324 };
 const CHOICE_LETTERS = ["A", "B", "C", "D", "E", "F"];
 
 const fraction = ({ unlocked, total }: { unlocked: number; total: number }) => `${unlocked}/${total}`;
@@ -39,7 +40,7 @@ export class NotebookScene extends Phaser.Scene {
   }
 
   create(data: NotebookData): void {
-    this.cameras.main.setBackgroundColor(NES.navy);
+    drawMenuBackdrop(this);
     this.notebook = loadNotebook();
     const paper = data.paperId ? findPaper(data.paperId) : undefined;
     if (paper && data.worldIndex !== undefined && paper.worlds[data.worldIndex]) {
@@ -99,10 +100,10 @@ export class NotebookScene extends Phaser.Scene {
     this.flipped = false;
 
     const title = paper.worlds[worldIndex].name;
-    this.add.text(GAME_WIDTH / 2, 18, shorten(title, 44), textStyle(16, NES.yellow)).setOrigin(0.5);
+    this.add.text(GAME_WIDTH / 2, 30, shorten(title, 44), textStyle(16, NES.yellow)).setOrigin(0.5);
     this.tabs = this.sections.map((section, i) =>
       this.add
-        .text(40 + i * 250, 38, `${section.name} ${fraction(section)}`, textStyle(16, NES.white))
+        .text(40 + i * 250, 46, `${section.name} ${fraction(section)}`, textStyle(16, NES.white))
         .setInteractive({ useHandCursor: true })
         .on("pointerdown", () => this.showSection(i)),
     );
@@ -112,18 +113,18 @@ export class NotebookScene extends Phaser.Scene {
 
     const arrow = (x: number, label: string, step: number) =>
       this.add
-        .text(x, 412, label, textStyle(16, NES.yellow))
+        .text(x, 405, label, textStyle(16, NES.yellow))
         .setOrigin(0.5)
         .setInteractive({ useHandCursor: true })
         .on("pointerdown", () => this.turnPage(step));
     arrow(GAME_WIDTH / 2 - 80, "<", -1);
     arrow(GAME_WIDTH / 2 + 80, ">", 1);
-    this.counter = this.add.text(GAME_WIDTH / 2, 412, "", textStyle(16, NES.white)).setOrigin(0.5);
-    this.flipHint = this.add.text(PAGE_BOX.x + PAGE_BOX.width, 412, "", textStyle(8, NES.yellow)).setOrigin(1, 0.5);
+    this.counter = this.add.text(GAME_WIDTH / 2, 405, "", textStyle(16, NES.white)).setOrigin(0.5);
+    this.flipHint = this.add.text(PAGE_BOX.x + PAGE_BOX.width, 405, "", textStyle(8, NES.yellow)).setOrigin(1, 0.5);
     this.add
       .text(
         GAME_WIDTH / 2,
-        438,
+        425,
         isTouchDevice()
           ? "TAP < > FOR PAGES, A TAB FOR A SECTION, A CARD TO FLIP IT"
           : "A/D: PAGE   W/S: SECTION   SPACE: FLIP CARD   ESC: BACK",
@@ -132,7 +133,7 @@ export class NotebookScene extends Phaser.Scene {
       .setOrigin(0.5);
     // A visible way out, since phones have no Esc key.
     this.add
-      .text(PAGE_BOX.x + 8, 412, "BACK", textStyle(16, NES.white))
+      .text(PAGE_BOX.x + 8, 405, "BACK", textStyle(16, NES.white))
       .setOrigin(0, 0.5)
       .setPadding(8, 8, 8, 8)
       .setInteractive({ useHandCursor: true })

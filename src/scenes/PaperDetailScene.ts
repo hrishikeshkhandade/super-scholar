@@ -3,6 +3,7 @@ import type { OnlinePaper } from "../content/openAlex";
 import { NES } from "../palette";
 import type { PaperSource } from "./GenerateScene";
 import { GAME_WIDTH, Menu, fitTextToHeight, panel, textStyle } from "../ui";
+import { drawMenuBackdrop } from "./backdrop";
 
 const TITLE_MAX_HEIGHT = 44; // two lines of 16px text
 const BOX_BOTTOM = 326;
@@ -15,7 +16,7 @@ export class PaperDetailScene extends Phaser.Scene {
 
   create(data: { paper: OnlinePaper }): void {
     const { paper } = data;
-    this.cameras.main.setBackgroundColor(NES.navy);
+    drawMenuBackdrop(this);
 
     const title = this.add.text(40, 30, paper.title, textStyle(16, NES.yellow, GAME_WIDTH - 80));
     fitTextToHeight(title, TITLE_MAX_HEIGHT);

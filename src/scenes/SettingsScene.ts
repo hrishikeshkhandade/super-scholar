@@ -3,6 +3,7 @@ import { audio } from "../audio/audio";
 import { NES } from "../palette";
 import { MUSIC_STYLES, TEXT_SPEEDS, VOLUME_LEVELS, clearProgress, loadSettings, saveSettings, type Settings } from "../save";
 import { GAME_WIDTH, Menu, textStyle, volumeLabel } from "../ui";
+import { drawMenuBackdrop } from "./backdrop";
 
 const STYLE_LABELS = { upbeat: "UPBEAT", tradingFloor: "TRADING FLOOR" } as const;
 
@@ -12,7 +13,7 @@ export class SettingsScene extends Phaser.Scene {
   }
 
   create(): void {
-    this.cameras.main.setBackgroundColor(NES.navy);
+    drawMenuBackdrop(this);
     this.add.text(GAME_WIDTH / 2, 50, "SETTINGS", textStyle(24, NES.yellow)).setOrigin(0.5);
     audio.playMusic("title");
 

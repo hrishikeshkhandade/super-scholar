@@ -1,6 +1,7 @@
 import Phaser from "phaser";
 import { NES } from "../palette";
 import { GAME_WIDTH, Menu, textStyle } from "../ui";
+import { drawMenuBackdrop } from "./backdrop";
 
 const ABOUT_TEXT = "Super Scholar turns research papers into a retro platformer you learn from.";
 
@@ -31,7 +32,7 @@ export class AboutScene extends Phaser.Scene {
   }
 
   create(): void {
-    this.cameras.main.setBackgroundColor(NES.navy);
+    drawMenuBackdrop(this);
     this.add.text(GAME_WIDTH / 2, 32, "ABOUT", textStyle(24, NES.yellow)).setOrigin(0.5);
     this.add.text(40, 60, ABOUT_TEXT, textStyle(16, NES.white, GAME_WIDTH - 80));
 
@@ -43,7 +44,7 @@ export class AboutScene extends Phaser.Scene {
     });
     this.add.text(40, 290, GOAL_TEXT, textStyle(16, NES.white, GAME_WIDTH - 80));
 
-    new Menu(this, 330, 382, [
+    new Menu(this, 330, 370, [
       { label: "CREDITS", onSelect: () => this.scene.start("Credits", { from: "About" }) },
       { label: "BACK", onSelect: () => this.scene.start("Title") },
     ]);
@@ -60,7 +61,7 @@ export class CreditsScene extends Phaser.Scene {
   // BACK returns to whichever screen opened the credits (title or About).
   create(data: { from?: string }): void {
     const back = () => this.scene.start(data.from ?? "About");
-    this.cameras.main.setBackgroundColor(NES.navy);
+    drawMenuBackdrop(this);
     const centered = (y: number, text: string, size: number, color: number) =>
       this.add.text(GAME_WIDTH / 2, y, text, textStyle(size, color)).setOrigin(0.5);
     centered(40, "CREDITS", 24, NES.yellow);

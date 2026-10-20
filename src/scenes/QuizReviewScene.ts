@@ -4,6 +4,7 @@ import type { Paper, Question } from "../content/types";
 import { NES } from "../palette";
 import { isTouchDevice } from "../touchControls";
 import { GAME_WIDTH, Menu, START_LIVES, fitTextToHeight, panel, textStyle } from "../ui";
+import { drawMenuBackdrop } from "./backdrop";
 
 // After beating a boss: the questions the player got wrong, each with the
 // right answer and why, one per page. Then on to the next world or the title.
@@ -30,7 +31,7 @@ export class QuizReviewScene extends Phaser.Scene {
   create(data: QuizReviewData): void {
     this.params = data;
     this.pageIndex = 0;
-    this.cameras.main.setBackgroundColor(NES.navy);
+    drawMenuBackdrop(this);
     this.add.text(GAME_WIDTH / 2, 30, "REVIEW YOUR MISSES", textStyle(24, NES.yellow)).setOrigin(0.5);
     panel(this, BOX.x, BOX.y, BOX.width, BOX.height);
 
@@ -58,7 +59,7 @@ export class QuizReviewScene extends Phaser.Scene {
       { label: "TITLE SCREEN", onSelect: () => this.scene.start("Title") },
     ], { spacing: 8 });
     this.add
-      .text(GAME_WIDTH / 2, 440, isTouchDevice() ? "TAP < > TO TURN PAGES" : "A / D: PAGE   W / S + ENTER: CHOOSE", textStyle(8, NES.lightGray))
+      .text(GAME_WIDTH / 2, 427, isTouchDevice() ? "TAP < > TO TURN PAGES" : "A / D: PAGE   W / S + ENTER: CHOOSE", textStyle(8, NES.lightGray))
       .setOrigin(0.5);
 
     this.input.keyboard?.on("keydown", (event: KeyboardEvent) => {

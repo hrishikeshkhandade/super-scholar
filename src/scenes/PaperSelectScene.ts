@@ -6,6 +6,7 @@ import type { Paper } from "../content/types";
 import { startPaperOver } from "../levelMap";
 import { NES, css } from "../palette";
 import { GAME_WIDTH, Menu, START_LIVES, textStyle } from "../ui";
+import { drawMenuBackdrop } from "./backdrop";
 
 const INPUT_BOX = { x: 40, y: 64, width: GAME_WIDTH - 80, height: 40 };
 const SEARCH_DELAY_MS = 500; // wait for a pause in typing before searching online
@@ -48,7 +49,7 @@ export class PaperSelectScene extends Phaser.Scene {
   }
 
   create(): void {
-    this.cameras.main.setBackgroundColor(NES.navy);
+    drawMenuBackdrop(this);
     audio.playMusic("title");
     this.add.text(GAME_WIDTH / 2, 36, "CHOOSE A PAPER", textStyle(24, NES.yellow)).setOrigin(0.5);
     this.status = this.add.text(40, 114, "", textStyle(8, NES.lightGray));

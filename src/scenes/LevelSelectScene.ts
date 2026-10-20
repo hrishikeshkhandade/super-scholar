@@ -8,6 +8,7 @@ import { loadCleared, loadProgress, loadStars, stageKey } from "../save";
 import { isTouchDevice } from "../touchControls";
 import { GAME_WIDTH, Menu, START_LIVES, showStars, textStyle } from "../ui";
 import { listTop, paperLabel, shorten, tableLabels } from "./listLayout";
+import { drawMenuBackdrop } from "./backdrop";
 
 // Level select: pick a paper, then a map of its worlds where every cleared
 // level (and the next one to beat) can be played again.
@@ -16,18 +17,20 @@ interface LevelSelectData {
   paperId?: string;
 }
 
-const MAP_TOP = 76;
-const MAP_BOTTOM = 392;
+const MAP_TOP = 82;
+const MAP_BOTTOM = 386;
 const BOX_HEIGHT = 30;
 const LEVEL_BOX_WIDTH = 72;
 const BOSS_BOX_WIDTH = 88;
 const BOX_GAP = 24;
-const NAME_HEIGHT = 14; // world name just above its own row of boxes
+const NAME_HEIGHT = 18; // world name just above its own row of boxes, clear of the selection frame
 
+// Colours from the game's own blocks: the next level is a gold ? block,
+// cleared ones are green, and locked ones are dark, empty-looking slots.
 const STATE_STYLE = {
-  cleared: { fill: NES.green, text: NES.white, border: NES.white },
-  open: { fill: NES.black, text: NES.yellow, border: NES.yellow },
-  locked: { fill: NES.navy, text: NES.gray, border: NES.gray },
+  cleared: { fill: NES.green, text: NES.white, border: NES.lime },
+  open: { fill: NES.yellow, text: NES.black, border: NES.brown },
+  locked: { fill: NES.black, text: NES.gray, border: NES.gray },
 } as const;
 
 interface StopView {
@@ -47,7 +50,7 @@ export class LevelSelectScene extends Phaser.Scene {
   }
 
   create(data: LevelSelectData): void {
-    this.cameras.main.setBackgroundColor(NES.navy);
+    drawMenuBackdrop(this);
     const paper = data.paperId ? findPaper(data.paperId) : undefined;
     if (paper) this.showMap(paper);
     else this.showPapers();
@@ -74,8 +77,8 @@ export class LevelSelectScene extends Phaser.Scene {
     const back = () => this.scene.restart({});
     const map = levelMap(paper, loadCleared(), loadProgress());
     const bestStars = loadStars()[paper.id] ?? {};
-    this.add.text(GAME_WIDTH / 2, 22, "LEVEL SELECT", textStyle(24, NES.yellow)).setOrigin(0.5);
-    this.add.text(GAME_WIDTH / 2, 52, shorten(paper.title, 90), textStyle(8, NES.sky)).setOrigin(0.5);
+    this.add.text(GAME_WIDTH / 2, 36, "LEVEL SELECT", textStyle(24, NES.yellow)).setOrigin(0.5);
+    this.add.text(GAME_WIDTH / 2, 62, shorten(paper.title, 90), textStyle(8, NES.sky)).setOrigin(0.5);
 
     const rowHeight = Math.min(64, (MAP_BOTTOM - MAP_TOP) / map.length);
     this.rows = map.map((world, w) => {
@@ -110,17 +113,17 @@ export class LevelSelectScene extends Phaser.Scene {
     });
 
     this.highlight = this.add.rectangle(0, 0, 10, 10).setOrigin(0, 0).setStrokeStyle(4, NES.yellow).setFillStyle();
-    this.status = this.add.text(GAME_WIDTH / 2, 404, "", textStyle(8, NES.white)).setOrigin(0.5);
+    this.status = this.add.text(GAME_WIDTH / 2, 400, "", textStyle(8, NES.white)).setOrigin(0.5);
     this.add
       .text(
         GAME_WIDTH / 2,
-        426,
+        420,
         isTouchDevice() ? "TAP A GREEN OR BLINKING LEVEL TO PLAY IT" : "ARROWS / WASD: CHOOSE   ENTER: PLAY   ESC: BACK",
         textStyle(8, NES.lightGray),
       )
       .setOrigin(0.5);
     this.add
-      .text(28, 426, "BACK", textStyle(16, NES.white))
+      .text(28, 414, "BACK", textStyle(16, NES.white))
       .setOrigin(0, 0.5)
       .setPadding(8, 8, 8, 8)
       .setInteractive({ useHandCursor: true })
@@ -171,7 +174,7 @@ export class LevelSelectScene extends Phaser.Scene {
     if (withSound) audio.playSfx("move");
     this.selected = { row, column };
     const { x, y, width, height } = view.box;
-    this.highlight.setPosition(x - 5, y - 5).setSize(width + 10, height + 10);
+    this.highlight.setPosition(x - 4, y - 4).setSize(width + 8, height + 8);
     const rating = view.stars > 0 ? `   ${view.stars}/3 STARS` : "";
     this.status.setColor(css(NES.white)).setText(`${view.stop.state === "open" ? "NEXT UP" : "CLEARED"}: ${view.stop.label}${rating}`);
   }

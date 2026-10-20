@@ -5,6 +5,7 @@ import { NES } from "../palette";
 import { TEXT_SPEED_MS, loadSettings } from "../save";
 import { isTouchDevice } from "../touchControls";
 import { GAME_HEIGHT, GAME_WIDTH, MAX_LIVES, QuestionPanel, onceAdvance, panel, textStyle } from "../ui";
+import { drawBackdrop } from "./backdrop";
 
 export interface CutsceneData {
   cutscene: Cutscene;
@@ -44,7 +45,8 @@ export class CutsceneScene extends Phaser.Scene {
     this.furthestShown = -1;
     this.onPages = true;
 
-    this.add.rectangle(0, 0, GAME_WIDTH, GAME_HEIGHT, NES.black, 0.75).setOrigin(0, 0);
+    drawBackdrop(this);
+    this.add.rectangle(0, 0, GAME_WIDTH, GAME_HEIGHT, NES.black, 0.6).setOrigin(0, 0);
     this.add.image(110, 160, "professor").setScale(3);
     this.add.text(200, 120, data.cutscene.title.toUpperCase(), textStyle(24, NES.yellow, GAME_WIDTH - 220));
 

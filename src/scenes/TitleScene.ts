@@ -2,19 +2,16 @@ import Phaser from "phaser";
 import { audio } from "../audio/audio";
 import { findPaper } from "../content/library";
 import { TILE } from "../levels/parseLevel";
-import { farKey, groundKey, groundTopKey, hillsKey } from "../levels/themeTextures";
-import { THEMES } from "../levels/themes";
 import { NES, css } from "../palette";
 import { loadProgress } from "../save";
 import { GAME_HEIGHT, GAME_WIDTH, Menu, START_LIVES, panel, textStyle, type MenuItem } from "../ui";
+import { GROUND_TOP, drawBackdrop } from "./backdrop";
 import { LAST_QUERY_KEY } from "./PaperSelectScene";
 
 // The title screen, styled like a classic NES title: a level scene behind a
 // big outlined logo, a framed box with the four main choices, and the less
 // used ones (settings, about, credits, feedback) in a row along the bottom.
 
-const SCENE_THEME = THEMES.find((theme) => theme.name === "forest") ?? THEMES[0];
-const GROUND_TOP = GAME_HEIGHT - 2 * TILE; // two rows of ground tiles
 // The sign's top sits below where the sky's teal band ends (y=180), so it
 // stands in front of the mountains without cutting across the sky.
 const BOX = { width: 304, top: 196, padding: 18 };
@@ -100,23 +97,9 @@ export class TitleScene extends Phaser.Scene {
     };
   }
 
-  // A forest level: sky bands, drifting clouds, mountains, hills, and two
-  // rows of ground with a few blocks, the bear, and the scholar on it.
+  // The shared forest backdrop, plus a few blocks, the bear, and the scholar.
   private drawScene(): void {
-    const theme = SCENE_THEME;
-    this.cameras.main.setBackgroundColor(theme.sky[2]);
-    const band = 90;
-    theme.sky.slice(0, 2).forEach((color, i) => this.add.rectangle(0, i * band, GAME_WIDTH, band, color).setOrigin(0, 0));
-    for (let i = 0; i < 4; i++) {
-      const cloud = this.add.image(80 + i * 220, 40 + (i % 2) * 34, "cloud").setAlpha(theme.cloudAlpha);
-      this.tweens.add({ targets: cloud, x: cloud.x + 40, duration: 7000 + i * 900, yoyo: true, repeat: -1, ease: "Sine.easeInOut" });
-    }
-    this.add.tileSprite(0, GROUND_TOP - 200, GAME_WIDTH, 200, farKey(theme)).setOrigin(0, 0).setAlpha(0.9);
-    this.add.tileSprite(0, GROUND_TOP - 120, GAME_WIDTH, 128, hillsKey(theme)).setOrigin(0, 0);
-    for (let x = 0; x < GAME_WIDTH; x += TILE) {
-      this.add.image(x + TILE / 2, GROUND_TOP + TILE / 2, groundTopKey(theme));
-      this.add.image(x + TILE / 2, GROUND_TOP + TILE * 1.5, groundKey(theme));
-    }
+    drawBackdrop(this);
     // Blocks floating above the ground on the right, like the first screen of a level.
     const blockY = GROUND_TOP - TILE * 2.5;
     ["brick", "question-block", "brick"].forEach((key, i) => this.add.image(620 + i * TILE, blockY, key));

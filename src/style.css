@@ -74,8 +74,9 @@ canvas {
   touch-action: pan-y;
   user-select: text;
   -webkit-user-select: text;
-  padding: calc(16px * var(--scale, 1)) calc(32px * var(--scale, 1));
-  background: #0000bc;
+  padding: calc(12px * var(--scale, 1)) calc(24px * var(--scale, 1));
+  /* See-through, so the game's themed backdrop and panel show behind it. */
+  background: transparent;
   color: #fcfcfc;
   font: calc(12px * var(--scale, 1)) / 1.6 "Press Start 2P", monospace;
 }

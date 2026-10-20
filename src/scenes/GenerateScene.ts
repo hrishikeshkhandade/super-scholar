@@ -8,6 +8,7 @@ import { NES } from "../palette";
 import { saveUploadedPaper } from "../save";
 import { isTouchDevice } from "../touchControls";
 import { GAME_WIDTH, Menu, START_LIVES, textStyle } from "../ui";
+import { drawMenuBackdrop } from "./backdrop";
 
 // Gets a paper's PDF (an upload, or a free copy downloaded by our server
 // function) and builds a game from it in the browser.
@@ -28,7 +29,7 @@ export class GenerateScene extends Phaser.Scene {
   }
 
   create(data: PaperSource): void {
-    this.cameras.main.setBackgroundColor(NES.navy);
+    drawMenuBackdrop(this);
     const professor = this.add.image(GAME_WIDTH / 2, 140, "professor").setScale(3);
     this.tweens.add({ targets: professor, y: 130, duration: 400, yoyo: true, repeat: -1, ease: "Sine.easeInOut" });
     this.add.text(GAME_WIDTH / 2, 230, "PROF. QUANT IS READING\nYOUR PAPER...", textStyle(24, NES.yellow)).setOrigin(0.5).setAlign("center");

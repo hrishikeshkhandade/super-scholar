@@ -1,9 +1,9 @@
 import Phaser from "phaser";
 import { audio } from "../audio/audio";
 import { RATING_QUESTIONS, TEXT_QUESTIONS } from "../feedbackQuestions";
-import { NES } from "../palette";
 import { isTouchDevice } from "../touchControls";
 import { GAME_HEIGHT, GAME_WIDTH } from "../ui";
+import { PANEL_INNER, drawMenuBackdrop } from "./backdrop";
 
 // The FEEDBACK screen for classmates trying the game. The form itself is the
 // HTML in index.html, laid over the canvas so it gets native typing and the
@@ -22,7 +22,7 @@ export class FeedbackScene extends Phaser.Scene {
   }
 
   create(): void {
-    this.cameras.main.setBackgroundColor(NES.navy);
+    drawMenuBackdrop(this);
     this.form = document.getElementById("feedback-form") as HTMLFormElement;
     this.status = document.getElementById("feedback-status")!;
     this.sendButton = document.getElementById("feedback-send") as HTMLButtonElement;
@@ -130,16 +130,18 @@ export class FeedbackScene extends Phaser.Scene {
     }
   }
 
-  // Cover the game canvas exactly, and scale the text with it.
+  // Fit just inside the menu panel's border, so anything scrolled out of
+  // view is clipped at the frame instead of spilling over it; the text
+  // scales with the canvas.
   private positionForm(): void {
     const canvas = this.game.canvas.getBoundingClientRect();
     const container = this.form.parentElement!.getBoundingClientRect();
     const scale = canvas.width / GAME_WIDTH;
     Object.assign(this.form.style, {
-      left: `${canvas.left - container.left}px`,
-      top: `${canvas.top - container.top}px`,
-      width: `${canvas.width}px`,
-      height: `${(GAME_HEIGHT * canvas.width) / GAME_WIDTH}px`,
+      left: `${canvas.left - container.left + PANEL_INNER.x * scale}px`,
+      top: `${canvas.top - container.top + PANEL_INNER.y * scale}px`,
+      width: `${(GAME_WIDTH - PANEL_INNER.x * 2) * scale}px`,
+      height: `${(GAME_HEIGHT - PANEL_INNER.y * 2) * scale}px`,
     });
     this.form.style.setProperty("--scale", String(Math.max(scale, 0.75)));
   }
