@@ -65,9 +65,12 @@ export class CreditsScene extends Phaser.Scene {
     const centered = (y: number, text: string, size: number, color: number) =>
       this.add.text(GAME_WIDTH / 2, y, text, textStyle(size, color)).setOrigin(0.5);
     centered(40, "CREDITS", 24, NES.yellow);
-    centered(122, "MADE BY", 16, NES.lightGray);
-    centered(160, "HRISHIKESH KHANDADE", 24, NES.yellow);
-    centered(192, "for CS 124 at the University of Illinois", 16, NES.lightGray);
+    // The scholar as a little author portrait, then the name block sitting
+    // right above the buttons (which stay low, see menuY below).
+    this.add.image(GAME_WIDTH / 2, 112, "player-idle").setScale(2);
+    centered(176, "MADE BY", 16, NES.lightGray);
+    centered(210, "HRISHIKESH KHANDADE", 24, NES.yellow);
+    centered(242, "for CS 124 at the University of Illinois", 16, NES.lightGray);
 
     // The profile links are menu options with pixel icons, not raw URLs.
     const menuX = 330;
