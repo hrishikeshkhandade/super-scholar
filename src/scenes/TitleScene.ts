@@ -4,7 +4,7 @@ import { findPaper } from "../content/library";
 import { TILE } from "../levels/parseLevel";
 import { NES, css } from "../palette";
 import { loadProgress } from "../save";
-import { GAME_HEIGHT, GAME_WIDTH, Menu, START_LIVES, panel, textStyle, type MenuItem } from "../ui";
+import { GAME_HEIGHT, GAME_WIDTH, Menu, PointerGuard, START_LIVES, panel, textStyle, type MenuItem } from "../ui";
 import { GROUND_TOP, drawBackdrop } from "./backdrop";
 import { LAST_QUERY_KEY } from "./PaperSelectScene";
 
@@ -144,6 +144,7 @@ class ExtraRow {
     scene: Phaser.Scene,
     private readonly items: MenuItem[],
   ) {
+    const pointer = new PointerGuard(scene);
     // A slim dark bar, like a status bar, so the options stand out from the
     // ground without heavy boxes. The chosen one turns yellow and underlined.
     scene.add.rectangle(0, GAME_HEIGHT - STRIP_HEIGHT, GAME_WIDTH, STRIP_HEIGHT, NES.black, 0.7).setOrigin(0, 0);
@@ -160,9 +161,9 @@ class ExtraRow {
       label.setX(x);
       if (i > 0) scene.add.rectangle(x - ROW_GAP / 2, ROW_Y, 4, 4, NES.gray);
       x += label.width + ROW_GAP;
-      label.on("pointerover", () => this.highlight(i));
+      label.on("pointerover", () => pointer.canHover && this.highlight(i));
       label.on("pointerout", () => this.highlight(this.focused));
-      label.on("pointerdown", () => this.choose(i));
+      label.on("pointerdown", () => pointer.canClick && this.choose(i));
       this.texts.push(label);
     });
 

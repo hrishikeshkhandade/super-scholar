@@ -6,7 +6,7 @@ import { levelMap, mapProgress, type MapStop } from "../levelMap";
 import { NES, css } from "../palette";
 import { loadCleared, loadProgress, loadStars, stageKey } from "../save";
 import { isTouchDevice } from "../touchControls";
-import { GAME_WIDTH, Menu, START_LIVES, showStars, textStyle } from "../ui";
+import { GAME_WIDTH, Menu, PointerGuard, START_LIVES, showStars, textStyle } from "../ui";
 import { listTop, paperLabel, shorten, tableLabels } from "./listLayout";
 import { drawMenuBackdrop } from "./backdrop";
 
@@ -76,6 +76,7 @@ export class LevelSelectScene extends Phaser.Scene {
   private showMap(paper: Paper): void {
     const back = () => this.scene.restart({});
     const map = levelMap(paper, loadCleared(), loadProgress());
+    const pointer = new PointerGuard(this);
     const bestStars = loadStars()[paper.id] ?? {};
     this.add.text(GAME_WIDTH / 2, 36, "LEVEL SELECT", textStyle(24, NES.yellow)).setOrigin(0.5);
     this.add.text(GAME_WIDTH / 2, 62, shorten(paper.title, 90), textStyle(8, NES.sky)).setOrigin(0.5);
@@ -97,8 +98,8 @@ export class LevelSelectScene extends Phaser.Scene {
           .setOrigin(0, 0)
           .setStrokeStyle(2, style.border)
           .setInteractive({ useHandCursor: stop.state !== "locked" })
-          .on("pointerdown", () => this.choose(w, column, paper));
-        box.on("pointerover", () => stop.state !== "locked" && this.select(w, column));
+          .on("pointerdown", () => pointer.canClick && this.choose(w, column, paper));
+        box.on("pointerover", () => pointer.canHover && stop.state !== "locked" && this.select(w, column));
         const label = this.add
           .text(x + widths[column] / 2, y + BOX_HEIGHT / 2, stop.label, textStyle(16, style.text))
           .setOrigin(0.5);

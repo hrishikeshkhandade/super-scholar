@@ -65,13 +65,15 @@ export class CreditsScene extends Phaser.Scene {
     const centered = (y: number, text: string, size: number, color: number) =>
       this.add.text(GAME_WIDTH / 2, y, text, textStyle(size, color)).setOrigin(0.5);
     centered(40, "CREDITS", 24, NES.yellow);
-    centered(110, "MADE BY", 16, NES.lightGray);
-    centered(148, "HRISHIKESH KHANDADE", 24, NES.yellow);
-    centered(180, "for CS 124 at the University of Illinois", 16, NES.lightGray);
+    centered(122, "MADE BY", 16, NES.lightGray);
+    centered(160, "HRISHIKESH KHANDADE", 24, NES.yellow);
+    centered(192, "for CS 124 at the University of Illinois", 16, NES.lightGray);
 
     // The profile links are menu options with pixel icons, not raw URLs.
     const menuX = 330;
-    const menuY = 230;
+    // Low enough that BACK lands on empty grass on the title screen, not on
+    // one of its options (the mouse is still there when the title opens).
+    const menuY = 286;
     const menu = new Menu(this, menuX, menuY, [
       { label: "LINKEDIN", onSelect: () => openLink(LINKEDIN_URL) },
       { label: "GITHUB", onSelect: () => openLink(GITHUB_URL) },
@@ -86,7 +88,7 @@ export class CreditsScene extends Phaser.Scene {
     icon(menuY + 8, "linkedin", LINKEDIN_URL);
     icon(menuY + rowHeight + 8, "github", GITHUB_URL);
 
-    centered(400, "Made with Phaser, pdf.js & OpenAlex", 16, NES.sky);
+    centered(408, "Made with Phaser, pdf.js & OpenAlex", 16, NES.sky);
     this.input.keyboard?.on("keydown-ESC", back);
   }
 }

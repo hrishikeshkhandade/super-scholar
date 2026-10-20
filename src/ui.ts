@@ -29,6 +29,32 @@ function isTypingInInput(event: KeyboardEvent): boolean {
   return event.target instanceof HTMLInputElement;
 }
 
+// When a screen opens, the mouse is often resting right where the previous
+// screen's button was, on top of some other option. So hovering only selects
+// once the pointer has moved, and clicks in the first moments are ignored
+// (a double-click on BACK shouldn't open whatever is underneath).
+const POINTER_GRACE_MS = 250;
+
+export class PointerGuard {
+  private moved = false;
+  private readonly readyAt: number;
+
+  constructor(private readonly scene: Phaser.Scene) {
+    this.readyAt = scene.time.now + POINTER_GRACE_MS;
+    scene.input.once("pointermove", () => (this.moved = true));
+  }
+
+  // Hover counts once the pointer has moved on this screen.
+  get canHover(): boolean {
+    return this.moved;
+  }
+
+  // Clicks and taps count after a short moment.
+  get canClick(): boolean {
+    return this.scene.time.now >= this.readyAt;
+  }
+}
+
 export interface MenuItem {
   label: string;
   enabled?: boolean;
@@ -44,6 +70,7 @@ export class Menu {
   private active = true;
   private readonly cursor: Phaser.GameObjects.Text;
   private readonly onKey = (event: KeyboardEvent) => this.handleKey(event);
+  private readonly pointer: PointerGuard;
 
   constructor(
     private readonly scene: Phaser.Scene,
@@ -62,6 +89,7 @@ export class Menu {
     } = {},
   ) {
     this.items = items;
+    this.pointer = new PointerGuard(scene);
     this.cursor = scene.add.text(x - 28, y, ">", textStyle(this.size, NES.yellow));
     this.setItems(items);
     scene.input.keyboard?.on("keydown", this.onKey);
@@ -82,8 +110,8 @@ export class Menu {
       y += text.height + (this.options.spacing ?? 20);
       text.setDepth(this.depth);
       text.setInteractive({ useHandCursor: item.enabled !== false });
-      text.on("pointerover", () => this.select(index));
-      text.on("pointerdown", () => this.choose(index));
+      text.on("pointerover", () => this.pointer.canHover && this.select(index));
+      text.on("pointerdown", () => this.pointer.canClick && this.choose(index));
       return text;
     });
     const firstEnabled = items.findIndex((item) => item.enabled !== false);
