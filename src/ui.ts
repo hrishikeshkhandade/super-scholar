@@ -41,6 +41,7 @@ export class Menu {
   private items: MenuItem[];
   private selected = 0;
   private depth = 0;
+  private active = true;
   private readonly cursor: Phaser.GameObjects.Text;
   private readonly onKey = (event: KeyboardEvent) => this.handleKey(event);
 
@@ -50,7 +51,15 @@ export class Menu {
     private readonly y: number,
     items: MenuItem[],
     // align "center" centers every option on x instead of starting it there.
-    private readonly options: { size?: number; spacing?: number; wrapWidth?: number; align?: "left" | "center" } = {},
+    // onEdge: instead of wrapping around, moving past the first or last
+    // option calls this (so focus can move to another control).
+    private readonly options: {
+      size?: number;
+      spacing?: number;
+      wrapWidth?: number;
+      align?: "left" | "center";
+      onEdge?: (direction: -1 | 1) => void;
+    } = {},
   ) {
     this.items = items;
     this.cursor = scene.add.text(x - 28, y, ">", textStyle(this.size, NES.yellow));
@@ -104,6 +113,14 @@ export class Menu {
     this.cursor.setY(this.cursor.y + dy);
   }
 
+  // An inactive menu ignores keys and hides its cursor (another control on
+  // the screen has focus). Clicking an option still works.
+  setActive(active: boolean): void {
+    this.active = active;
+    this.cursor.setVisible(active);
+    this.select(this.selected);
+  }
+
   setLabel(index: number, label: string): void {
     this.texts[index]?.setText(label);
   }
@@ -113,15 +130,26 @@ export class Menu {
     this.selected = index;
     this.texts.forEach((text, i) => {
       const enabled = this.items[i].enabled !== false;
-      text.setColor(css(!enabled ? NES.gray : i === index ? NES.yellow : NES.white));
+      text.setColor(css(!enabled ? NES.gray : i === index && this.active ? NES.yellow : NES.white));
     });
     const target = this.texts[index];
-    this.cursor.setVisible(target !== undefined);
+    this.cursor.setVisible(target !== undefined && this.active);
     if (target) this.cursor.setPosition(target.getBounds().left - 28, target.y);
   }
 
-  private move(step: number): void {
+  private move(step: -1 | 1): void {
     const count = this.items.length;
+    if (this.options.onEdge) {
+      for (let next = this.selected + step; next >= 0 && next < count; next += step) {
+        if (this.items[next].enabled !== false) {
+          this.select(next);
+          audio.playSfx("move");
+          return;
+        }
+      }
+      this.options.onEdge(step);
+      return;
+    }
     for (let i = 1; i <= count; i++) {
       const next = (this.selected + step * i + count * count) % count;
       if (this.items[next].enabled !== false) {
@@ -140,7 +168,7 @@ export class Menu {
   }
 
   private handleKey(event: KeyboardEvent): void {
-    if (this.items.length === 0 || event.repeat) return;
+    if (!this.active || this.items.length === 0 || event.repeat) return;
     const typing = isTypingInInput(event);
     const key = event.key.toLowerCase();
     if (key === "arrowup" || (key === "w" && !typing)) this.move(-1);
