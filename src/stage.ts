@@ -9,4 +9,7 @@ export interface StageData {
   // Hits taken so far in this level; carried over when a pit fall restarts
   // it, so falling still costs the "no hits" star.
   levelHits?: number;
+  // Facts found so far in this level (indexes into the world's facts),
+  // carried over the same way so they still show on the LEVEL CLEAR card.
+  levelFacts?: number[];
 }

@@ -6,14 +6,15 @@ import { layoutFor } from "../levels/chooseLayout";
 import { farKey, groundKey, groundTopKey, hillsKey } from "../levels/themeTextures";
 import { themeFor, type Theme } from "../levels/themes";
 import { TILE, isSolidTile, parseLevel, type BlockContents } from "../levels/parseLevel";
-import { NES } from "../palette";
+import { NES, css } from "../palette";
 import { GRAVITY, JUMP_VELOCITY, PlayerController, makeOneWay, type Sprite } from "../player";
 import { advanceProgress, markCleared, saveBestStars, unlockNote } from "../save";
+import { addFoundFact } from "../foundFacts";
 import { COIN_GOAL, levelStars } from "../stars";
 import type { StageData } from "../stage";
 import { enablePause } from "./PauseScene";
 import { isTouchDevice } from "../touchControls";
-import { GAME_HEIGHT, GAME_WIDTH, HeartBar, MAX_LIVES, Menu, START_LIVES, TITLE_CARD_MS, panel, showStars, showTitleCard, textStyle } from "../ui";
+import { GAME_HEIGHT, GAME_WIDTH, HeartBar, MAX_LIVES, Menu, START_LIVES, TITLE_CARD_MS, fitTextToHeight, onceAdvance, panel, showStars, showTitleCard, textStyle } from "../ui";
 
 type StaticSprite = Phaser.Types.Physics.Arcade.SpriteWithStaticBody;
 
@@ -22,7 +23,6 @@ const BUBBLE_BOB_SPEED = 70; // how fast bubbles drift up and down
 const MOVING_PLATFORM_SPEED = 70;
 const MOVING_PLATFORM_RANGE = TILE * 3;
 const INVULNERABLE_MS = 1200;
-const FACT_SHOWN_MS = 5000;
 const STOMP_TIP_MS = 2000;
 const FACT_INDEX_KEY = "factIndex";
 
@@ -43,9 +43,7 @@ export class LevelScene extends Phaser.Scene {
   private hearts!: HeartBar;
   private coinText!: Phaser.GameObjects.Text;
   private shieldIcon!: Phaser.GameObjects.Image;
-  private factBanner!: Phaser.GameObjects.Container;
-  private factText!: Phaser.GameObjects.Text;
-  private factHideTimer?: Phaser.Time.TimerEvent;
+  private factsFound: number[] = [];
   private coins = 0;
   private coinsInLevel = 0;
   private hits = 0;
@@ -62,6 +60,7 @@ export class LevelScene extends Phaser.Scene {
     this.stage = { ...data };
     this.coins = 0;
     this.hits = data.levelHits ?? 0;
+    this.factsFound = data.levelFacts ?? [];
     this.hasShield = false;
     this.invulnerableUntil = 0;
     this.finished = false;
@@ -160,7 +159,6 @@ export class LevelScene extends Phaser.Scene {
     this.cameras.main.setDeadzone(120, 80);
 
     this.drawHud(layout.name);
-    this.createFactBanner();
     enablePause(this, () => !this.finished && !this.cardShowing());
   }
 
@@ -223,9 +221,9 @@ export class LevelScene extends Phaser.Scene {
   private showStompTip(): void {
     const tip = this.add
       .container(GAME_WIDTH / 2, 130, [
-        this.add.rectangle(0, 0, 520, 56, NES.black, 0.85).setStrokeStyle(4, NES.yellow),
-        this.add.image(-220, 0, "bear-walk1"),
-        this.add.text(20, 0, "STOMP BEARS FOR FUN FACTS!", textStyle(16, NES.yellow)).setOrigin(0.5),
+        this.add.rectangle(0, 0, 580, 56, NES.black, 0.85).setStrokeStyle(4, NES.yellow),
+        this.add.image(-250, 0, "bear-walk1"),
+        this.add.text(20, 0, "STOMP BEARS TO COLLECT FACTS!", textStyle(16, NES.yellow)).setOrigin(0.5),
       ])
       .setScrollFactor(0)
       .setDepth(15)
@@ -360,7 +358,7 @@ export class LevelScene extends Phaser.Scene {
   }
 
   private floatText(x: number, y: number, message: string, color: number): void {
-    const text = this.add.text(x, y, message, textStyle(16, color)).setOrigin(0.5).setDepth(8);
+    const text = this.add.text(x, y, message, textStyle(16, color)).setOrigin(0.5).setStroke(css(NES.black), 4).setDepth(8);
     this.tweens.add({ targets: text, y: y - 40, alpha: 0, duration: 900, onComplete: () => text.destroy() });
   }
 
@@ -378,44 +376,56 @@ export class LevelScene extends Phaser.Scene {
       this.controls.bounce(JUMP_VELOCITY * 0.6);
       this.addCoins(2);
       this.floatText(bear.x, bear.y - 24, "BEAR SHORTED!", NES.yellow);
-      this.showNextFact();
+      this.collectFact(bear.x, bear.y - 52);
     } else {
       this.damage(bear.x);
     }
   }
 
-  // A banner under the HUD that slides down with a fact from the paper and
-  // hides itself after a few seconds. The game keeps running underneath.
-  private createFactBanner(): void {
-    const width = GAME_WIDTH - 40;
-    const background = this.add.rectangle(0, 0, width, 100, NES.black, 0.9).setOrigin(0, 0).setStrokeStyle(4, NES.yellow);
-    const label = this.add.text(12, 10, "FUN FACT", textStyle(8, NES.yellow));
-    this.factText = this.add.text(12, 26, "", textStyle(16, NES.white, width - 24));
-    this.factBanner = this.add
-      .container(20, -120, [background, label, this.factText])
-      .setScrollFactor(0)
-      .setDepth(15);
-  }
-
-  private showNextFact(): void {
+  // Stomping a bear collects the world's next fact without covering the
+  // level: a "+FACT" pops up, and the facts are read on the LEVEL CLEAR card.
+  private collectFact(x: number, y: number): void {
     const facts = this.stage.paper.worlds[this.stage.worldIndex].facts;
     if (facts.length === 0) return;
     // The registry outlives this scene, so facts keep cycling across levels.
     const index = ((this.registry.get(FACT_INDEX_KEY) as number | undefined) ?? 0) % facts.length;
     this.registry.set(FACT_INDEX_KEY, index + 1);
     unlockNote(this.stage.paper.id, this.stage.worldIndex, "fact", index);
-    this.factText.setText(facts[index]);
-
-    this.tweens.killTweensOf(this.factBanner);
-    this.tweens.add({ targets: this.factBanner, y: 56, duration: 250, ease: "Back.easeOut" });
-    this.factHideTimer?.remove();
-    this.factHideTimer = this.time.delayedCall(FACT_SHOWN_MS, () => this.hideFact());
+    this.factsFound = addFoundFact(this.factsFound, index);
+    audio.playSfx("powerup");
+    this.floatText(x, y, "+FACT", NES.lime);
   }
 
-  private hideFact(): void {
-    this.factHideTimer?.remove();
-    this.tweens.killTweensOf(this.factBanner);
-    this.tweens.add({ targets: this.factBanner, y: -120, duration: 200 });
+  // After LEVEL CLEAR: the facts found in this level, one page each, then onDone.
+  private showFoundFacts(onDone: () => void): void {
+    const facts = this.stage.paper.worlds[this.stage.worldIndex].facts;
+    if (this.factsFound.length === 0) {
+      onDone();
+      return;
+    }
+    const fixed = <T extends Phaser.GameObjects.Components.ScrollFactor & Phaser.GameObjects.Components.Depth>(object: T) =>
+      object.setScrollFactor(0).setDepth(30);
+    const box = { x: 60, y: 110, width: GAME_WIDTH - 120, height: 230 };
+    fixed(this.add.rectangle(0, 0, GAME_WIDTH, GAME_HEIGHT, NES.black, 0.6).setOrigin(0, 0));
+    fixed(panel(this, box.x, box.y, box.width, box.height).setStrokeStyle(4, NES.yellow));
+    const heading = fixed(this.add.text(GAME_WIDTH / 2, box.y + 26, "", textStyle(16, NES.yellow)).setOrigin(0.5));
+    const body = fixed(this.add.text(box.x + 24, box.y + 56, "", textStyle(16, NES.white, box.width - 48)));
+    const prompt = fixed(this.add.text(GAME_WIDTH / 2, box.y + box.height - 22, "", textStyle(8, NES.lightGray)).setOrigin(0.5));
+    const press = isTouchDevice() ? "TAP" : "SPACE";
+
+    const showPage = (page: number) => {
+      const last = page === this.factsFound.length - 1;
+      heading.setText(`FACTS FOUND  ${page + 1}/${this.factsFound.length}`);
+      body.setText(facts[this.factsFound[page]]);
+      fitTextToHeight(body, prompt.y - 16 - body.y);
+      prompt.setText(`${press}: ${last ? "CONTINUE" : "NEXT FACT"}`);
+      onceAdvance(this, () => {
+        audio.playSfx("select");
+        if (last) onDone();
+        else showPage(page + 1);
+      });
+    };
+    showPage(0);
   }
 
   private damage(fromX: number): void {
@@ -440,7 +450,7 @@ export class LevelScene extends Phaser.Scene {
   private fallIntoPit(): void {
     if (this.finished) return;
     audio.playSfx("fall");
-    if (this.loseLife()) this.scene.restart({ ...this.stage, levelHits: this.hits + 1 });
+    if (this.loseLife()) this.scene.restart({ ...this.stage, levelHits: this.hits + 1, levelFacts: this.factsFound });
   }
 
   // Returns true if the player still has lives left.
@@ -456,7 +466,6 @@ export class LevelScene extends Phaser.Scene {
     if (this.finished) return;
     this.finished = true;
     this.physics.pause();
-    this.hideFact(); // so it can't cover "LEVEL CLEAR!"
     audio.playSfx("clear");
     this.controls.showFrame("player-jump");
     this.add
@@ -470,7 +479,7 @@ export class LevelScene extends Phaser.Scene {
     markCleared(this.stage.paper.id, this.stage.worldIndex, this.stage.checkpointsCleared);
     advanceProgress({ paperId: this.stage.paper.id, worldIndex: this.stage.worldIndex, checkpointsCleared: cleared });
     unlockNote(this.stage.paper.id, this.stage.worldIndex, "lesson", this.stage.checkpointsCleared);
-    const nextStage: StageData = { ...this.stage, checkpointsCleared: cleared, levelHits: 0 };
+    const nextStage: StageData = { ...this.stage, checkpointsCleared: cleared, levelHits: 0, levelFacts: [] };
 
     const stars = levelStars({ coinsCollected: this.coins, coinsInLevel: this.coinsInLevel, hits: this.hits });
     saveBestStars(this.stage.paper.id, this.stage.worldIndex, this.stage.checkpointsCleared, stars);
@@ -485,13 +494,15 @@ export class LevelScene extends Phaser.Scene {
       .setDepth(20);
     const nextScene = cleared >= world.cutscenes.length ? "Boss" : "Level";
 
-    // Long enough to see the stars before the lesson starts.
+    // Long enough to see the stars before the facts card and the lesson.
     this.time.delayedCall(2200, () =>
-      this.scene.start("Cutscene", {
-        cutscene: world.cutscenes[this.stage.checkpointsCleared],
-        lives: this.stage.lives,
-        next: { scene: nextScene, data: nextStage },
-      }),
+      this.showFoundFacts(() =>
+        this.scene.start("Cutscene", {
+          cutscene: world.cutscenes[this.stage.checkpointsCleared],
+          lives: this.stage.lives,
+          next: { scene: nextScene, data: nextStage },
+        }),
+      ),
     );
   }
 
@@ -499,11 +510,10 @@ export class LevelScene extends Phaser.Scene {
     audio.playSfx("gameover");
     this.finished = true;
     this.physics.pause();
-    this.hideFact();
     panel(this, 200, 110, 400, 230).setScrollFactor(0).setDepth(20);
     this.add.text(GAME_WIDTH / 2, 150, "GAME OVER", textStyle(32, NES.red)).setOrigin(0.5).setScrollFactor(0).setDepth(20);
     const menu = new Menu(this, 260, 220, [
-      { label: "RETRY LEVEL", onSelect: () => this.scene.restart({ ...this.stage, lives: START_LIVES, levelHits: 0 }) },
+      { label: "RETRY LEVEL", onSelect: () => this.scene.restart({ ...this.stage, lives: START_LIVES, levelHits: 0, levelFacts: [] }) },
       { label: "TITLE SCREEN", onSelect: () => this.scene.start("Title") },
     ]);
     menu.setDepth(21);
