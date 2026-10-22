@@ -18,6 +18,10 @@ export interface BossArena {
   speedScale(): number;
   // How long to wait between attacks, in ms (sooner on HARD and when angry).
   attackDelay(): number;
+  // Costs the player a heart (if they're not still recovering from a hit).
+  hurtPlayer(fromX: number): void;
+  // Bounces the player up, as after stomping something.
+  bouncePlayer(): void;
 }
 
 export interface BossBehavior {

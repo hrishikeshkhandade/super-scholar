@@ -16,6 +16,7 @@ import { enablePause } from "./PauseScene";
 import type { BossArena, BossBehavior } from "./bosses/arena";
 import { Charger } from "./bosses/charger";
 import { Jumper } from "./bosses/jumper";
+import { Summoner } from "./bosses/summoner";
 import { Thrower } from "./bosses/thrower";
 import {
   GAME_HEIGHT,
@@ -58,6 +59,7 @@ const BEHAVIORS: Record<BossStyle, (arena: BossArena) => BossBehavior> = {
   charger: (arena) => new Charger(arena),
   jumper: (arena) => new Jumper(arena),
   thrower: (arena) => new Thrower(arena),
+  summoner: (arena) => new Summoner(arena),
 };
 
 export class BossScene extends Phaser.Scene {
@@ -145,6 +147,8 @@ export class BossScene extends Phaser.Scene {
       },
       speedScale: () => this.tuning.bossSpeed * (1 + this.rage * RAGE_SPEEDUP),
       attackDelay: () => (ATTACK_EVERY_MS - this.rage * RAGE_ATTACK_SOONER_MS) * this.tuning.bossAttackEvery,
+      hurtPlayer: (fromX) => this.damage(fromX),
+      bouncePlayer: () => this.controls.bounce(JUMP_VELOCITY * 0.6),
     });
 
     this.dizzyStars = Array.from({ length: DIZZY_STARS }, () => this.add.image(0, 0, "star").setScale(0.6).setVisible(false));
