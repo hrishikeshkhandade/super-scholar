@@ -10,6 +10,8 @@ import { NES } from "../palette";
 import { GRAVITY, JUMP_VELOCITY, PlayerController, makeOneWay, type Sprite } from "../player";
 import { advanceProgress, currentTuning, markCleared, saveBestStars, startLives, unlockNote } from "../save";
 import type { Tuning } from "../difficulty";
+import { addPlayTime, bossQuestionKey, finishRun, recordAnswer, recordStars, runResult, loadRun } from "../run";
+import { formatTime } from "../leaderboard";
 import { bossStars } from "../stars";
 import type { StageData } from "../stage";
 import { enablePause } from "./PauseScene";
@@ -82,6 +84,7 @@ export class BossScene extends Phaser.Scene {
   private cardShowing: () => boolean = () => false;
   private stompableAt = 0;
   private tuning!: Tuning;
+  private playMs = 0; // for the leaderboard run, saved when the fight ends
 
   constructor() {
     super("Boss");
@@ -98,6 +101,8 @@ export class BossScene extends Phaser.Scene {
     this.invulnerableUntil = 0;
     this.stompableAt = 0;
     this.tuning = currentTuning();
+    this.playMs = 0;
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.savePlayTime());
 
     audio.playMusic("boss");
     this.physics.world.gravity.y = GRAVITY;
@@ -197,8 +202,14 @@ export class BossScene extends Phaser.Scene {
       if (this.introMs <= 0) this.startFighting();
       return;
     }
+    this.playMs += deltaMs;
     this.behavior.update(deltaMs);
     this.updateDizzyStars(time);
+  }
+
+  private savePlayTime(): void {
+    if (!this.stage.replay) addPlayTime(this.stage.paper.id, this.playMs);
+    this.playMs = 0;
   }
 
   private updateDizzyStars(time: number): void {
@@ -253,6 +264,7 @@ export class BossScene extends Phaser.Scene {
     const questionPanel = new QuestionPanel(this, question, PANEL_TOP, (choiceIndex) => {
       questionPanel.destroy();
       const correct = this.fight.answer(choiceIndex);
+      if (!this.stage.replay) recordAnswer(this.stage.paper.id, bossQuestionKey(this.stage.worldIndex, questionIndex), correct);
       // Tagged in the Notebook so the player can find it to study.
       if (!correct) unlockNote(this.stage.paper.id, this.stage.worldIndex, "missed", questionIndex);
       this.showFeedback(correct, question.choices[question.answerIndex], question.explanation);
@@ -332,27 +344,25 @@ export class BossScene extends Phaser.Scene {
     advanceProgress({ paperId: paper.id, worldIndex: nextWorld, checkpointsCleared: 0 });
 
     this.tweens.add({ targets: this.boss, alpha: 0, angle: 90, y: this.boss.y + 40, duration: 800 });
-    // With misses to review, the menu has a third option, so the panel grows upward.
-    const missed = this.fight.missed;
-    const extra = missed.length > 0 ? 36 : 0;
-    const top = PANEL_TOP - extra;
-    panel(this, 20, top, GAME_WIDTH - 40, 230 + extra);
-    const heading = hasNextWorld ? "WORLD CLEAR!" : "PAPER COMPLETE!";
-    this.add.text(GAME_WIDTH / 2, top + 32, heading, textStyle(32, NES.yellow)).setOrigin(0.5);
     const stars = bossStars({ wrongAnswers: this.fight.wrongAnswers, hits: this.hits });
     saveBestStars(paper.id, worldIndex, "boss", stars);
-    showStars(this, GAME_WIDTH / 2, top + 72, stars);
-    const message = hasNextWorld
-      ? "You beat the boss. On to the next section of the paper!"
-      : "You beat every world in this paper. Scholar status: legendary!";
-    this.add.text(GAME_WIDTH / 2, top + 118, message, textStyle(16, NES.white, GAME_WIDTH - 100)).setOrigin(0.5);
-    new Menu(this, 280, top + 160, [
+    const { replay } = this.stage;
+    if (!replay) recordStars(paper.id, worldIndex, "boss", stars);
+
+    // The end of a full playthrough: its score for the leaderboard.
+    this.savePlayTime();
+    const run = !hasNextWorld && !replay ? loadRun(paper.id) : undefined;
+    if (run) finishRun(paper.id);
+    const result = run && runResult(paper, run);
+
+    const missed = this.fight.missed;
+    const items = [
       ...(missed.length > 0
         ? [
             {
               label: `REVIEW MISSES (${missed.length})`,
               onSelect: () =>
-                this.scene.start("QuizReview", { missed, paper, nextWorld: hasNextWorld ? nextWorld : undefined }),
+                this.scene.start("QuizReview", { missed, paper, nextWorld: hasNextWorld ? nextWorld : undefined, replay }),
             },
           ]
         : []),
@@ -361,12 +371,27 @@ export class BossScene extends Phaser.Scene {
             {
               label: "NEXT WORLD",
               onSelect: () =>
-                this.scene.start("Level", { paper, worldIndex: nextWorld, checkpointsCleared: 0, lives: startLives() }),
+                this.scene.start("Level", { paper, worldIndex: nextWorld, checkpointsCleared: 0, lives: startLives(), replay }),
             },
           ]
         : []),
+      ...(result ? [{ label: "LEADERBOARD", onSelect: () => this.scene.start("Leaderboard", { paperId: paper.id }) }] : []),
       { label: "TITLE SCREEN", onSelect: () => this.scene.start("Title") },
-    ]);
+    ];
+    // Each option past two makes the panel grow upward.
+    const extra = Math.max(items.length - 2, 0) * 36;
+    const top = PANEL_TOP - extra;
+    panel(this, 20, top, GAME_WIDTH - 40, 230 + extra);
+    const heading = hasNextWorld ? "WORLD CLEAR!" : "PAPER COMPLETE!";
+    this.add.text(GAME_WIDTH / 2, top + 32, heading, textStyle(32, NES.yellow)).setOrigin(0.5);
+    showStars(this, GAME_WIDTH / 2, top + 72, stars);
+    const message = hasNextWorld
+      ? "You beat the boss. On to the next section of the paper!"
+      : result
+        ? `${result.score}/${result.total} right on the first try. Time: ${result.timeMs === null ? "- (3 stars everywhere sets one)" : formatTime(result.timeMs)}`
+        : "You beat every world in this paper. Scholar status: legendary!";
+    this.add.text(GAME_WIDTH / 2, top + 118, message, textStyle(16, NES.white, GAME_WIDTH - 100)).setOrigin(0.5).setAlign("center");
+    new Menu(this, 280, top + 160, items);
   }
 
   private lose(): void {

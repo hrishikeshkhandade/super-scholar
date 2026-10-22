@@ -46,9 +46,9 @@ function volumeFrom(value: unknown, legacySwitch: unknown, fallback: number): nu
   return fallback;
 }
 
-type Storage = Pick<globalThis.Storage, "getItem" | "setItem" | "removeItem">;
+export type Storage = Pick<globalThis.Storage, "getItem" | "setItem" | "removeItem">;
 
-function browserStorage(): Storage | null {
+export function browserStorage(): Storage | null {
   try {
     return globalThis.localStorage ?? null;
   } catch {
@@ -56,7 +56,7 @@ function browserStorage(): Storage | null {
   }
 }
 
-function readJson(storage: Storage | null, key: string): unknown {
+export function readJson(storage: Storage | null, key: string): unknown {
   try {
     const raw = storage?.getItem(key);
     return raw ? JSON.parse(raw) : undefined;
@@ -65,7 +65,7 @@ function readJson(storage: Storage | null, key: string): unknown {
   }
 }
 
-function writeJson(storage: Storage | null, key: string, value: unknown): void {
+export function writeJson(storage: Storage | null, key: string, value: unknown): void {
   try {
     storage?.setItem(key, JSON.stringify(value));
   } catch {

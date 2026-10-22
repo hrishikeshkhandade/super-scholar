@@ -2,11 +2,13 @@ import { handleAiGame } from "../server/aiGame";
 import { handleAskScholar } from "../server/askScholar";
 import { handleFeedback } from "../server/feedback";
 import { handleFetchPaper } from "../server/fetchPaper";
+import { handleLeaderboard, type BoardStore } from "../server/leaderboard";
+import type { BoardEntry } from "../src/leaderboard";
 
 // The Cloudflare Worker behind the site. Game files (HTML, JS, images) are
 // served straight from Cloudflare's static assets; only /api/ requests run
-// this code: paper downloads, AI-written worlds, the Scholar's answers, and
-// classmate feedback.
+// this code: paper downloads, AI-written worlds, the Scholar's answers,
+// classmate feedback, and each paper's leaderboard.
 
 interface RateLimiter {
   limit(options: { key: string }): Promise<{ success: boolean }>;
@@ -19,10 +21,20 @@ interface Env {
     put(key: string, value: string): Promise<void>;
   };
   FEEDBACK: { put(key: string, value: string): Promise<void> };
+  LEADERBOARD: {
+    get(key: string, type: "json"): Promise<unknown>;
+    put(key: string, value: string, options?: { metadata?: unknown }): Promise<void>;
+    list(options: { prefix: string; cursor?: string }): Promise<{
+      keys: { name: string; metadata?: unknown }[];
+      list_complete: boolean;
+      cursor?: string;
+    }>;
+  };
   DOWNLOAD_LIMITER?: RateLimiter;
   FEEDBACK_LIMITER?: RateLimiter;
   AI_LIMITER?: RateLimiter;
   ASK_LIMITER?: RateLimiter;
+  LEADERBOARD_LIMITER?: RateLimiter;
   GEMINI_API_KEY?: string;
   GROQ_API_KEY?: string;
 }
@@ -49,6 +61,25 @@ async function allowed(limiter: RateLimiter | undefined, request: Request): Prom
   return (await limiter.limit({ key: ip })).success;
 }
 
+// Each entry is kept in its key's metadata too, so one list call returns
+// the whole board without a read per entry.
+function boardStore(kv: Env["LEADERBOARD"]): BoardStore {
+  return {
+    get: async (key) => (await kv.get(key, "json")) as BoardEntry | null,
+    put: (key, entry) => kv.put(key, JSON.stringify(entry), { metadata: entry }),
+    list: async (prefix) => {
+      const entries: BoardEntry[] = [];
+      let cursor: string | undefined;
+      do {
+        const page = await kv.list({ prefix, cursor });
+        for (const key of page.keys) if (key.metadata) entries.push(key.metadata as BoardEntry);
+        cursor = page.list_complete ? undefined : page.cursor;
+      } while (cursor);
+      return entries;
+    },
+  };
+}
+
 const tooMany = () => Response.json({ error: "Too many requests. Wait a minute and try again." }, { status: 429 });
 
 export default {
@@ -71,6 +102,11 @@ export default {
       // that writing new papers' worlds needs.
       if (!(await allowed(env.ASK_LIMITER, request))) return withHeaders(tooMany());
       return withHeaders(await handleAskScholar(request, { geminiKey: env.GEMINI_API_KEY, groqKey: env.GROQ_API_KEY }));
+    }
+    if (pathname === "/api/leaderboard") {
+      // Reading is free; adding a score is limited per visitor.
+      if (request.method === "POST" && !(await allowed(env.LEADERBOARD_LIMITER, request))) return withHeaders(tooMany());
+      return withHeaders(await handleLeaderboard(request, boardStore(env.LEADERBOARD)));
     }
     if (pathname === "/api/feedback") {
       if (!(await allowed(env.FEEDBACK_LIMITER, request))) return withHeaders(tooMany());

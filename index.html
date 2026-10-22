@@ -30,6 +30,11 @@
         </div>
         <p id="feedback-status" role="status"></p>
       </form>
+      <!-- The leaderboard's nickname box, laid over the game by LeaderboardScene. -->
+      <form id="board-form" class="game-form" hidden novalidate>
+        <input name="nickname" maxlength="12" autocomplete="off" placeholder="Your nickname" aria-label="Nickname" />
+        <button type="button" id="board-send">ADD MY SCORE</button>
+      </form>
       <!-- Ask the Scholar's question box, laid over the game by AskScholarScene. -->
       <form id="ask-form" class="game-form" hidden novalidate>
         <label><span class="label-text">Your question</span><textarea name="question" maxlength="200" rows="2"></textarea></label>

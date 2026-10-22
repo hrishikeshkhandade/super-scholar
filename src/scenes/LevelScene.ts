@@ -9,6 +9,7 @@ import { TILE, isSolidTile, parseLevel, type BlockContents } from "../levels/par
 import { NES, css } from "../palette";
 import { GRAVITY, JUMP_VELOCITY, PlayerController, makeOneWay, type Sprite } from "../player";
 import { advanceProgress, currentTuning, markCleared, saveBestStars, startLives, unlockNote } from "../save";
+import { addPlayTime, practiceKey, recordStars } from "../run";
 import { addFoundFact } from "../foundFacts";
 import type { Tuning } from "../difficulty";
 import { COIN_GOAL, levelStars } from "../stars";
@@ -48,6 +49,7 @@ export class LevelScene extends Phaser.Scene {
   private coinText!: Phaser.GameObjects.Text;
   private shieldIcon!: Phaser.GameObjects.Image;
   private factsFound: number[] = [];
+  private playMs = 0; // for the leaderboard run, saved when the level ends
   private ticker!: Phaser.GameObjects.Container;
   private tickerChain?: Phaser.Tweens.TweenChain;
   private tickerBackground!: Phaser.GameObjects.Rectangle;
@@ -71,6 +73,10 @@ export class LevelScene extends Phaser.Scene {
     this.coins = 0;
     this.hits = data.levelHits ?? 0;
     this.factsFound = data.levelFacts ?? [];
+    this.playMs = 0;
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      if (!this.stage.replay) addPlayTime(this.stage.paper.id, this.playMs);
+    });
     this.tuning = currentTuning();
     this.hasShield = false;
     this.invulnerableUntil = 0;
@@ -250,9 +256,11 @@ export class LevelScene extends Phaser.Scene {
     });
   }
 
-  update(time: number): void {
+  update(time: number, deltaMs: number): void {
     this.controls.touch?.setVisible(!this.finished);
     if (this.finished) return;
+    // Only time spent actually playing counts (not the title card).
+    if (!this.cardShowing()) this.playMs += deltaMs;
     this.controls.update(time);
     this.updateBears();
     this.updateMovingPlatforms();
@@ -535,6 +543,7 @@ export class LevelScene extends Phaser.Scene {
 
     const stars = levelStars({ coinsCollected: this.coins, coinsInLevel: this.coinsInLevel, hits: this.hits });
     saveBestStars(this.stage.paper.id, this.stage.worldIndex, this.stage.checkpointsCleared, stars);
+    if (!this.stage.replay) recordStars(this.stage.paper.id, this.stage.worldIndex, this.stage.checkpointsCleared, stars);
     // A dark band so the stars stand out from the level behind them.
     this.add.rectangle(GAME_WIDTH / 2, 228, 360, 64, NES.black, 0.75).setScrollFactor(0).setDepth(19);
     for (const star of showStars(this, GAME_WIDTH / 2, 214, stars)) star.setScrollFactor(0).setDepth(20);
@@ -553,6 +562,9 @@ export class LevelScene extends Phaser.Scene {
           cutscene: world.cutscenes[this.stage.checkpointsCleared],
           lives: this.stage.lives,
           askAbout: this.stage.paper.title,
+          runQuestion: this.stage.replay
+            ? undefined
+            : { paperId: this.stage.paper.id, key: practiceKey(this.stage.worldIndex, this.stage.checkpointsCleared) },
           next: { scene: nextScene, data: nextStage },
         }),
       ),

@@ -6,6 +6,7 @@ import { TEXT_SPEED_MS, loadSettings } from "../save";
 import { isTouchDevice } from "../touchControls";
 import { GAME_HEIGHT, GAME_WIDTH, MAX_LIVES, Menu, QuestionPanel, fitTextToHeight, onceAdvance, panel, textStyle } from "../ui";
 import type { AskScholarData } from "./AskScholarScene";
+import { recordAnswer } from "../run";
 import { drawBackdrop } from "./backdrop";
 
 export interface CutsceneData {
@@ -17,6 +18,8 @@ export interface CutsceneData {
   onDone?: (lives: number) => void;
   // The paper's title, for lessons the player can ask the Scholar about.
   askAbout?: string;
+  // The leaderboard run's record of this lesson's practice question.
+  runQuestion?: { paperId: string; key: string };
 }
 
 const BOX = { x: 20, y: 250, width: GAME_WIDTH - 40, height: 180 };
@@ -162,6 +165,8 @@ export class CutsceneScene extends Phaser.Scene {
     const questionPanel = new QuestionPanel(this, question, 130, (choiceIndex) => {
       questionPanel.destroy();
       const correct = choiceIndex === question.answerIndex;
+      const { runQuestion } = this.params;
+      if (runQuestion) recordAnswer(runQuestion.paperId, runQuestion.key, correct);
       audio.playSfx(correct ? "correct" : "wrong");
       let heading = correct ? "CORRECT!" : "NOT QUITE.";
       if (correct && this.lives < MAX_LIVES) {

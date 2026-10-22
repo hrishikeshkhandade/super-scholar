@@ -2,6 +2,7 @@ import Phaser from "phaser";
 import { audio } from "../audio/audio";
 import type { Paper, Question } from "../content/types";
 import { startLives } from "../save";
+import { finishedRun } from "../run";
 import { NES } from "../palette";
 import { isTouchDevice } from "../touchControls";
 import { GAME_WIDTH, Menu, fitTextToHeight, panel, textStyle } from "../ui";
@@ -14,6 +15,7 @@ export interface QuizReviewData {
   missed: Question[];
   paper: Paper;
   nextWorld?: number; // the world to go on to, if there is one
+  replay?: boolean; // from the level select, so the next world is a replay too
 }
 
 // Leaves room under the menu for the controls hint.
@@ -48,16 +50,18 @@ export class QuizReviewScene extends Phaser.Scene {
     arrow(GAME_WIDTH / 2 + 80, ">", 1);
     this.counter = this.add.text(GAME_WIDTH / 2, BOX.y + BOX.height + 22, "", textStyle(16, NES.white)).setOrigin(0.5);
 
-    const { paper, nextWorld } = data;
+    const { paper, nextWorld, replay } = data;
+    const finished = nextWorld === undefined && !replay && finishedRun(paper.id) !== undefined;
     new Menu(this, 300, BOX.y + BOX.height + 50, [
       ...(nextWorld !== undefined
         ? [
             {
               label: "NEXT WORLD",
-              onSelect: () => this.scene.start("Level", { paper, worldIndex: nextWorld, checkpointsCleared: 0, lives: startLives() }),
+              onSelect: () => this.scene.start("Level", { paper, worldIndex: nextWorld, checkpointsCleared: 0, lives: startLives(), replay }),
             },
           ]
         : []),
+      ...(finished ? [{ label: "LEADERBOARD", onSelect: () => this.scene.start("Leaderboard", { paperId: paper.id }) }] : []),
       { label: "TITLE SCREEN", onSelect: () => this.scene.start("Title") },
     ], { spacing: 8 });
     this.add

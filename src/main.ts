@@ -6,6 +6,7 @@ import { BootScene } from "./scenes/BootScene";
 import { BossScene } from "./scenes/BossScene";
 import { AskScholarScene } from "./scenes/AskScholarScene";
 import { CutsceneScene } from "./scenes/CutsceneScene";
+import { LeaderboardScene } from "./scenes/LeaderboardScene";
 import { FeedbackScene } from "./scenes/FeedbackScene";
 import { GenerateScene } from "./scenes/GenerateScene";
 import { LevelScene } from "./scenes/LevelScene";
@@ -54,6 +55,7 @@ waitForFont().then(() => {
       GenerateScene,
       CutsceneScene,
       AskScholarScene,
+      LeaderboardScene,
       LevelScene,
       BossScene,
       PauseScene,

@@ -23,6 +23,8 @@ const BOX_HEIGHT = 30;
 const LEVEL_BOX_WIDTH = 72;
 const BOSS_BOX_WIDTH = 88;
 const BOX_GAP = 24;
+// Left of center, to leave room for TOP SCHOLARS on the right.
+const HINT_X = 360;
 const NAME_HEIGHT = 18; // world name just above its own row of boxes, clear of the selection frame
 
 // Colours from the game's own blocks: the next level is a gold ? block,
@@ -115,14 +117,22 @@ export class LevelSelectScene extends Phaser.Scene {
 
     this.highlight = this.add.rectangle(0, 0, 10, 10).setOrigin(0, 0).setStrokeStyle(4, NES.yellow).setFillStyle();
     this.status = this.add.text(GAME_WIDTH / 2, 400, "", textStyle(8, NES.white)).setOrigin(0.5);
+    // The hint sits between BACK and TOP SCHOLARS on the bottom row.
     this.add
       .text(
-        GAME_WIDTH / 2,
+        HINT_X,
         420,
-        isTouchDevice() ? "TAP A GREEN OR BLINKING LEVEL TO PLAY IT" : "ARROWS / WASD: CHOOSE   ENTER: PLAY   ESC: BACK",
+        isTouchDevice() ? "TAP A GREEN OR BLINKING LEVEL TO PLAY IT" : "ARROWS / WASD: CHOOSE   ENTER: PLAY",
         textStyle(8, NES.lightGray),
       )
       .setOrigin(0.5);
+    const openBoard = () => this.scene.start("Leaderboard", { paperId: paper.id, back: { scene: "LevelSelect", data: { paperId: paper.id } } });
+    this.add
+      .text(GAME_WIDTH - 28, 414, isTouchDevice() ? "TOP SCHOLARS" : "T: TOP SCHOLARS", textStyle(16, NES.white))
+      .setOrigin(1, 0.5)
+      .setPadding(8, 8, 8, 8)
+      .setInteractive({ useHandCursor: true })
+      .on("pointerdown", () => pointer.canClick && openBoard());
     this.add
       .text(28, 414, "BACK", textStyle(16, NES.white))
       .setOrigin(0, 0.5)
@@ -144,6 +154,7 @@ export class LevelSelectScene extends Phaser.Scene {
       else if (key === "s" || key === "arrowdown") this.move(1, 0);
       else if (key === "enter" || key === " ") this.choose(this.selected.row, this.selected.column, paper);
       else if (key === "escape") back();
+      else if (key === "t") openBoard();
       else return;
       event.preventDefault();
     });
@@ -195,6 +206,7 @@ export class LevelSelectScene extends Phaser.Scene {
       worldIndex: stop.worldIndex,
       checkpointsCleared,
       lives: startLives(),
+      replay: true,
     });
   }
 }

@@ -12,4 +12,6 @@ export interface StageData {
   // Facts found so far in this level (indexes into the world's facts),
   // carried over the same way so they still show on the LEVEL CLEAR card.
   levelFacts?: number[];
+  // Played from the level select: doesn't count toward the leaderboard run.
+  replay?: boolean;
 }

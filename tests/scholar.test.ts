@@ -83,6 +83,7 @@ describe("Ask the Scholar server", () => {
       ASSETS: { fetch: async () => new Response("game") },
       AI_WORLDS: { get: async () => null, put: async () => {} },
       FEEDBACK: { put: async () => {} },
+      LEADERBOARD: { get: async () => null, put: async () => {}, list: async () => ({ keys: [], list_complete: true }) },
       AI_LIMITER: { limit: async () => ({ success: true }) },
       ASK_LIMITER: { limit: async () => ({ success: false }) },
       GEMINI_API_KEY: "test-key-not-real",

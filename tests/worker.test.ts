@@ -12,6 +12,7 @@ function fakeEnv(options: { allow?: boolean; saved?: unknown } = {}) {
       put: async (key: string) => void puts.push(key),
     },
     FEEDBACK: { put: async (key: string) => void feedbackPuts.push(key) },
+    LEADERBOARD: { get: async () => null, put: async () => {}, list: async () => ({ keys: [], list_complete: true }) },
     DOWNLOAD_LIMITER: { limit: async () => ({ success: options.allow ?? true }) },
     FEEDBACK_LIMITER: { limit: async () => ({ success: options.allow ?? true }) },
     AI_LIMITER: { limit: async () => ({ success: options.allow ?? true }) },

@@ -1,4 +1,5 @@
 import type { Paper } from "./content/types";
+import { startRun } from "./run";
 import { loadProgress, markCleared, saveProgress, stageKey, type ClearedStages, type Progress, type Stage } from "./save";
 
 // Works out what the level select shows for a paper: every level and boss in
@@ -67,6 +68,7 @@ export function stagesReached(paper: Paper, progress: Progress | undefined): { w
 export function startPaperOver(paper: Paper): void {
   for (const { worldIndex, stage } of stagesReached(paper, loadProgress())) markCleared(paper.id, worldIndex, stage);
   saveProgress({ paperId: paper.id, worldIndex: 0, checkpointsCleared: 0 });
+  startRun(paper.id); // a fresh run for the leaderboard
 }
 
 // How many levels and bosses of a paper are cleared, e.g. for "7/20".

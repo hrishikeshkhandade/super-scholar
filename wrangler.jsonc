@@ -13,17 +13,20 @@
   },
   // Saved AI-written worlds, one entry per paper (keyed by a fingerprint of its text).
   // FEEDBACK: classmates' answers from the in-game FEEDBACK screen (read with `npm run feedback`).
+  // LEADERBOARD: each paper's top 10 scholars.
   "kv_namespaces": [
     { "binding": "AI_WORLDS", "id": "9c37b30aa8e04c62b14e6925d3c96853" },
-    { "binding": "FEEDBACK", "id": "e90d33d313824887af4024001a7fff26" }
+    { "binding": "FEEDBACK", "id": "e90d33d313824887af4024001a7fff26" },
+    { "binding": "LEADERBOARD", "id": "350540f193cc464e8adc5cdc5c6083a7" }
   ],
   // Per-visitor limits a minute: 20 paper downloads, 4 AI papers, 3 feedback sends,
-  // 6 questions to the Scholar.
+  // 6 questions to the Scholar, 5 leaderboard scores.
   "ratelimits": [
     { "name": "DOWNLOAD_LIMITER", "namespace_id": "1001", "simple": { "limit": 20, "period": 60 } },
     { "name": "AI_LIMITER", "namespace_id": "1002", "simple": { "limit": 4, "period": 60 } },
     { "name": "FEEDBACK_LIMITER", "namespace_id": "1003", "simple": { "limit": 3, "period": 60 } },
-    { "name": "ASK_LIMITER", "namespace_id": "1004", "simple": { "limit": 6, "period": 60 } }
+    { "name": "ASK_LIMITER", "namespace_id": "1004", "simple": { "limit": 6, "period": 60 } },
+    { "name": "LEADERBOARD_LIMITER", "namespace_id": "1005", "simple": { "limit": 5, "period": 60 } }
   ],
   "observability": { "enabled": true }
 }
