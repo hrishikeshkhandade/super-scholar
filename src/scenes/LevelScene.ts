@@ -26,6 +26,9 @@ const MOVING_PLATFORM_RANGE = TILE * 3;
 const INVULNERABLE_MS = 1200;
 const STOMP_TIP_MS = 2000;
 const FACT_INDEX_KEY = "factIndex";
+const HUD_HEIGHT = 48;
+// The fun-fact ticker: a slim strip that fades in just under the HUD.
+const TICKER = { textX: 104, padding: 8, slide: 8, maxTextHeight: 34, minMs: 3000, msPerChar: 40, maxMs: 7000 };
 
 export class LevelScene extends Phaser.Scene {
   private stage!: StageData;
@@ -45,6 +48,11 @@ export class LevelScene extends Phaser.Scene {
   private coinText!: Phaser.GameObjects.Text;
   private shieldIcon!: Phaser.GameObjects.Image;
   private factsFound: number[] = [];
+  private ticker!: Phaser.GameObjects.Container;
+  private tickerChain?: Phaser.Tweens.TweenChain;
+  private tickerBackground!: Phaser.GameObjects.Rectangle;
+  private tickerText!: Phaser.GameObjects.Text;
+  private controlsHint!: Phaser.GameObjects.Text;
   private tuning!: Tuning;
   private coins = 0;
   private coinsInLevel = 0;
@@ -190,7 +198,7 @@ export class LevelScene extends Phaser.Scene {
 
   private drawHud(levelName: string): void {
     const fixed = <T extends Phaser.GameObjects.Components.ScrollFactor>(object: T) => object.setScrollFactor(0);
-    fixed(this.add.rectangle(0, 0, GAME_WIDTH, 48, NES.black, 0.6).setOrigin(0, 0).setDepth(9));
+    fixed(this.add.rectangle(0, 0, GAME_WIDTH, HUD_HEIGHT, NES.black, 0.6).setOrigin(0, 0).setDepth(9));
     this.hearts = new HeartBar(this, 16, 14);
     this.hearts.set(this.stage.lives);
     this.shieldIcon = fixed(this.add.image(196, 24, "shield").setDepth(10).setVisible(false));
@@ -201,15 +209,16 @@ export class LevelScene extends Phaser.Scene {
     const label = `${this.stage.worldIndex + 1}-${this.stage.checkpointsCleared + 1} ${levelName.toUpperCase()}`;
     fixed(this.add.text(GAME_WIDTH - 16, 8, label, textStyle(16, NES.yellow)).setOrigin(1, 0).setDepth(10));
     fixed(this.add.text(GAME_WIDTH - 16, 30, world.name.toUpperCase(), textStyle(8, NES.lightGray)).setOrigin(1, 0).setDepth(10));
-    const hint = fixed(
+    const hint = (this.controlsHint = fixed(
       this.add.text(GAME_WIDTH / 2, 70, isTouchDevice() ? "TAP THE BUTTONS TO MOVE AND JUMP" : "A/D MOVE  W JUMP  S DROP  ESC PAUSE", textStyle(16, NES.white)).setOrigin(0.5).setDepth(10),
-    );
+    ));
     // A pit fall restarts the level; showing the title card again every time
     // would get in the way, so it only shows on a fresh start.
     const freshStart = (this.stage.levelHits ?? 0) === 0;
     const cardMs = freshStart ? TITLE_CARD_MS : 0;
     this.tweens.add({ targets: hint, alpha: 0, delay: 4000 + cardMs, duration: 800 });
     const firstLevel = this.stage.worldIndex === 0 && this.stage.checkpointsCleared === 0;
+    this.createFactTicker();
     if (freshStart) {
       this.cardShowing = showTitleCard(
         this,
@@ -387,7 +396,8 @@ export class LevelScene extends Phaser.Scene {
   }
 
   // Stomping a bear collects the world's next fact without covering the
-  // level: a "+FACT" pops up, and the facts are read on the LEVEL CLEAR card.
+  // level: a "+FACT" pops up, the fact shows in a slim ticker under the HUD,
+  // and the facts found are listed again on the LEVEL CLEAR card.
   private collectFact(x: number, y: number): void {
     const facts = this.stage.paper.worlds[this.stage.worldIndex].facts;
     if (facts.length === 0) return;
@@ -398,6 +408,43 @@ export class LevelScene extends Phaser.Scene {
     this.factsFound = addFoundFact(this.factsFound, index);
     audio.playSfx("powerup");
     this.floatText(x, y, "+FACT", NES.lime);
+    this.showFactTicker(facts[index]);
+  }
+
+  // A slim strip just under the HUD, in the HUD's colours, so it reads as
+  // part of it rather than a pop-up.
+  private createFactTicker(): void {
+    this.tickerBackground = this.add.rectangle(0, 0, GAME_WIDTH, 0, NES.black, 0.6).setOrigin(0, 0);
+    const label = this.add.text(16, TICKER.padding, "FUN FACT", textStyle(8, NES.yellow));
+    this.tickerText = this.add.text(TICKER.textX, TICKER.padding, "", textStyle(8, NES.white, GAME_WIDTH - TICKER.textX - 16));
+    this.tickerText.setLineSpacing(4);
+    this.ticker = this.add.container(0, 0, [this.tickerBackground, label, this.tickerText]).setScrollFactor(0).setDepth(10).setAlpha(0);
+  }
+
+  private showFactTicker(fact: string): void {
+    // The controls hint sits in the same spot early in a level.
+    this.tweens.killTweensOf(this.controlsHint);
+    this.controlsHint.setAlpha(0);
+    this.tickerText.setText(fact);
+    fitTextToHeight(this.tickerText, TICKER.maxTextHeight); // the end card has the full text
+    const height = this.tickerText.height + TICKER.padding * 2;
+    this.tickerBackground.setSize(GAME_WIDTH, height);
+    const shownMs = Phaser.Math.Clamp(TICKER.minMs + fact.length * TICKER.msPerChar, TICKER.minMs, TICKER.maxMs);
+    this.hideFactTicker();
+    this.ticker.setY(HUD_HEIGHT - TICKER.slide).setAlpha(0);
+    this.tickerChain = this.tweens.chain({
+      targets: this.ticker,
+      tweens: [
+        { y: HUD_HEIGHT, alpha: 1, duration: 200, ease: "Quad.easeOut" },
+        { alpha: 0, delay: shownMs, duration: 300 },
+      ],
+    });
+  }
+
+  private hideFactTicker(): void {
+    this.tickerChain?.stop();
+    this.tickerChain = undefined;
+    this.ticker.setAlpha(0);
   }
 
   // After LEVEL CLEAR: the facts found in this level, one page each, then onDone.
@@ -470,6 +517,7 @@ export class LevelScene extends Phaser.Scene {
     if (this.finished) return;
     this.finished = true;
     this.physics.pause();
+    this.hideFactTicker(); // so it can't sit over "LEVEL CLEAR!"
     audio.playSfx("clear");
     this.controls.showFrame("player-jump");
     this.add
