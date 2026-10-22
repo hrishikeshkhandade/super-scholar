@@ -49,6 +49,7 @@ npm run feedback
 - `fetchPaper` only downloads PDF links OpenAlex lists for the requested paper ID, accepts only GET, checks the file is a PDF, caps it at 20 MB, and is rate-limited per visitor.
 - `feedback` accepts only POST, checks every field (ratings 1-5, answers up to 300 characters, an optional name up to 40), refuses empty forms, and is rate-limited to about 3 sends a minute per visitor.
 - `aiGame` accepts only POST, checks the request's size and shape, is rate-limited to about 4 papers a minute per visitor (Cloudflare's limiter is approximate), and saves each result under a SHA-256 fingerprint of the exact text sent, so a request can never overwrite another paper's saved worlds. Everything the AI returns is checked (lengths, choices, answers) by the server and again by the game; anything that fails falls back to the rules-made version.
+- `askScholar` (Ask the Scholar, after each lesson) accepts only POST, checks the question (up to 200 characters) and lesson text sizes, has its own rate limit of about 6 questions a minute per visitor so it can't use up the quota for writing papers, and tells the AI to treat the question only as a question. Answers are checked and trimmed to fit the speech box; players get 3 questions per lesson.
 
 ## Credits
 

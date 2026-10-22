@@ -65,9 +65,10 @@ canvas {
   -webkit-user-select: text;
 }
 
-/* The feedback form sits over the game canvas (FeedbackScene sets its
-   position and --scale) and scrolls if it doesn't fit. */
-#feedback-form {
+/* HTML forms laid over the game canvas (the feedback form and the Ask the
+   Scholar box): placeOverGame() sets their position and --scale, and they
+   scroll if they don't fit. */
+.game-form {
   position: absolute;
   box-sizing: border-box;
   overflow-y: auto;
@@ -81,45 +82,45 @@ canvas {
   font: calc(12px * var(--scale, 1)) / 1.6 "Press Start 2P", monospace;
 }
 
-#feedback-form[hidden] {
+.game-form[hidden] {
   display: none;
 }
 
-#feedback-form h2 {
+.game-form h2 {
   margin: 0;
   text-align: center;
   color: #f8b800;
   font-size: calc(24px * var(--scale, 1));
 }
 
-#feedback-form .note {
+.game-form .note {
   margin: 0.5em 0 1em;
   text-align: center;
   color: #3cbcfc;
 }
 
-#feedback-form fieldset {
+.game-form fieldset {
   margin: 0 0 0.8em;
   padding: 0;
   border: 0;
 }
 
-#feedback-form legend {
+.game-form legend {
   margin-bottom: 0.4em;
 }
 
-#feedback-form fieldset button {
+.game-form fieldset button {
   width: 3em;
   margin-right: 0.5em;
 }
 
-#feedback-form label {
+.game-form label {
   display: block;
   margin-bottom: 0.8em;
 }
 
-#feedback-form textarea,
-#feedback-form input {
+.game-form textarea,
+.game-form input {
   display: block;
   box-sizing: border-box;
   width: 100%;
@@ -133,12 +134,12 @@ canvas {
   outline: none;
 }
 
-#feedback-form textarea:focus,
-#feedback-form input:focus {
+.game-form textarea:focus,
+.game-form input:focus {
   border-color: #f8b800;
 }
 
-#feedback-form button {
+.game-form button {
   padding: 0.6em 0.8em;
   border: calc(4px * var(--scale, 1)) solid #fcfcfc;
   background: #000000;
@@ -147,45 +148,74 @@ canvas {
   cursor: pointer;
 }
 
-#feedback-form button:focus-visible,
-#feedback-form button:hover {
+.game-form button:focus-visible,
+.game-form button:hover {
   border-color: #f8b800;
   color: #f8b800;
 }
 
-#feedback-form fieldset button[aria-pressed="true"] {
+.game-form fieldset button[aria-pressed="true"] {
   background: #f8b800;
   border-color: #f8b800;
   color: #000000;
 }
 
-#feedback-form .actions {
+.game-form .actions {
   display: flex;
   gap: 1em;
   justify-content: center;
   margin-top: 1em;
 }
 
-#feedback-form #feedback-status {
+/* Disabled buttons (ASK after the last question, SEND after sending). */
+.game-form button:disabled,
+.game-form button:disabled:hover {
+  border-color: #7c7c7c;
+  color: #7c7c7c;
+  cursor: default;
+}
+
+/* The Scholar's box sits right on the scene, with no padding of its own. */
+#ask-form {
+  padding: 0;
+  overflow: hidden;
+}
+
+#ask-form label {
+  margin-bottom: 0;
+}
+
+#ask-form .actions {
+  justify-content: flex-start;
+  align-items: center;
+  margin-top: 0.8em;
+}
+
+#ask-left {
+  margin-left: auto;
+  color: #bcbcbc;
+}
+
+#feedback-status {
   min-height: 1.6em;
   text-align: center;
   color: #b8f818;
 }
 
-#feedback-form #feedback-status.error {
+#feedback-status.error {
   color: #f87858;
 }
 
 /* Phones: finger-sized buttons, and 16px text boxes so iPhones don't zoom
    in when one is tapped. */
 @media (pointer: coarse) {
-  #feedback-form button {
+  .game-form button {
     min-width: 40px;
     min-height: 40px;
   }
 
-  #feedback-form textarea,
-  #feedback-form input {
+  .game-form textarea,
+  .game-form input {
     font-size: 16px;
   }
 }

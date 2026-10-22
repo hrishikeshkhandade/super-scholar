@@ -2,6 +2,7 @@ import Phaser from "phaser";
 import { audio } from "../audio/audio";
 import { RATING_QUESTIONS, TEXT_QUESTIONS } from "../feedbackQuestions";
 import { isTouchDevice } from "../touchControls";
+import { showOverGame } from "../htmlOverlay";
 import { GAME_HEIGHT, GAME_WIDTH } from "../ui";
 import { PANEL_INNER, drawMenuBackdrop } from "./backdrop";
 
@@ -32,7 +33,6 @@ export class FeedbackScene extends Phaser.Scene {
 
     const back = () => this.scene.start("Title");
     const send = () => void this.send();
-    const onResize = () => this.positionForm();
     // Enter in the name box would otherwise try to submit the form.
     const onSubmit = (event: Event) => event.preventDefault();
     const onKey = (event: KeyboardEvent) => {
@@ -45,20 +45,21 @@ export class FeedbackScene extends Phaser.Scene {
     backButton.addEventListener("click", back);
     this.form.addEventListener("submit", onSubmit);
     this.form.addEventListener("keydown", onKey);
-    window.addEventListener("resize", onResize);
-    this.scale.on(Phaser.Scale.Events.RESIZE, onResize);
     this.input.keyboard?.on("keydown-ESC", back);
 
-    this.form.hidden = false;
-    this.positionForm();
+    // Just inside the menu panel's border, so anything scrolled out of view
+    // is clipped at the frame instead of spilling over it.
+    showOverGame(this, this.form, {
+      x: PANEL_INNER.x,
+      y: PANEL_INNER.y,
+      width: GAME_WIDTH - PANEL_INNER.x * 2,
+      height: GAME_HEIGHT - PANEL_INNER.y * 2,
+    });
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
-      this.form.hidden = true;
       this.sendButton.removeEventListener("click", send);
       backButton.removeEventListener("click", back);
       this.form.removeEventListener("submit", onSubmit);
       this.form.removeEventListener("keydown", onKey);
-      window.removeEventListener("resize", onResize);
-      this.scale.off(Phaser.Scale.Events.RESIZE, onResize);
     });
   }
 
@@ -128,21 +129,5 @@ export class FeedbackScene extends Phaser.Scene {
       this.sendButton.disabled = false;
       this.sending = false;
     }
-  }
-
-  // Fit just inside the menu panel's border, so anything scrolled out of
-  // view is clipped at the frame instead of spilling over it; the text
-  // scales with the canvas.
-  private positionForm(): void {
-    const canvas = this.game.canvas.getBoundingClientRect();
-    const container = this.form.parentElement!.getBoundingClientRect();
-    const scale = canvas.width / GAME_WIDTH;
-    Object.assign(this.form.style, {
-      left: `${canvas.left - container.left + PANEL_INNER.x * scale}px`,
-      top: `${canvas.top - container.top + PANEL_INNER.y * scale}px`,
-      width: `${(GAME_WIDTH - PANEL_INNER.x * 2) * scale}px`,
-      height: `${(GAME_HEIGHT - PANEL_INNER.y * 2) * scale}px`,
-    });
-    this.form.style.setProperty("--scale", String(Math.max(scale, 0.75)));
   }
 }

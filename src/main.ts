@@ -4,6 +4,7 @@ import { NES } from "./palette";
 import { AboutScene, CreditsScene } from "./scenes/AboutScene";
 import { BootScene } from "./scenes/BootScene";
 import { BossScene } from "./scenes/BossScene";
+import { AskScholarScene } from "./scenes/AskScholarScene";
 import { CutsceneScene } from "./scenes/CutsceneScene";
 import { FeedbackScene } from "./scenes/FeedbackScene";
 import { GenerateScene } from "./scenes/GenerateScene";
@@ -52,6 +53,7 @@ waitForFont().then(() => {
       PaperDetailScene,
       GenerateScene,
       CutsceneScene,
+      AskScholarScene,
       LevelScene,
       BossScene,
       PauseScene,

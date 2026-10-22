@@ -552,6 +552,7 @@ export class LevelScene extends Phaser.Scene {
         this.scene.start("Cutscene", {
           cutscene: world.cutscenes[this.stage.checkpointsCleared],
           lives: this.stage.lives,
+          askAbout: this.stage.paper.title,
           next: { scene: nextScene, data: nextStage },
         }),
       ),

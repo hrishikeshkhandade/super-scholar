@@ -4,7 +4,8 @@ import type { Cutscene, Question } from "../content/types";
 import { NES } from "../palette";
 import { TEXT_SPEED_MS, loadSettings } from "../save";
 import { isTouchDevice } from "../touchControls";
-import { GAME_HEIGHT, GAME_WIDTH, MAX_LIVES, QuestionPanel, onceAdvance, panel, textStyle } from "../ui";
+import { GAME_HEIGHT, GAME_WIDTH, MAX_LIVES, Menu, QuestionPanel, fitTextToHeight, onceAdvance, panel, textStyle } from "../ui";
+import type { AskScholarData } from "./AskScholarScene";
 import { drawBackdrop } from "./backdrop";
 
 export interface CutsceneData {
@@ -14,9 +15,12 @@ export interface CutsceneData {
   // (the runner, which is paused underneath this scene).
   next?: { scene: string; data: object };
   onDone?: (lives: number) => void;
+  // The paper's title, for lessons the player can ask the Scholar about.
+  askAbout?: string;
 }
 
 const BOX = { x: 20, y: 250, width: GAME_WIDTH - 40, height: 180 };
+const AFTER_PRACTICE_MENU_Y = 372;
 
 const FORWARD_KEYS = [" ", "Enter", "d", "D", "s", "S", "ArrowRight", "ArrowDown"];
 const BACK_KEYS = ["a", "A", "w", "W", "ArrowLeft", "ArrowUp"];
@@ -166,10 +170,40 @@ export class CutsceneScene extends Phaser.Scene {
       }
       const answer = `Answer: ${question.choices[question.answerIndex]}`;
       this.add.text(40, 150, heading, textStyle(24, correct ? NES.lime : NES.salmon));
-      this.add.text(40, 210, `${answer}\n\n${question.explanation}`, textStyle(16, NES.white, GAME_WIDTH - 80));
-      this.add.text(GAME_WIDTH - 40, 410, "SPACE / TAP", textStyle(8, NES.yellow)).setOrigin(1, 1);
-      onceAdvance(this, () => this.finish());
+      const explanation = this.add.text(40, 210, `${answer}\n\n${question.explanation}`, textStyle(16, NES.white, GAME_WIDTH - 80));
+      const { askAbout } = this.params;
+      if (!askAbout) {
+        this.add.text(GAME_WIDTH - 40, 410, "SPACE / TAP", textStyle(8, NES.yellow)).setOrigin(1, 1);
+        onceAdvance(this, () => this.finish());
+        return;
+      }
+      fitTextToHeight(explanation, AFTER_PRACTICE_MENU_Y - 16 - explanation.y);
+      // Next frame, so the key that answered can't also pick from this menu.
+      this.time.delayedCall(0, () => this.offerScholar(askAbout));
     });
+  }
+
+  // CONTINUE comes first, so Space still moves on as before.
+  private offerScholar(paperTitle: string): void {
+    new Menu(this, GAME_WIDTH / 2 - 120, AFTER_PRACTICE_MENU_Y, [
+      { label: "CONTINUE", onSelect: () => this.finish() },
+      { label: "ASK THE SCHOLAR", onSelect: () => this.openScholar(paperTitle) },
+    ], { spacing: 12 });
+  }
+
+  // The Scholar runs on top of this paused scene, and the lesson finishes
+  // when the player is done asking.
+  private openScholar(paperTitle: string): void {
+    const data: AskScholarData = {
+      paperTitle,
+      cutscene: this.params.cutscene,
+      onDone: () => {
+        this.scene.resume();
+        this.finish();
+      },
+    };
+    this.scene.launch("AskScholar", data);
+    this.scene.pause();
   }
 
   private finish(): void {

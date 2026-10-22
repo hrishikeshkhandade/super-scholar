@@ -14,7 +14,7 @@
       <input id="search-input" type="search" placeholder="Search papers..." autocomplete="off" hidden />
       <input id="pdf-input" type="file" accept="application/pdf,.pdf" hidden />
       <!-- Classmate feedback, laid over the game by FeedbackScene. Sent with fetch, never submitted. -->
-      <form id="feedback-form" hidden novalidate>
+      <form id="feedback-form" class="game-form" hidden novalidate>
         <h2>FEEDBACK</h2>
         <p class="note">Thanks for playing! Answer whatever you like.</p>
         <fieldset data-rating="fun"><legend>How fun was it?</legend></fieldset>
@@ -29,6 +29,15 @@
           <button type="button" id="feedback-back">BACK</button>
         </div>
         <p id="feedback-status" role="status"></p>
+      </form>
+      <!-- Ask the Scholar's question box, laid over the game by AskScholarScene. -->
+      <form id="ask-form" class="game-form" hidden novalidate>
+        <label>Your question<textarea name="question" maxlength="200" rows="2"></textarea></label>
+        <div class="actions">
+          <button type="button" id="ask-send">ASK</button>
+          <button type="button" id="ask-done">DONE</button>
+          <span id="ask-left"></span>
+        </div>
       </form>
     </div>
     <script type="module" src="/src/main.ts"></script>

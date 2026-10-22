@@ -1,10 +1,12 @@
 import { handleAiGame } from "../server/aiGame";
+import { handleAskScholar } from "../server/askScholar";
 import { handleFeedback } from "../server/feedback";
 import { handleFetchPaper } from "../server/fetchPaper";
 
 // The Cloudflare Worker behind the site. Game files (HTML, JS, images) are
 // served straight from Cloudflare's static assets; only /api/ requests run
-// this code: paper downloads, AI-written worlds, and classmate feedback.
+// this code: paper downloads, AI-written worlds, the Scholar's answers, and
+// classmate feedback.
 
 interface RateLimiter {
   limit(options: { key: string }): Promise<{ success: boolean }>;
@@ -20,6 +22,7 @@ interface Env {
   DOWNLOAD_LIMITER?: RateLimiter;
   FEEDBACK_LIMITER?: RateLimiter;
   AI_LIMITER?: RateLimiter;
+  ASK_LIMITER?: RateLimiter;
   GEMINI_API_KEY?: string;
   GROQ_API_KEY?: string;
 }
@@ -62,6 +65,12 @@ export default {
         put: (key: string, value: string) => env.AI_WORLDS.put(key, value),
       };
       return withHeaders(await handleAiGame(request, { geminiKey: env.GEMINI_API_KEY, groqKey: env.GROQ_API_KEY, store }));
+    }
+    if (pathname === "/api/ask-scholar") {
+      // Its own limit, so players asking questions can't use up the quota
+      // that writing new papers' worlds needs.
+      if (!(await allowed(env.ASK_LIMITER, request))) return withHeaders(tooMany());
+      return withHeaders(await handleAskScholar(request, { geminiKey: env.GEMINI_API_KEY, groqKey: env.GROQ_API_KEY }));
     }
     if (pathname === "/api/feedback") {
       if (!(await allowed(env.FEEDBACK_LIMITER, request))) return withHeaders(tooMany());
