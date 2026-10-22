@@ -15,6 +15,7 @@ import type { StageData } from "../stage";
 import { enablePause } from "./PauseScene";
 import type { BossArena, BossBehavior } from "./bosses/arena";
 import { Charger } from "./bosses/charger";
+import { Flyer } from "./bosses/flyer";
 import { Jumper } from "./bosses/jumper";
 import { Summoner } from "./bosses/summoner";
 import { Thrower } from "./bosses/thrower";
@@ -60,6 +61,7 @@ const BEHAVIORS: Record<BossStyle, (arena: BossArena) => BossBehavior> = {
   jumper: (arena) => new Jumper(arena),
   thrower: (arena) => new Thrower(arena),
   summoner: (arena) => new Summoner(arena),
+  flyer: (arena) => new Flyer(arena),
 };
 
 export class BossScene extends Phaser.Scene {

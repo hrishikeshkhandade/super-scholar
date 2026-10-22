@@ -221,6 +221,16 @@ const SPRITES: Record<string, string[]> = {
     "KRWWWWWK",
     "KKKKKKKK",
   ],
+  // The Flyer boss's wings (this is the right one; the left is flipped).
+  wing: [
+    "..........KK",
+    "........KKWK",
+    "......KKCWWK",
+    "....KKCCCWK.",
+    "..KKCCCCCWK.",
+    "KKCCCCCCWK..",
+    ".KKKKKKKK...",
+  ],
   heart: [
     ".RR.RR.",
     "RSRRRRR",
