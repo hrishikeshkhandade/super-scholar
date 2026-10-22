@@ -203,6 +203,15 @@ const SPRITES: Record<string, string[]> = {
     "KRRRRRRK",
     "KKKKKKKK",
   ],
+  // The Jumper boss's landing wave, rolling along the floor.
+  shockwave: [
+    "......KK..",
+    "....KKWYK.",
+    "...KWYYYYK",
+    "..KWYYYYYK",
+    ".KYYYSYYYK",
+    "KYYYSSYYYK",
+  ],
   heart: [
     ".RR.RR.",
     "RSRRRRR",

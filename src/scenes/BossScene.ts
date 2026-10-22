@@ -2,6 +2,7 @@ import Phaser from "phaser";
 import { audio } from "../audio/audio";
 import { burst } from "../effects";
 import { BossFight } from "../bossFight";
+import { BOSS_STYLE_NAMES, bossStyleFor, type BossStyle } from "../bossStyles";
 import { TILE } from "../levels/parseLevel";
 import { farKey } from "../levels/themeTextures";
 import { THEMES } from "../levels/themes";
@@ -12,6 +13,9 @@ import type { Tuning } from "../difficulty";
 import { bossStars } from "../stars";
 import type { StageData } from "../stage";
 import { enablePause } from "./PauseScene";
+import type { BossArena, BossBehavior } from "./bosses/arena";
+import { Charger } from "./bosses/charger";
+import { Jumper } from "./bosses/jumper";
 import {
   GAME_HEIGHT,
   GAME_WIDTH,
@@ -26,10 +30,11 @@ import {
   textStyle,
 } from "../ui";
 
-// The boss fight is an arena: dodge the boss's charges and falling candles,
-// and stomp it to pause the fight for a question. Right answers damage it.
+// The boss fight is an arena: dodge the boss's attacks and stomp it to pause
+// the fight for a question. Right answers damage it. How the boss moves and
+// attacks depends on the world (see bossStyles.ts and the bosses folder).
 
-type Mode = "intro" | "walk" | "telegraph" | "charge" | "stunned" | "question" | "over";
+type Mode = "intro" | "fight" | "question" | "over";
 type StaticSprite = Phaser.Types.Physics.Arcade.SpriteWithStaticBody;
 
 const FLOOR_Y = 12 * TILE;
@@ -39,22 +44,16 @@ const BAR = { x: 480, y: 34, width: 300, height: 16 };
 // paper, so a player still learning the answers should be able to win.
 // Wrong answers make the boss a little angrier (rage), never much harder.
 const INTRO_MS = 2000;
-const TELEGRAPH_MS = 1100; // shaking before a charge
-const STUN_MS = 1600; // dizzy and harmless after hitting a wall
-const CANDLE_WARNING_MS = 1200; // red marker before a candle falls
 const PLAYER_INVULNERABLE_MS = 1500;
 const STOMP_COOLDOWN_MS = 1500;
-const WALK_SPEED = 50;
-const CHARGE_SPEED = 280;
 const RAGE_SPEEDUP = 0.12; // each rage level makes it 12% faster
 const ATTACK_EVERY_MS = 3200;
 const RAGE_ATTACK_SOONER_MS = 300;
 
-interface PendingDrop {
-  x: number;
-  remainingMs: number;
-  marker: Phaser.GameObjects.Rectangle;
-}
+const BEHAVIORS: Record<BossStyle, (arena: BossArena) => BossBehavior> = {
+  charger: (arena) => new Charger(arena),
+  jumper: (arena) => new Jumper(arena),
+};
 
 export class BossScene extends Phaser.Scene {
   private stage!: StageData;
@@ -62,15 +61,12 @@ export class BossScene extends Phaser.Scene {
   private controls!: PlayerController;
   private player!: Sprite;
   private boss!: Sprite;
-  private candles!: Phaser.Physics.Arcade.Group;
+  private behavior!: BossBehavior;
   private hearts!: HeartBar;
   private healthFill!: Phaser.GameObjects.Rectangle;
   private rageText!: Phaser.GameObjects.Text;
   private mode: Mode = "intro";
-  private modeMs = 0;
-  private attackMs = 0;
-  private nextAttack: "charge" | "candles" = "charge";
-  private drops: PendingDrop[] = [];
+  private introMs = 0;
   private invulnerableUntil = 0;
   private hits = 0;
   private cardShowing: () => boolean = () => false;
@@ -88,9 +84,7 @@ export class BossScene extends Phaser.Scene {
     this.mode = "intro";
     this.hits = 0;
     // The title card freezes the arena first, so the intro waits for it.
-    this.modeMs = INTRO_MS + TITLE_CARD_MS;
-    this.nextAttack = "charge";
-    this.drops = [];
+    this.introMs = INTRO_MS + TITLE_CARD_MS;
     this.invulnerableUntil = 0;
     this.stompableAt = 0;
     this.tuning = currentTuning();
@@ -121,15 +115,30 @@ export class BossScene extends Phaser.Scene {
     this.controls = new PlayerController(this, 120, FLOOR_Y - 30);
     this.player = this.controls.sprite.setDepth(0);
 
-    this.candles = this.physics.add.group();
+    const hazards = this.physics.add.group();
     this.physics.add.collider(this.player, floor);
     this.physics.add.collider(this.player, platforms);
     this.physics.add.collider(this.boss, floor);
-    this.physics.add.collider(this.candles, floor, (candle) => (candle as Sprite).destroy());
     this.physics.add.overlap(this.player, this.boss, () => this.touchBoss());
-    this.physics.add.overlap(this.player, this.candles, (_player, candle) => {
-      (candle as Sprite).destroy();
-      this.damage((candle as Sprite).x);
+    this.physics.add.overlap(this.player, hazards, (_player, hazard) => {
+      (hazard as Sprite).destroy();
+      this.damage((hazard as Sprite).x);
+    });
+
+    const scene = this;
+    const style = bossStyleFor(data.worldIndex);
+    this.behavior = BEHAVIORS[style]({
+      scene,
+      boss: this.boss,
+      player: this.player,
+      floor,
+      floorY: FLOOR_Y,
+      hazards,
+      get rage() {
+        return scene.rage;
+      },
+      speedScale: () => this.tuning.bossSpeed * (1 + this.rage * RAGE_SPEEDUP),
+      attackDelay: () => (ATTACK_EVERY_MS - this.rage * RAGE_ATTACK_SOONER_MS) * this.tuning.bossAttackEvery,
     });
 
     this.drawHud(world.boss.name);
@@ -138,7 +147,7 @@ export class BossScene extends Phaser.Scene {
     this.cardShowing = showTitleCard(this, {
       title: `WORLD ${this.stage.worldIndex + 1} BOSS`,
       subtitle: world.boss.name,
-      detail: "Stomp it to answer its questions",
+      detail: BOSS_STYLE_NAMES[style],
     });
   }
 
@@ -159,7 +168,7 @@ export class BossScene extends Phaser.Scene {
     this.rageText = this.add.text(BAR.x - 16, 36, "", textStyle(8, NES.red)).setOrigin(1, 0);
 
     const hint = this.add
-      .text(GAME_WIDTH / 2, 130, "STOMP THE BOSS TO ANSWER!\nDODGE ITS CHARGE AND THE CANDLES", textStyle(16, NES.yellow))
+      .text(GAME_WIDTH / 2, 130, "STOMP THE BOSS TO ANSWER!\n" + this.behavior.hint, textStyle(16, NES.yellow))
       .setOrigin(0.5)
       .setAlign("center");
     this.tweens.add({ targets: hint, alpha: 0, delay: INTRO_MS + TITLE_CARD_MS, duration: 600 });
@@ -170,89 +179,21 @@ export class BossScene extends Phaser.Scene {
     this.controls.touch?.setVisible(fighting);
     if (!fighting) return;
     this.controls.update(time);
-    this.updateDrops(deltaMs);
-    this.updateBoss(deltaMs);
+    if (this.mode === "intro") {
+      this.introMs -= deltaMs;
+      if (this.introMs <= 0) this.startFighting();
+      return;
+    }
+    this.behavior.update(deltaMs);
+  }
+
+  private startFighting(): void {
+    this.mode = "fight";
+    this.behavior.resume();
   }
 
   private get rage(): number {
     return this.fight.rage;
-  }
-
-  private updateBoss(deltaMs: number): void {
-    const towardPlayer = Math.sign(this.player.x - this.boss.x) || 1;
-    this.modeMs -= deltaMs;
-
-    switch (this.mode) {
-      case "intro":
-        if (this.modeMs <= 0) this.startWalking();
-        break;
-      case "walk":
-        this.boss.setVelocityX(towardPlayer * WALK_SPEED * this.tuning.bossSpeed * (1 + this.rage * RAGE_SPEEDUP));
-        this.attackMs -= deltaMs;
-        if (this.attackMs <= 0) this.startAttack();
-        break;
-      case "telegraph":
-        // Shake in place so the player can see the charge coming.
-        this.boss.setVelocityX(0);
-        this.boss.setX(this.boss.x + (Math.random() - 0.5) * 4);
-        if (this.modeMs <= 0) {
-          this.mode = "charge";
-          this.modeMs = 2500;
-          this.boss.setVelocityX(towardPlayer * CHARGE_SPEED * this.tuning.bossSpeed * (1 + this.rage * RAGE_SPEEDUP));
-        }
-        break;
-      case "charge":
-        if (this.boss.body.blocked.left || this.boss.body.blocked.right || this.modeMs <= 0) {
-          this.mode = "stunned";
-          this.modeMs = STUN_MS;
-          this.boss.setVelocityX(0).setTint(NES.lightGray);
-          this.cameras.main.shake(200, 0.01);
-          audio.playSfx("bump");
-        }
-        break;
-      case "stunned":
-        if (this.modeMs <= 0) this.startWalking();
-        break;
-    }
-  }
-
-  private startWalking(): void {
-    this.mode = "walk";
-    this.attackMs = (ATTACK_EVERY_MS - this.rage * RAGE_ATTACK_SOONER_MS) * this.tuning.bossAttackEvery;
-    this.boss.clearTint();
-  }
-
-  private startAttack(): void {
-    if (this.nextAttack === "charge") {
-      this.mode = "telegraph";
-      this.modeMs = TELEGRAPH_MS;
-      this.boss.setTint(NES.red);
-      this.nextAttack = "candles";
-      return;
-    }
-    // Candle rain: the boss jumps and red candles fall where warnings flash.
-    this.nextAttack = "charge";
-    if (this.boss.body.blocked.down) this.boss.setVelocityY(-650);
-    const count = 2 + this.rage;
-    for (let i = 0; i < count; i++) {
-      const x = Phaser.Math.Between(40, GAME_WIDTH - 40);
-      const marker = this.add.rectangle(x, FLOOR_Y - 3, 28, 6, NES.red).setAlpha(0.8);
-      this.tweens.add({ targets: marker, alpha: 0.2, duration: 120, yoyo: true, repeat: -1 });
-      this.drops.push({ x, remainingMs: CANDLE_WARNING_MS + i * 150, marker });
-    }
-    this.startWalking();
-  }
-
-  private updateDrops(deltaMs: number): void {
-    for (const drop of [...this.drops]) {
-      drop.remainingMs -= deltaMs;
-      if (drop.remainingMs > 0) continue;
-      drop.marker.destroy();
-      this.drops = this.drops.filter((other) => other !== drop);
-      const candle = this.candles.create(drop.x, -20, "spike") as Sprite;
-      candle.setVelocityY(200).setFlipY(true);
-      candle.body.setSize(20, 24).setOffset(6, 4);
-    }
   }
 
   private touchBoss(): void {
@@ -261,7 +202,7 @@ export class BossScene extends Phaser.Scene {
     const fromAbove = this.player.body.bottom <= this.boss.body.top + 20;
     if (falling && fromAbove && this.time.now >= this.stompableAt) this.stomp();
     // A stunned boss is dizzy and harmless: that's the moment to jump on it.
-    else if (this.mode !== "stunned") this.damage(this.boss.x);
+    else if (!this.behavior.harmless) this.damage(this.boss.x);
   }
 
   private stomp(): void {
@@ -321,7 +262,7 @@ export class BossScene extends Phaser.Scene {
 
   private resumeFight(): void {
     this.physics.resume();
-    this.startWalking();
+    this.startFighting();
     this.stompableAt = this.time.now + STOMP_COOLDOWN_MS;
     this.invulnerableUntil = this.time.now + PLAYER_INVULNERABLE_MS;
   }
@@ -346,8 +287,7 @@ export class BossScene extends Phaser.Scene {
   private endFight(): void {
     this.mode = "over";
     this.physics.pause();
-    this.drops.forEach((drop) => drop.marker.destroy());
-    this.drops = [];
+    this.behavior.end();
   }
 
   private win(): void {
