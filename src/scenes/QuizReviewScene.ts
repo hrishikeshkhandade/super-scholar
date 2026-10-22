@@ -1,9 +1,10 @@
 import Phaser from "phaser";
 import { audio } from "../audio/audio";
 import type { Paper, Question } from "../content/types";
+import { startLives } from "../save";
 import { NES } from "../palette";
 import { isTouchDevice } from "../touchControls";
-import { GAME_WIDTH, Menu, START_LIVES, fitTextToHeight, panel, textStyle } from "../ui";
+import { GAME_WIDTH, Menu, fitTextToHeight, panel, textStyle } from "../ui";
 import { drawMenuBackdrop } from "./backdrop";
 
 // After beating a boss: the questions the player got wrong, each with the
@@ -52,7 +53,7 @@ export class QuizReviewScene extends Phaser.Scene {
         ? [
             {
               label: "NEXT WORLD",
-              onSelect: () => this.scene.start("Level", { paper, worldIndex: nextWorld, checkpointsCleared: 0, lives: START_LIVES }),
+              onSelect: () => this.scene.start("Level", { paper, worldIndex: nextWorld, checkpointsCleared: 0, lives: startLives() }),
             },
           ]
         : []),

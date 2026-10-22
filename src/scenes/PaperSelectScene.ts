@@ -4,8 +4,9 @@ import { LIBRARY, searchPapers } from "../content/library";
 import { searchOnline, type OnlinePaper } from "../content/openAlex";
 import type { Paper } from "../content/types";
 import { startPaperOver } from "../levelMap";
+import { startLives } from "../save";
 import { NES, css } from "../palette";
-import { GAME_WIDTH, Menu, START_LIVES, textStyle } from "../ui";
+import { GAME_WIDTH, Menu, textStyle } from "../ui";
 import { drawMenuBackdrop } from "./backdrop";
 
 const INPUT_BOX = { x: 40, y: 64, width: GAME_WIDTH - 80, height: 40 };
@@ -152,7 +153,7 @@ export class PaperSelectScene extends Phaser.Scene {
     startPaperOver(paper);
     this.scene.start("Cutscene", {
       cutscene: paper.intro,
-      lives: START_LIVES,
+      lives: startLives(),
       next: { scene: "Level", data: { paper, worldIndex: 0, checkpointsCleared: 0 } },
     });
   }

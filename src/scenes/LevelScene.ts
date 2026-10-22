@@ -8,13 +8,14 @@ import { themeFor, type Theme } from "../levels/themes";
 import { TILE, isSolidTile, parseLevel, type BlockContents } from "../levels/parseLevel";
 import { NES, css } from "../palette";
 import { GRAVITY, JUMP_VELOCITY, PlayerController, makeOneWay, type Sprite } from "../player";
-import { advanceProgress, markCleared, saveBestStars, unlockNote } from "../save";
+import { advanceProgress, currentTuning, markCleared, saveBestStars, startLives, unlockNote } from "../save";
 import { addFoundFact } from "../foundFacts";
+import type { Tuning } from "../difficulty";
 import { COIN_GOAL, levelStars } from "../stars";
 import type { StageData } from "../stage";
 import { enablePause } from "./PauseScene";
 import { isTouchDevice } from "../touchControls";
-import { GAME_HEIGHT, GAME_WIDTH, HeartBar, MAX_LIVES, Menu, START_LIVES, TITLE_CARD_MS, fitTextToHeight, onceAdvance, panel, showStars, showTitleCard, textStyle } from "../ui";
+import { GAME_HEIGHT, GAME_WIDTH, HeartBar, MAX_LIVES, Menu, TITLE_CARD_MS, fitTextToHeight, onceAdvance, panel, showStars, showTitleCard, textStyle } from "../ui";
 
 type StaticSprite = Phaser.Types.Physics.Arcade.SpriteWithStaticBody;
 
@@ -44,6 +45,7 @@ export class LevelScene extends Phaser.Scene {
   private coinText!: Phaser.GameObjects.Text;
   private shieldIcon!: Phaser.GameObjects.Image;
   private factsFound: number[] = [];
+  private tuning!: Tuning;
   private coins = 0;
   private coinsInLevel = 0;
   private hits = 0;
@@ -61,6 +63,7 @@ export class LevelScene extends Phaser.Scene {
     this.coins = 0;
     this.hits = data.levelHits ?? 0;
     this.factsFound = data.levelFacts ?? [];
+    this.tuning = currentTuning();
     this.hasShield = false;
     this.invulnerableUntil = 0;
     this.finished = false;
@@ -120,7 +123,7 @@ export class LevelScene extends Phaser.Scene {
     this.bears = this.physics.add.group();
     for (const tile of level.bears) {
       const bear = this.bears.create(center(tile).x, center(tile).y, "bear-walk1") as Sprite;
-      bear.play("bear-walk").setVelocityX(-BEAR_SPEED);
+      bear.play("bear-walk").setVelocityX(-BEAR_SPEED * this.tuning.bearSpeed);
       bear.body.setSize(32, 28).setOffset(4, 4);
     }
 
@@ -193,6 +196,7 @@ export class LevelScene extends Phaser.Scene {
     this.shieldIcon = fixed(this.add.image(196, 24, "shield").setDepth(10).setVisible(false));
     fixed(this.add.image(240, 24, "coin1").setDepth(10));
     this.coinText = fixed(this.add.text(256, 18, "x 0", textStyle(16, NES.white)).setDepth(10));
+    if (this.tuning.hudLabel) fixed(this.add.text(352, 18, this.tuning.hudLabel, textStyle(16, NES.red)).setDepth(10));
     const world = this.stage.paper.worlds[this.stage.worldIndex];
     const label = `${this.stage.worldIndex + 1}-${this.stage.checkpointsCleared + 1} ${levelName.toUpperCase()}`;
     fixed(this.add.text(GAME_WIDTH - 16, 8, label, textStyle(16, NES.yellow)).setOrigin(1, 0).setDepth(10));
@@ -261,7 +265,7 @@ export class LevelScene extends Phaser.Scene {
       const aheadX = Math.floor((bear.x + direction * 20) / TILE);
       const belowY = Math.floor((body.bottom + 4) / TILE);
       if (body.blocked.down && !isSolidTile(this.rows, aheadX, belowY)) direction = -direction;
-      bear.setVelocityX(direction * BEAR_SPEED).setFlipX(direction > 0);
+      bear.setVelocityX(direction * BEAR_SPEED * this.tuning.bearSpeed).setFlipX(direction > 0);
     }
   }
 
@@ -513,7 +517,7 @@ export class LevelScene extends Phaser.Scene {
     panel(this, 200, 110, 400, 230).setScrollFactor(0).setDepth(20);
     this.add.text(GAME_WIDTH / 2, 150, "GAME OVER", textStyle(32, NES.red)).setOrigin(0.5).setScrollFactor(0).setDepth(20);
     const menu = new Menu(this, 260, 220, [
-      { label: "RETRY LEVEL", onSelect: () => this.scene.restart({ ...this.stage, lives: START_LIVES, levelHits: 0, levelFacts: [] }) },
+      { label: "RETRY LEVEL", onSelect: () => this.scene.restart({ ...this.stage, lives: startLives(), levelHits: 0, levelFacts: [] }) },
       { label: "TITLE SCREEN", onSelect: () => this.scene.start("Title") },
     ]);
     menu.setDepth(21);

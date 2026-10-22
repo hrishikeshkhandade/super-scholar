@@ -1,5 +1,6 @@
 import type { MusicStyle } from "./audio/songs";
 import type { Paper } from "./content/types";
+import { DIFFICULTIES, TUNING, type Difficulty } from "./difficulty";
 import { validatePaper } from "./content/validate";
 
 // Saves progress and settings in the browser (localStorage), so "Continue"
@@ -19,6 +20,7 @@ export interface Settings {
   musicVolume: number; // 0 (off) to 100, in VOLUME_LEVELS steps
   musicStyle: MusicStyle;
   sfxVolume: number;
+  difficulty: Difficulty;
 }
 
 export const MUSIC_STYLES: MusicStyle[] = ["upbeat", "tradingFloor"];
@@ -35,7 +37,7 @@ const STARS_KEY = "super-scholar.stars";
 const MAX_SAVED_UPLOADS = 3;
 // 100% is the game's original loudness.
 export const VOLUME_LEVELS = [0, 25, 50, 75, 100];
-const DEFAULT_SETTINGS: Settings = { textSpeed: "normal", musicVolume: 100, musicStyle: "upbeat", sfxVolume: 100 };
+const DEFAULT_SETTINGS: Settings = { textSpeed: "normal", musicVolume: 100, musicStyle: "upbeat", sfxVolume: 100, difficulty: "normal" };
 
 // A saved volume, or an on/off switch from saves made before volume levels.
 function volumeFrom(value: unknown, legacySwitch: unknown, fallback: number): number {
@@ -124,8 +126,15 @@ export function loadSettings(storage: Storage | null = browserStorage()): Settin
     musicVolume: volumeFrom(value.musicVolume, value.music, DEFAULT_SETTINGS.musicVolume),
     musicStyle: MUSIC_STYLES.includes(value.musicStyle!) ? value.musicStyle! : DEFAULT_SETTINGS.musicStyle,
     sfxVolume: volumeFrom(value.sfxVolume, value.sfx, DEFAULT_SETTINGS.sfxVolume),
+    difficulty: DIFFICULTIES.includes(value.difficulty!) ? value.difficulty! : DEFAULT_SETTINGS.difficulty,
   };
 }
+
+// The numbers for the chosen difficulty, read when a level or boss starts.
+export const currentTuning = (storage: Storage | null = browserStorage()) => TUNING[loadSettings(storage).difficulty];
+
+// Hearts at the start of a world, a retry, or a continue.
+export const startLives = (storage: Storage | null = browserStorage()) => currentTuning(storage).startLives;
 
 export function saveSettings(settings: Settings, storage: Storage | null = browserStorage()): void {
   writeJson(storage, SETTINGS_KEY, settings);

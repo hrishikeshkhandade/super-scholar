@@ -8,6 +8,7 @@ import {
   saveProgress,
   saveSettings,
   saveUploadedPaper,
+  startLives,
 } from "../src/save";
 
 function memoryStorage() {
@@ -39,8 +40,8 @@ describe("save data", () => {
 
   it("starts with default settings and remembers changes", () => {
     const storage = memoryStorage();
-    expect(loadSettings(storage)).toEqual({ textSpeed: "normal", musicVolume: 100, musicStyle: "upbeat", sfxVolume: 100 });
-    const changed = { textSpeed: "fast", musicVolume: 25, musicStyle: "tradingFloor", sfxVolume: 0 } as const;
+    expect(loadSettings(storage)).toEqual({ textSpeed: "normal", musicVolume: 100, musicStyle: "upbeat", sfxVolume: 100, difficulty: "normal" });
+    const changed = { textSpeed: "fast", musicVolume: 25, musicStyle: "tradingFloor", sfxVolume: 0, difficulty: "hard" } as const;
     saveSettings(changed, storage);
     expect(loadSettings(storage)).toEqual(changed);
   });
@@ -48,9 +49,19 @@ describe("save data", () => {
   it("keeps old saves working and ignores bad setting values", () => {
     const storage = memoryStorage();
     storage.setItem("super-scholar.settings", JSON.stringify({ textSpeed: "slow" }));
-    expect(loadSettings(storage)).toEqual({ textSpeed: "slow", musicVolume: 100, musicStyle: "upbeat", sfxVolume: 100 });
+    expect(loadSettings(storage)).toEqual({ textSpeed: "slow", musicVolume: 100, musicStyle: "upbeat", sfxVolume: 100, difficulty: "normal" });
     storage.setItem("super-scholar.settings", JSON.stringify({ musicVolume: 33, sfxVolume: "loud", musicStyle: "jazz" }));
     expect(loadSettings(storage)).toMatchObject({ musicVolume: 100, sfxVolume: 100, musicStyle: "upbeat" });
+  });
+
+  it("starts worlds with fewer hearts on HARD, and falls back to NORMAL for bad values", () => {
+    const storage = memoryStorage();
+    expect(startLives(storage)).toBe(3);
+    saveSettings({ ...loadSettings(storage), difficulty: "hard" }, storage);
+    expect(startLives(storage)).toBe(2);
+    storage.setItem("super-scholar.settings", JSON.stringify({ difficulty: "nightmare" }));
+    expect(loadSettings(storage).difficulty).toBe("normal");
+    expect(startLives(storage)).toBe(3);
   });
 
   // Saves from before volume levels had on/off switches; they carry over

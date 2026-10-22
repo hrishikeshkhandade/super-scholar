@@ -7,7 +7,8 @@ import { farKey } from "../levels/themeTextures";
 import { THEMES } from "../levels/themes";
 import { NES } from "../palette";
 import { GRAVITY, JUMP_VELOCITY, PlayerController, makeOneWay, type Sprite } from "../player";
-import { advanceProgress, markCleared, saveBestStars, unlockNote } from "../save";
+import { advanceProgress, currentTuning, markCleared, saveBestStars, startLives, unlockNote } from "../save";
+import type { Tuning } from "../difficulty";
 import { bossStars } from "../stars";
 import type { StageData } from "../stage";
 import { enablePause } from "./PauseScene";
@@ -17,7 +18,6 @@ import {
   HeartBar,
   Menu,
   QuestionPanel,
-  START_LIVES,
   onceAdvance,
   TITLE_CARD_MS,
   panel,
@@ -75,6 +75,7 @@ export class BossScene extends Phaser.Scene {
   private hits = 0;
   private cardShowing: () => boolean = () => false;
   private stompableAt = 0;
+  private tuning!: Tuning;
 
   constructor() {
     super("Boss");
@@ -92,6 +93,7 @@ export class BossScene extends Phaser.Scene {
     this.drops = [];
     this.invulnerableUntil = 0;
     this.stompableAt = 0;
+    this.tuning = currentTuning();
 
     audio.playMusic("boss");
     this.physics.world.gravity.y = GRAVITY;
@@ -150,6 +152,7 @@ export class BossScene extends Phaser.Scene {
   private drawHud(bossName: string): void {
     this.hearts = new HeartBar(this, 16, 14);
     this.hearts.set(this.stage.lives);
+    if (this.tuning.hudLabel) this.add.text(210, 18, this.tuning.hudLabel, textStyle(16, NES.red));
     this.add.text(BAR.x, 10, bossName, textStyle(16, NES.salmon));
     this.add.rectangle(BAR.x, BAR.y, BAR.width, BAR.height, NES.gray).setOrigin(0, 0).setStrokeStyle(2, NES.white);
     this.healthFill = this.add.rectangle(BAR.x, BAR.y, BAR.width, BAR.height, NES.red).setOrigin(0, 0);
@@ -184,7 +187,7 @@ export class BossScene extends Phaser.Scene {
         if (this.modeMs <= 0) this.startWalking();
         break;
       case "walk":
-        this.boss.setVelocityX(towardPlayer * WALK_SPEED * (1 + this.rage * RAGE_SPEEDUP));
+        this.boss.setVelocityX(towardPlayer * WALK_SPEED * this.tuning.bossSpeed * (1 + this.rage * RAGE_SPEEDUP));
         this.attackMs -= deltaMs;
         if (this.attackMs <= 0) this.startAttack();
         break;
@@ -195,7 +198,7 @@ export class BossScene extends Phaser.Scene {
         if (this.modeMs <= 0) {
           this.mode = "charge";
           this.modeMs = 2500;
-          this.boss.setVelocityX(towardPlayer * CHARGE_SPEED * (1 + this.rage * RAGE_SPEEDUP));
+          this.boss.setVelocityX(towardPlayer * CHARGE_SPEED * this.tuning.bossSpeed * (1 + this.rage * RAGE_SPEEDUP));
         }
         break;
       case "charge":
@@ -215,7 +218,7 @@ export class BossScene extends Phaser.Scene {
 
   private startWalking(): void {
     this.mode = "walk";
-    this.attackMs = ATTACK_EVERY_MS - this.rage * RAGE_ATTACK_SOONER_MS;
+    this.attackMs = (ATTACK_EVERY_MS - this.rage * RAGE_ATTACK_SOONER_MS) * this.tuning.bossAttackEvery;
     this.boss.clearTint();
   }
 
@@ -388,7 +391,7 @@ export class BossScene extends Phaser.Scene {
             {
               label: "NEXT WORLD",
               onSelect: () =>
-                this.scene.start("Level", { paper, worldIndex: nextWorld, checkpointsCleared: 0, lives: START_LIVES }),
+                this.scene.start("Level", { paper, worldIndex: nextWorld, checkpointsCleared: 0, lives: startLives() }),
             },
           ]
         : []),
@@ -402,7 +405,7 @@ export class BossScene extends Phaser.Scene {
     panel(this, 20, PANEL_TOP, GAME_WIDTH - 40, 230);
     this.add.text(GAME_WIDTH / 2, PANEL_TOP + 50, "GAME OVER", textStyle(32, NES.red)).setOrigin(0.5);
     new Menu(this, 280, PANEL_TOP + 110, [
-      { label: "RETRY BOSS", onSelect: () => this.scene.restart({ ...this.stage, lives: START_LIVES }) },
+      { label: "RETRY BOSS", onSelect: () => this.scene.restart({ ...this.stage, lives: startLives() }) },
       { label: "TITLE SCREEN", onSelect: () => this.scene.start("Title") },
     ]);
   }

@@ -3,8 +3,8 @@ import { audio } from "../audio/audio";
 import { findPaper } from "../content/library";
 import { TILE } from "../levels/parseLevel";
 import { NES, css } from "../palette";
-import { loadProgress } from "../save";
-import { GAME_HEIGHT, GAME_WIDTH, Menu, PointerGuard, START_LIVES, panel, textStyle, type MenuItem } from "../ui";
+import { loadProgress, startLives } from "../save";
+import { GAME_HEIGHT, GAME_WIDTH, Menu, PointerGuard, panel, textStyle, type MenuItem } from "../ui";
 import { GROUND_TOP, drawBackdrop } from "./backdrop";
 import { LAST_QUERY_KEY } from "./PaperSelectScene";
 
@@ -52,7 +52,7 @@ export class TitleScene extends Phaser.Scene {
             paper: savedPaper,
             worldIndex: progress!.worldIndex,
             checkpointsCleared: progress!.checkpointsCleared,
-            lives: START_LIVES,
+            lives: startLives(),
           });
         },
       },

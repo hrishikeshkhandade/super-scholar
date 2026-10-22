@@ -1,6 +1,7 @@
 import Phaser from "phaser";
 import { audio } from "../audio/audio";
 import { NES } from "../palette";
+import { DIFFICULTIES } from "../difficulty";
 import { MUSIC_STYLES, TEXT_SPEEDS, VOLUME_LEVELS, clearProgress, loadSettings, saveSettings, type Settings } from "../save";
 import { GAME_WIDTH, Menu, textStyle, volumeLabel } from "../ui";
 import { drawMenuBackdrop } from "./backdrop";
@@ -26,6 +27,7 @@ export class SettingsScene extends Phaser.Scene {
       `MUSIC: ${volumeLabel(s.musicVolume)}`,
       `MUSIC STYLE: ${STYLE_LABELS[s.musicStyle]}`,
       `SOUND EFFECTS: ${volumeLabel(s.sfxVolume)}`,
+      `DIFFICULTY: ${s.difficulty.toUpperCase()}`,
     ];
     const update = (change: Partial<Settings>, message: string) => {
       Object.assign(settings, change);
@@ -35,7 +37,7 @@ export class SettingsScene extends Phaser.Scene {
       status.setText(message);
     };
     const next = <T>(list: T[], current: T) => list[(list.indexOf(current) + 1) % list.length];
-    const [speedLabel, musicLabel, styleLabel, sfxLabel] = labels(settings);
+    const [speedLabel, musicLabel, styleLabel, sfxLabel, difficultyLabel] = labels(settings);
 
     const menu = new Menu(this, 150, 110, [
       { label: speedLabel, onSelect: () => update({ textSpeed: next(TEXT_SPEEDS, settings.textSpeed) }, "Saved") },
@@ -59,17 +61,24 @@ export class SettingsScene extends Phaser.Scene {
         },
       },
       {
+        label: difficultyLabel,
+        onSelect: () => {
+          const difficulty = next(DIFFICULTIES, settings.difficulty);
+          update({ difficulty }, difficulty === "hard" ? "Saved - 2 hearts, faster enemies" : "Saved");
+        },
+      },
+      {
         label: "RESET PROGRESS",
         onSelect: () => {
           if (!confirmingReset) {
             confirmingReset = true;
-            menu.setLabel(4, "SURE? SELECT AGAIN");
+            menu.setLabel(5, "SURE? SELECT AGAIN");
             status.setText("");
             return;
           }
           clearProgress();
           confirmingReset = false;
-          menu.setLabel(4, "RESET PROGRESS");
+          menu.setLabel(5, "RESET PROGRESS");
           status.setText("Progress erased");
         },
       },

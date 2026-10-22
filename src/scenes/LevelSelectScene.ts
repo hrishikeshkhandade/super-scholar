@@ -4,9 +4,9 @@ import { findPaper, playablePapers } from "../content/library";
 import type { Paper } from "../content/types";
 import { levelMap, mapProgress, type MapStop } from "../levelMap";
 import { NES, css } from "../palette";
-import { loadCleared, loadProgress, loadStars, stageKey } from "../save";
+import { loadCleared, loadProgress, loadStars, stageKey, startLives } from "../save";
 import { isTouchDevice } from "../touchControls";
-import { GAME_WIDTH, Menu, PointerGuard, START_LIVES, showStars, textStyle } from "../ui";
+import { GAME_WIDTH, Menu, PointerGuard, showStars, textStyle } from "../ui";
 import { listTop, paperLabel, shorten, tableLabels } from "./listLayout";
 import { drawMenuBackdrop } from "./backdrop";
 
@@ -194,7 +194,7 @@ export class LevelSelectScene extends Phaser.Scene {
       paper,
       worldIndex: stop.worldIndex,
       checkpointsCleared,
-      lives: START_LIVES,
+      lives: startLives(),
     });
   }
 }

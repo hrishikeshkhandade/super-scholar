@@ -5,9 +5,9 @@ import { GenerateError, prepareGame, withAiWorlds } from "../generator/generateG
 import { MAX_PDF_BYTES, MAX_PDF_PAGES, readPdfLines } from "../generator/readPdf";
 import { startPaperOver } from "../levelMap";
 import { NES } from "../palette";
-import { saveUploadedPaper } from "../save";
+import { saveUploadedPaper, startLives } from "../save";
 import { isTouchDevice } from "../touchControls";
-import { GAME_WIDTH, Menu, START_LIVES, textStyle } from "../ui";
+import { GAME_WIDTH, Menu, textStyle } from "../ui";
 import { drawMenuBackdrop } from "./backdrop";
 
 // Gets a paper's PDF (an upload, or a free copy downloaded by our server
@@ -106,7 +106,7 @@ export class GenerateScene extends Phaser.Scene {
       audio.playSfx("powerup");
       this.scene.start("Cutscene", {
         cutscene: paper.intro,
-        lives: START_LIVES,
+        lives: startLives(),
         next: { scene: "Level", data: { paper, worldIndex: 0, checkpointsCleared: 0 } },
       });
     } catch (error) {
