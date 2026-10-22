@@ -16,6 +16,7 @@ import { enablePause } from "./PauseScene";
 import type { BossArena, BossBehavior } from "./bosses/arena";
 import { Charger } from "./bosses/charger";
 import { Jumper } from "./bosses/jumper";
+import { Thrower } from "./bosses/thrower";
 import {
   GAME_HEIGHT,
   GAME_WIDTH,
@@ -49,10 +50,14 @@ const STOMP_COOLDOWN_MS = 1500;
 const RAGE_SPEEDUP = 0.12; // each rage level makes it 12% faster
 const ATTACK_EVERY_MS = 3200;
 const RAGE_ATTACK_SOONER_MS = 300;
+// Stars circling over the boss's head while it's dizzy and safe to stomp.
+const DIZZY_STARS = 3;
+const DIZZY_ORBIT = { width: 34, height: 8, above: 14, msPerTurn: 900 };
 
 const BEHAVIORS: Record<BossStyle, (arena: BossArena) => BossBehavior> = {
   charger: (arena) => new Charger(arena),
   jumper: (arena) => new Jumper(arena),
+  thrower: (arena) => new Thrower(arena),
 };
 
 export class BossScene extends Phaser.Scene {
@@ -63,6 +68,7 @@ export class BossScene extends Phaser.Scene {
   private boss!: Sprite;
   private behavior!: BossBehavior;
   private hearts!: HeartBar;
+  private dizzyStars: Phaser.GameObjects.Image[] = [];
   private healthFill!: Phaser.GameObjects.Rectangle;
   private rageText!: Phaser.GameObjects.Text;
   private mode: Mode = "intro";
@@ -141,6 +147,7 @@ export class BossScene extends Phaser.Scene {
       attackDelay: () => (ATTACK_EVERY_MS - this.rage * RAGE_ATTACK_SOONER_MS) * this.tuning.bossAttackEvery,
     });
 
+    this.dizzyStars = Array.from({ length: DIZZY_STARS }, () => this.add.image(0, 0, "star").setScale(0.6).setVisible(false));
     this.drawHud(world.boss.name);
     // No pausing during a question: the fight is already stopped then.
     enablePause(this, () => this.mode !== "question" && this.mode !== "over" && !this.cardShowing());
@@ -185,6 +192,21 @@ export class BossScene extends Phaser.Scene {
       return;
     }
     this.behavior.update(deltaMs);
+    this.updateDizzyStars(time);
+  }
+
+  private updateDizzyStars(time: number): void {
+    const dizzy = this.behavior.harmless;
+    const turn = (time / DIZZY_ORBIT.msPerTurn) * Math.PI * 2;
+    this.dizzyStars.forEach((star, i) => {
+      const angle = turn + (i * Math.PI * 2) / DIZZY_STARS;
+      star
+        .setVisible(dizzy)
+        .setPosition(
+          this.boss.x + Math.cos(angle) * DIZZY_ORBIT.width,
+          this.boss.body.top - DIZZY_ORBIT.above + Math.sin(angle) * DIZZY_ORBIT.height,
+        );
+    });
   }
 
   private startFighting(): void {
@@ -209,6 +231,7 @@ export class BossScene extends Phaser.Scene {
     audio.playSfx("stomp");
     this.controls.bounce(JUMP_VELOCITY * 0.8);
     this.boss.clearTint();
+    this.dizzyStars.forEach((star) => star.setVisible(false));
     this.cameras.main.shake(150, 0.01);
     this.mode = "question";
     this.physics.pause();
@@ -288,6 +311,7 @@ export class BossScene extends Phaser.Scene {
     this.mode = "over";
     this.physics.pause();
     this.behavior.end();
+    this.dizzyStars.forEach((star) => star.setVisible(false));
   }
 
   private win(): void {

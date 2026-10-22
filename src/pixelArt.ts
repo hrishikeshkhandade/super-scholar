@@ -212,6 +212,15 @@ const SPRITES: Record<string, string[]> = {
     ".KYYYSYYYK",
     "KYYYSSYYYK",
   ],
+  // The Thrower boss's books, spinning through the air.
+  book: [
+    "KKKKKKKK",
+    "KROOOOOK",
+    "KROWWWOK",
+    "KROOOOOK",
+    "KRWWWWWK",
+    "KKKKKKKK",
+  ],
   heart: [
     ".RR.RR.",
     "RSRRRRR",
