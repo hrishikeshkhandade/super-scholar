@@ -4,7 +4,7 @@ import { fetchAiWorlds } from "../generator/aiClient";
 import { GenerateError, prepareGame, withAiWorlds } from "../generator/generateGame";
 import { MAX_PDF_BYTES, MAX_PDF_PAGES, readPdfLines } from "../generator/readPdf";
 import { startPaperOver } from "../levelMap";
-import { NES } from "../palette";
+import { NES, css } from "../palette";
 import { saveUploadedPaper, startLives } from "../save";
 import { isTouchDevice } from "../touchControls";
 import { GAME_WIDTH, Menu, textStyle } from "../ui";
@@ -18,11 +18,26 @@ export type PaperSource =
   | { download: { id: string; title: string; authors: string[]; year: number | undefined } };
 
 const NOT_FOUND_TIP = "Try OPEN PAPER to get the PDF yourself, then upload it.";
+// The AI step can take a minute, so the screen shows it's still working:
+// what's happening (changing every few seconds) and the seconds so far.
+const AI_STEPS = [
+  "Turning sections into worlds",
+  "Writing lessons in plain words",
+  "Hiding fun facts under the bears",
+  "Writing the boss's questions",
+  "Naming the bosses",
+  "Checking nothing is copied",
+];
+const AI_STEP_MS = 4000;
+const PROFESSOR_Y = 116;
 
 export class GenerateScene extends Phaser.Scene {
   private status!: Phaser.GameObjects.Text;
   private abort?: AbortController;
   private hint?: Phaser.GameObjects.Text;
+  private waitNote!: Phaser.GameObjects.Text;
+  private heading!: Phaser.GameObjects.Text;
+  private professor!: Phaser.GameObjects.Image;
 
   constructor() {
     super("Generate");
@@ -30,10 +45,12 @@ export class GenerateScene extends Phaser.Scene {
 
   create(data: PaperSource): void {
     drawMenuBackdrop(this);
-    const professor = this.add.image(GAME_WIDTH / 2, 140, "professor").setScale(3);
-    this.tweens.add({ targets: professor, y: 130, duration: 400, yoyo: true, repeat: -1, ease: "Sine.easeInOut" });
-    this.add.text(GAME_WIDTH / 2, 230, "PROF. QUANT IS READING\nYOUR PAPER...", textStyle(24, NES.yellow)).setOrigin(0.5).setAlign("center");
+    // Sits fully above the heading, even at the top of his bob.
+    this.professor = this.add.image(GAME_WIDTH / 2, PROFESSOR_Y, "professor").setScale(3);
+    this.tweens.add({ targets: this.professor, y: PROFESSOR_Y - 8, duration: 400, yoyo: true, repeat: -1, ease: "Sine.easeInOut" });
+    this.heading = this.add.text(GAME_WIDTH / 2, 230, "PROF. QUANT IS READING\nYOUR PAPER...", textStyle(24, NES.yellow)).setOrigin(0.5).setAlign("center");
     this.status = this.add.text(GAME_WIDTH / 2, 300, "Opening the PDF", textStyle(16, NES.white)).setOrigin(0.5);
+    this.waitNote = this.add.text(GAME_WIDTH / 2, 330, "", textStyle(8, NES.lightGray)).setOrigin(0.5);
     // A slow download shouldn't trap the player on this screen. Esc, or a
     // tap on the hint, cancels.
     this.abort = new AbortController();
@@ -87,8 +104,9 @@ export class GenerateScene extends Phaser.Scene {
       // The rules version first, as a fallback that always works; then the
       // AI rewrites its worlds in plain words if it can.
       const prepared = prepareGame(lines, fileName);
-      this.status.setText("Rewriting it in plain words (AI)");
+      const progress = this.showAiProgress();
       const aiWorlds = await fetchAiWorlds(prepared.aiRequest, this.abort!.signal);
+      progress.remove();
       if (!this.scene.isActive()) return;
       const generated = withAiWorlds(prepared, aiWorlds);
       // For downloads, the database knows the real title, authors, and year.
@@ -120,8 +138,26 @@ export class GenerateScene extends Phaser.Scene {
     }
   }
 
+  // Ticks every second: the current step and how long it's been.
+  private showAiProgress(): Phaser.Time.TimerEvent {
+    const started = this.time.now;
+    const update = () => {
+      const elapsedMs = this.time.now - started;
+      const step = AI_STEPS[Math.floor(elapsedMs / AI_STEP_MS) % AI_STEPS.length];
+      this.status.setText(`${step}... ${Math.floor(elapsedMs / 1000)}s`);
+    };
+    update();
+    this.waitNote.setText("The AI is writing your game. This can take up to a minute.");
+    return this.time.addEvent({ delay: 1000, loop: true, callback: update });
+  }
+
   private showError(message: string, details?: string): void {
     this.hint?.destroy();
+    this.waitNote.setText("");
+    // He's stopped reading, so the screen shouldn't say he still is.
+    this.tweens.killTweensOf(this.professor);
+    this.professor.setY(PROFESSOR_Y);
+    this.heading.setText("PROF. QUANT\nHIT A SNAG").setColor(css(NES.salmon));
     audio.playSfx("wrong");
     this.status.setText("");
     const error = this.add

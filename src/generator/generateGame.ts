@@ -1,5 +1,5 @@
 import type { Cutscene, Paper, Question, World } from "../content/types";
-import { MAX_ABSTRACT_CHARS, MAX_EXCERPT_CHARS, MAX_TITLE_CHARS, type AiRequest } from "./aiWorlds";
+import { MAX_ABSTRACT_CHARS, MAX_EXCERPT_CHARS, MAX_TITLE_CHARS, fallbackBossName, type AiRequest } from "./aiWorlds";
 import { MAX_FACT_CHARS, MAX_PAGE_CHARS, validatePaper } from "../content/validate";
 import { LEVEL_LAYOUTS } from "../levels/layouts";
 import { containsTerm, findKeyTerms, type Term } from "./keywords";
@@ -140,7 +140,7 @@ function buildWorld(section: Section, index: number, terms: Term[], seed: number
     section: heading,
     cutscenes,
     facts: makeFacts(sentences, terms, section.text),
-    boss: { name: "THE PEER REVIEWER", questions },
+    boss: { name: fallbackBossName(index), questions },
   };
 }
 
@@ -195,10 +195,21 @@ export function withAiWorlds(prepared: PreparedGame, aiWorlds: (World | undefine
     .map((ruleWorld, i) => aiWorlds[i] ?? ruleWorld)
     .filter((world): world is World => world !== undefined)
     .map((world, i) => ({ ...world, id: `world-${i + 1}`, name: shorten(`World ${i + 1}: ${worldLabel(world)}`, MAX_WORLD_NAME) }));
+  distinctBossNames(worlds);
   const { paper } = prepared;
   const intro = { ...paper.intro, pages: introPages(paper.title, paper.summary, worlds, prepared.pageCount, true) };
   const merged: Paper = { ...paper, intro, worlds };
   return validatePaper(merged).length === 0 ? merged : paper;
+}
+
+// Two worlds can end up with the same boss (the AI repeating itself, or a
+// mix of AI and rules worlds); later ones get a stand-in name instead.
+function distinctBossNames(worlds: World[]): void {
+  const used = new Set<string>();
+  worlds.forEach((world, i) => {
+    for (let n = 0; used.has(world.boss.name) && n < 10; n++) world.boss = { ...world.boss, name: fallbackBossName(i + n) };
+    used.add(world.boss.name);
+  });
 }
 
 export function generateGame(lines: TextLine[], fileName: string): Paper {
@@ -230,6 +241,7 @@ export function prepareGame(lines: TextLine[], fileName: string): PreparedGame {
   if (worlds.length === 0) {
     throw new GenerateError("Couldn't find enough readable sentences. The PDF's text may be garbled.");
   }
+  distinctBossNames(worlds);
 
   const pageCount = Math.max(...lines.map((line) => line.page), 1);
   const yearMatch = /\b(19[5-9]\d|20[0-4]\d)\b/.exec(lines.filter((line) => line.page === 1).map((l) => l.text).join(" "));

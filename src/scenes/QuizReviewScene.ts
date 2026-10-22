@@ -16,7 +16,8 @@ export interface QuizReviewData {
   nextWorld?: number; // the world to go on to, if there is one
 }
 
-const BOX = { x: 20, y: 60, width: GAME_WIDTH - 40, height: 270 };
+// Leaves room under the menu for the controls hint.
+const BOX = { x: 20, y: 60, width: GAME_WIDTH - 40, height: 254 };
 const CHOICE_LETTERS = ["A", "B", "C", "D", "E", "F"];
 
 export class QuizReviewScene extends Phaser.Scene {

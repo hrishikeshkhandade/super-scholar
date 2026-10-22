@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { validatePaper } from "../src/content/validate";
-import { MAX_AI_SECTIONS, parseAiRequest, parseAiWorld, worldPrompt } from "../src/generator/aiWorlds";
+import { MAX_AI_SECTIONS, MAX_BOSS_NAME_CHARS, cleanBossName, parseAiRequest, parseAiWorld, worldPrompt } from "../src/generator/aiWorlds";
 import { prepareGame, withAiWorlds } from "../src/generator/generateGame";
 import { fakePaper } from "./fixtures/fakePaper";
 
@@ -147,6 +147,28 @@ describe("mixing AI worlds into a game", () => {
       prepared.paper.worlds[2].name,
     ]);
     expect(paper.intro.pages.join(" ")).toContain("An AI helped me");
+  });
+
+  // A real AI-made paper had "THE PEER REVIEWER" as every world's boss.
+  it("gives every world its own boss, named by the AI when it can", () => {
+    const named = parseAiWorld({ ...aiReply(), bossName: "the leaf lord!" }, prepared.aiRequest.sections[1], 1)!;
+    expect(named.boss.name).toBe("THE LEAF LORD");
+    const unnamed = parseAiWorld(aiReply(), prepared.aiRequest.sections[0], 0)!;
+    const twin = parseAiWorld(aiReply(), prepared.aiRequest.sections[2], 0)!; // same stand-in name as world 1
+    const paper = withAiWorlds(prepared, [unnamed, named, twin]);
+    const names = paper.worlds.map((w) => w.boss.name);
+    expect(new Set(names).size).toBe(names.length);
+    expect(new Set(prepared.paper.worlds.map((w) => w.boss.name)).size).toBe(prepared.paper.worlds.length);
+  });
+
+  it("keeps boss names short enough for the health bar", () => {
+    expect(cleanBossName("THE EXTREMELY LONG NAMED VILLAIN", 2).length).toBeLessThanOrEqual(MAX_BOSS_NAME_CHARS);
+    expect(cleanBossName("Lord Jitters!", 0)).toBe("LORD JITTERS");
+    expect(cleanBossName(undefined, 1)).not.toBe(cleanBossName(undefined, 0));
+  });
+
+  it("tells each world what the others cover, so lessons don't repeat", () => {
+    expect(worldPrompt(prepared.aiRequest, 0)).toContain('Other worlds cover "The light reactions", "The Calvin cycle"');
   });
 
   it("keeps the rules version when the AI sent nothing", () => {

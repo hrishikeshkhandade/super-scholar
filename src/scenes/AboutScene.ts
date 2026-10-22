@@ -14,8 +14,7 @@ const CONTROLS: [string, string][] = [
   ["A / D IN LESSONS", "BACK / NEXT PAGE"],
 ];
 
-const GOAL_TEXT =
-  "Stomp bears for fun facts and hit ? blocks for power-ups. Each flag unlocks a lesson; beat the quiz boss to clear the world.";
+const GOAL_TEXT = "Stomp bears for facts, beat each world's boss quiz, and ask the Scholar after lessons!";
 
 const LINKEDIN_URL = "https://www.linkedin.com/in/hrishikeshkhandade";
 const GITHUB_URL = "https://github.com/hrishikeshkhandade";
@@ -33,18 +32,18 @@ export class AboutScene extends Phaser.Scene {
 
   create(): void {
     drawMenuBackdrop(this);
-    this.add.text(GAME_WIDTH / 2, 32, "ABOUT", textStyle(24, NES.yellow)).setOrigin(0.5);
-    this.add.text(40, 60, ABOUT_TEXT, textStyle(16, NES.white, GAME_WIDTH - 80));
+    this.add.text(GAME_WIDTH / 2, 40, "ABOUT", textStyle(24, NES.yellow)).setOrigin(0.5);
+    this.add.text(40, 68, ABOUT_TEXT, textStyle(16, NES.white, GAME_WIDTH - 80));
 
-    this.add.text(40, 120, "HOW TO PLAY", textStyle(16, NES.yellow));
+    this.add.text(40, 124, "HOW TO PLAY", textStyle(16, NES.yellow));
     CONTROLS.forEach(([key, action], i) => {
-      const y = 150 + i * 26;
+      const y = 152 + i * 24;
       this.add.text(60, y, key, textStyle(16, NES.sky));
       this.add.text(360, y, action, textStyle(16, NES.white));
     });
-    this.add.text(40, 290, GOAL_TEXT, textStyle(16, NES.white, GAME_WIDTH - 80));
+    this.add.text(40, 284, GOAL_TEXT, textStyle(16, NES.white, GAME_WIDTH - 80));
 
-    new Menu(this, 330, 370, [
+    new Menu(this, 330, 352, [
       { label: "CREDITS", onSelect: () => this.scene.start("Credits", { from: "About" }) },
       { label: "BACK", onSelect: () => this.scene.start("Title") },
     ]);

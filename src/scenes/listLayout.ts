@@ -17,12 +17,17 @@ export const shorten = (text: string, max: number) => (text.length > max ? `${te
 export const listTop = (options: number) =>
   Math.max(LIST_AREA.top, Math.round((LIST_AREA.top + LIST_AREA.bottom - options * ROW_HEIGHT) / 2));
 
+// The pixel font draws "fi" and "fl" as one letter, which would pull a row's
+// count one letter left of the others. An invisible zero-width non-joiner
+// between them keeps every letter its own width.
+export const noLigatures = (text: string) => text.replace(/f(?=[il])/g, "f\u200C");
+
 // Pads names with spaces so the counts line up in one column, and returns
 // the x that centers the whole block.
 export function tableLabels(rows: [string, string][]): { labels: string[]; x: number } {
   const nameWidth = Math.max(...rows.map(([name]) => name.length));
   const countWidth = Math.max(...rows.map(([, count]) => count.length));
-  const labels = rows.map(([name, count]) => `${name.padEnd(nameWidth)}  ${count.padStart(countWidth)}`);
+  const labels = rows.map(([name, count]) => noLigatures(`${name.padEnd(nameWidth)}  ${count.padStart(countWidth)}`));
   const blockWidth = (nameWidth + 2 + countWidth) * CHAR_WIDTH + CURSOR_SPACE;
   return { labels, x: Math.round((GAME_WIDTH - blockWidth) / 2) + CURSOR_SPACE };
 }

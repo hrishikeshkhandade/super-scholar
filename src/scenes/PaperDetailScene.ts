@@ -35,7 +35,8 @@ export class PaperDetailScene extends Phaser.Scene {
     const hint = paper.pdfUrl
       ? "PLAY downloads the free PDF and builds your game right here."
       : "Paywalled: open it (your library may have access), save the PDF, then upload it.";
-    this.add.text(GAME_WIDTH / 2, 338, hint, textStyle(8, NES.salmon, GAME_WIDTH - 80)).setOrigin(0.5, 0).setAlign("center");
+    // Grey for the good news, salmon only when there's a catch.
+    this.add.text(GAME_WIDTH / 2, 338, hint, textStyle(8, paper.pdfUrl ? NES.lightGray : NES.salmon, GAME_WIDTH - 80)).setOrigin(0.5, 0).setAlign("center");
     const source: PaperSource = {
       download: { id: paper.id, title: paper.title, authors: paper.authors, year: paper.year },
     };

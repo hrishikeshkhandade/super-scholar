@@ -137,12 +137,13 @@ export class PaperSelectScene extends Phaser.Scene {
       { label: "+ UPLOAD A PDF\n  Turn any paper into a game", onSelect: () => this.chooseUpload() },
       ...ready.map((paper) => ({
         // Ready-to-play papers (built in or uploaded) fit on one line each.
-        label: `* ${truncate(paper.title, LINE_CHARS - 10)} - ${LIBRARY.includes(paper) ? "READY" : "UPLOAD"}`,
+        label: `* ${truncate(paper.title, LINE_CHARS - 10)} ${LIBRARY.includes(paper) ? "- READY" : "(UPLOAD)"}`,
         onSelect: () => this.startPaper(paper),
       })),
       ...this.onlineResults.slice(0, onlineRoom).map((paper) => ({
-        // "FREE PDF" up front means it can be played right away.
-        label: `${truncate(paper.title, LINE_CHARS)}\n${truncate(`${paper.pdfUrl ? "FREE PDF - " : ""}${byline(paper.authors, paper.year)}`, LINE_CHARS)}`,
+        // "FREE PDF" up front means it can be played right away. The second
+        // line is indented, like UPLOAD's, so each result reads as one block.
+        label: `${truncate(paper.title, LINE_CHARS)}\n  ${truncate(`${paper.pdfUrl ? "FREE PDF - " : ""}${byline(paper.authors, paper.year)}`, LINE_CHARS - 2)}`,
         onSelect: () => this.scene.start("PaperDetail", { paper }),
       })),
       { label: "BACK", onSelect: () => this.scene.start("Title") },

@@ -23,8 +23,8 @@ export interface AskScholarData {
 const SPEECH_BOX = { x: 20, y: 236, width: GAME_WIDTH - 40, height: 200 };
 const QUESTION_BOX = { x: 200, y: 96, width: GAME_WIDTH - 220, height: 132 };
 const THINKING_DOT_MS = 350;
-const PLACEHOLDER = "e.g. What does this mean in real life?";
-const NO_QUESTIONS_LEFT = "That's all for this lesson. Press DONE to keep playing!";
+const PLACEHOLDER = "e.g. Why does this matter?"; // one line, even on phones
+const NO_QUESTIONS_LEFT = "All asked! Press DONE.";
 
 export class AskScholarScene extends Phaser.Scene {
   private params!: AskScholarData;

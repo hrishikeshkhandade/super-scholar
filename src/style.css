@@ -175,20 +175,38 @@ canvas {
   cursor: default;
 }
 
-/* The Scholar's box sits right on the scene, with no padding of its own. */
+/* The Scholar's box sits right on the scene, with no padding of its own.
+   The buttons always keep their size and the text box takes whatever room
+   is left, so ASK and DONE never get pushed out of view on small screens. */
 #ask-form {
+  display: flex;
+  flex-direction: column;
   padding: 0;
   overflow: hidden;
 }
 
+#ask-form[hidden] {
+  display: none;
+}
+
 #ask-form label {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
   margin-bottom: 0;
 }
 
+#ask-form textarea {
+  flex: 1;
+  min-height: 2.6em;
+}
+
 #ask-form .actions {
+  flex: none;
   justify-content: flex-start;
   align-items: center;
-  margin-top: 0.8em;
+  margin-top: 0.6em;
 }
 
 #ask-left {
@@ -217,5 +235,11 @@ canvas {
   .game-form textarea,
   .game-form input {
     font-size: 16px;
+  }
+
+  /* Phones: the placeholder already says what to type, so the label's room
+     goes to the text box. */
+  #ask-form .label-text {
+    display: none;
   }
 }
