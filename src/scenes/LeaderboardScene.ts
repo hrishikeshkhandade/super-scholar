@@ -1,21 +1,24 @@
 import Phaser from "phaser";
 import { audio } from "../audio/audio";
-import { findPaper } from "../content/library";
+import { findPaper, playablePapers } from "../content/library";
 import type { Paper } from "../content/types";
 import { showOverGame } from "../htmlOverlay";
 import { MAX_NAME_CHARS, formatTime, nicknameProblem, type BoardEntry } from "../leaderboard";
 import { NES, css } from "../palette";
 import { endRun, finishedRun, runResult, type RunResult } from "../run";
 import { isTouchDevice } from "../touchControls";
-import { GAME_WIDTH, Menu, textStyle } from "../ui";
+import { loadProgress } from "../save";
+import { GAME_WIDTH, Menu, PointerGuard, textStyle } from "../ui";
 import { drawMenuBackdrop } from "./backdrop";
 import { noLigatures, shorten } from "./listLayout";
 
 // TOP SCHOLARS: a paper's top 10, ranked by quiz answers right on the first
 // try, then time. After finishing a full run, the player can add their score.
+// The < > arrows (or A/D) flip through every paper's board.
 
 export interface LeaderboardData {
-  paperId: string;
+  // The paper to show first: the one played last if not given.
+  paperId?: string;
   // Where BACK goes (the title screen if not given).
   back?: { scene: string; data?: object };
 }
@@ -27,6 +30,8 @@ const TABLE_X = 136;
 // a full board still clears the legend.
 const ROW_HEIGHT = { roomy: 22, compact: 19 };
 const BACK_Y = 404;
+const SWITCHER_Y = 62;
+const SWITCHER_ARROW_GAP = 22;
 const LEGEND = "SCORE: quiz answers right on the first try.  TIME: only with 3 stars on every level.";
 
 // "  1  Adhi          23/26   12:34", in the monospace pixel font.
@@ -49,7 +54,9 @@ export class LeaderboardScene extends Phaser.Scene {
   }
 
   create(data: LeaderboardData): void {
-    const paper = findPaper(data.paperId);
+    const papers = playablePapers();
+    const lastPlayed = loadProgress()?.paperId;
+    const paper = findPaper(data.paperId ?? lastPlayed ?? "") ?? papers[0];
     const back = () => this.scene.start(data.back?.scene ?? "Title", data.back?.data);
     drawMenuBackdrop(this);
     this.rows = [];
@@ -59,11 +66,11 @@ export class LeaderboardScene extends Phaser.Scene {
       return;
     }
     this.paper = paper;
+    this.addPaperSwitcher(papers, data);
     const run = finishedRun(paper.id);
     this.result = run && runResult(paper, run);
 
     this.add.text(GAME_WIDTH / 2, 36, "TOP SCHOLARS", textStyle(24, NES.yellow)).setOrigin(0.5);
-    this.add.text(GAME_WIDTH / 2, 62, shorten(paper.title, 90), textStyle(8, NES.sky)).setOrigin(0.5);
     // A finished run gets the nickname box above the table.
     this.tableTop = this.result ? formBox().y + formBox().height + 22 : 100;
     this.rowHeight = this.result ? ROW_HEIGHT.compact : ROW_HEIGHT.roomy;
@@ -75,6 +82,39 @@ export class LeaderboardScene extends Phaser.Scene {
     new Menu(this, GAME_WIDTH / 2 - 32, BACK_Y, [{ label: "BACK", onSelect: back }]);
     this.input.keyboard?.on("keydown-ESC", back);
     void this.loadBoard();
+  }
+
+  // "<  Paper title  (2/7)  >": flips to the previous or next paper's board.
+  private addPaperSwitcher(papers: Paper[], data: LeaderboardData): void {
+    const index = Math.max(papers.findIndex((other) => other.id === this.paper.id), 0);
+    const label = papers.length > 1 ? `${shorten(this.paper.title, 70)}  (${index + 1}/${papers.length})` : shorten(this.paper.title, 80);
+    const title = this.add.text(GAME_WIDTH / 2, SWITCHER_Y, label, textStyle(8, NES.sky)).setOrigin(0.5);
+    if (papers.length < 2) return;
+    const flip = (step: number) => {
+      audio.playSfx("move");
+      const next = papers[(index + step + papers.length) % papers.length];
+      this.scene.restart({ ...data, paperId: next.id });
+    };
+    const pointer = new PointerGuard(this);
+    // Right beside the paper's name, so they read as "other papers".
+    const arrows = [
+      [title.getBounds().left - SWITCHER_ARROW_GAP, "<", -1],
+      [title.getBounds().right + SWITCHER_ARROW_GAP, ">", 1],
+    ] as const;
+    for (const [x, text, step] of arrows) {
+      this.add
+        .text(x, SWITCHER_Y, text, textStyle(16, NES.yellow))
+        .setOrigin(0.5)
+        .setPadding(16, 14, 16, 14) // a fingertip-sized target on phones
+        .setInteractive({ useHandCursor: true })
+        .on("pointerdown", () => pointer.canClick && flip(step));
+    }
+    this.input.keyboard?.on("keydown", (event: KeyboardEvent) => {
+      if (event.repeat) return;
+      const key = event.key.toLowerCase();
+      if (key === "a" || key === "arrowleft") flip(-1);
+      else if (key === "d" || key === "arrowright") flip(1);
+    });
   }
 
   private async loadBoard(): Promise<void> {

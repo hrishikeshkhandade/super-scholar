@@ -9,7 +9,7 @@ import { GROUND_TOP, drawBackdrop } from "./backdrop";
 import { LAST_QUERY_KEY } from "./PaperSelectScene";
 
 // The title screen, styled like a classic NES title: a level scene behind a
-// big outlined logo, a framed box with the four main choices, and the less
+// big outlined logo, a framed box with the five main choices, and the less
 // used ones (settings, about, credits, feedback) in a row along the bottom.
 
 // The sign's top sits below where the sky's teal band ends (y=180), so it
@@ -57,6 +57,8 @@ export class TitleScene extends Phaser.Scene {
         },
       },
       { label: "LEVEL SELECT", onSelect: () => this.scene.start("LevelSelect") },
+      // Opens on the paper played last; every paper's board is a flip away.
+      { label: "LEADERBOARD", onSelect: () => this.scene.start("Leaderboard", {}) },
       { label: "NOTEBOOK", onSelect: () => this.scene.start("Notebook") },
     ];
     const extraItems: MenuItem[] = [
@@ -117,7 +119,7 @@ export class TitleScene extends Phaser.Scene {
       onYoyo: () => bear.setFlipX(false),
       onRepeat: () => bear.setFlipX(true),
     });
-    const scholar = this.add.image(560, footY, "player-idle").setScale(1.5);
+    const scholar = this.add.image(596, footY, "player-idle").setScale(1.5);
     this.tweens.add({ targets: scholar, y: footY - 22, duration: 240, yoyo: true, repeat: -1, repeatDelay: 2000, ease: "Quad.easeOut" });
   }
 
