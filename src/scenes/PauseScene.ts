@@ -23,7 +23,6 @@ export class PauseScene extends Phaser.Scene {
     this.add.text(GAME_WIDTH / 2, 130, "PAUSED", textStyle(32, NES.yellow)).setOrigin(0.5);
 
     const settings = loadSettings();
-    let confirmingQuit = false;
     const menu = new Menu(this, 280, 180, [
       { label: "RESUME", onSelect: () => this.resume() },
       {
@@ -46,14 +45,11 @@ export class PauseScene extends Phaser.Scene {
         },
       },
       {
+        // One click: only the level in progress is lost (CONTINUE resumes
+        // from the last cleared one), and a second "SURE?" step annoyed the
+        // student more than it protected anyone.
         label: "QUIT TO TITLE",
         onSelect: () => {
-          // Quitting loses the level in progress, so ask once more.
-          if (!confirmingQuit) {
-            confirmingQuit = true;
-            menu.setLabel(3, "SURE? SELECT AGAIN");
-            return;
-          }
           this.scene.stop(this.from);
           this.scene.start("Title");
         },
