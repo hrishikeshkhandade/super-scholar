@@ -22,7 +22,13 @@ export interface CutsceneData {
   runQuestion?: { paperId: string; key: string };
 }
 
-const BOX = { x: 20, y: 250, width: GAME_WIDTH - 40, height: 180 };
+// The professor stands on the left and the speech box sits on the right, so
+// lines are about 28 letters long: short enough to read without sweeping
+// the eyes across the whole screen (a student's request).
+const PROFESSOR = { x: 150, y: 290, scale: 4 }; // standing on the ground
+// Tall enough for the longest page (190 letters) with room to spare.
+const BOX = { x: 290, y: 116, width: GAME_WIDTH - 310, height: 240 };
+const TITLE_Y = 36;
 const AFTER_PRACTICE_MENU_Y = 372;
 
 const FORWARD_KEYS = [" ", "Enter", "d", "D", "s", "S", "ArrowRight", "ArrowDown"];
@@ -54,8 +60,9 @@ export class CutsceneScene extends Phaser.Scene {
 
     drawBackdrop(this);
     this.add.rectangle(0, 0, GAME_WIDTH, GAME_HEIGHT, NES.black, 0.6).setOrigin(0, 0);
-    this.add.image(110, 160, "professor").setScale(3);
-    this.add.text(200, 120, data.cutscene.title.toUpperCase(), textStyle(24, NES.yellow, GAME_WIDTH - 220));
+    this.add.image(PROFESSOR.x, PROFESSOR.y, "professor").setScale(PROFESSOR.scale);
+    const title = this.add.text(BOX.x, TITLE_Y, data.cutscene.title.toUpperCase(), textStyle(24, NES.yellow, BOX.width));
+    fitTextToHeight(title, BOX.y - TITLE_Y - 18);
 
     panel(this, BOX.x, BOX.y, BOX.width, BOX.height);
     this.add.text(BOX.x + 20, BOX.y - 8, ` ${data.cutscene.speaker} `, textStyle(16, NES.sky)).setBackgroundColor("#000000");
