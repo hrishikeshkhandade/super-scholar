@@ -6,8 +6,8 @@ export const MAX_QUESTION_CHARS = 200;
 export const QUESTIONS_PER_LESSON = 3;
 const MAX_LESSON_CHARS = 4000;
 const MAX_TITLE_CHARS = 200;
-// Room for about 3 short sentences: 7 lines of the speech box.
-export const MAX_ANSWER_CHARS = 250;
+// Room for about 3 short sentences: 7 short lines of the speech box.
+export const MAX_ANSWER_CHARS = 190;
 
 export interface ScholarQuestion {
   paperTitle: string;
@@ -35,7 +35,7 @@ export const SCHOLAR_PROMPT = `You are the Professor in Super Scholar, a retro g
 The player just finished a lesson and asks you a question about it.
 
 Answer rules:
-- At most 3 short sentences and under 40 words, in plain, friendly words a high-school student understands.
+- At most 3 short sentences and under 32 words, in plain, friendly words a high-school student understands.
 - Add a quick everyday example when it helps.
 - Stick to the lesson and its topic. If you're not sure, say so briefly instead of guessing.
 - If the question isn't about the lesson or the paper's topic, don't answer it: kindly suggest asking about the lesson instead.

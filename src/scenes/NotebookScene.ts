@@ -6,7 +6,7 @@ import { paperProgress, progressOf, worldSections, type NotePage, type NoteSecti
 import { NES, css } from "../palette";
 import { loadNotebook, type Notebook } from "../save";
 import { isTouchDevice } from "../touchControls";
-import { GAME_WIDTH, Menu, fitTextToHeight, panel, textStyle } from "../ui";
+import { fitTextToHeight, GAME_WIDTH, Menu, panel, READING, textStyle } from "../ui";
 import { listTop, paperLabel, shorten, tableLabels } from "./listLayout";
 import { drawMenuBackdrop } from "./backdrop";
 
@@ -189,7 +189,9 @@ export class NotebookScene extends Phaser.Scene {
     this.counter.setText(pages.length > 0 ? `${this.pageIndex + 1}/${pages.length}` : "0/0");
     const page = pages[this.pageIndex];
     const left = PAGE_BOX.x + 20;
-    const wrap = PAGE_BOX.width - 40;
+    // Lessons and facts use the short reading lines. Question cards keep the
+    // full width: a question and four choices wouldn't fit the page otherwise.
+    const wrap = page?.question ? PAGE_BOX.width - 40 : READING.width;
     if (!page) {
       this.flipHint.setText("");
       this.pageObjects = [this.add.text(left, PAGE_BOX.y + 20, "Nothing in this section.", textStyle(16, NES.lightGray, wrap))];

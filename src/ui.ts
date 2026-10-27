@@ -5,6 +5,12 @@ import { FONT, NES, css } from "./palette";
 
 export const GAME_WIDTH = 800;
 export const GAME_HEIGHT = 450;
+// Long text (questions, answers, explanations) sits in a centered column
+// about 32 letters wide, so it can be read without sweeping the eyes across
+// the whole screen (a student's request).
+export const READING = { width: 520, x: (GAME_WIDTH - 520) / 2 };
+// A box around the reading column, with room for the text's padding.
+export const READING_BOX = { x: READING.x - 40, width: READING.width + 80 };
 export const MAX_LIVES = 5;
 
 // "OFF" or "75%", for the music and sound settings.
@@ -335,10 +341,10 @@ export class QuestionPanel {
   private readonly objects: Phaser.GameObjects.GameObject[] = [];
   private readonly menu: Menu;
 
-  constructor(scene: Phaser.Scene, question: Question, top: number, onAnswer: (choiceIndex: number) => void) {
-    const width = GAME_WIDTH - 40;
-    this.objects.push(panel(scene, 20, top, width, GAME_HEIGHT - top - 20));
-    const prompt = scene.add.text(40, top + 20, question.prompt, textStyle(16, NES.white, width - 40));
+  // minTop: how far up the panel may grow for a long question.
+  constructor(scene: Phaser.Scene, question: Question, top: number, onAnswer: (choiceIndex: number) => void, minTop = 20) {
+    this.objects.push(panel(scene, READING_BOX.x, top, READING_BOX.width, GAME_HEIGHT - top - 20));
+    const prompt = scene.add.text(READING.x, top + 20, question.prompt, textStyle(16, NES.white, READING.width));
     this.objects.push(prompt);
     let answered = false;
     const items = question.choices.map((choice, index) => ({
@@ -349,20 +355,20 @@ export class QuestionPanel {
         onAnswer(index);
       },
     }));
-    this.menu = new Menu(scene, 72, prompt.y + prompt.height + 20, items, {
+    this.menu = new Menu(scene, READING.x + 32, prompt.y + prompt.height + 20, items, {
       size: 16,
       spacing: 8,
-      wrapWidth: width - 80,
+      wrapWidth: READING.width - 32,
     });
 
     // A long question grows the panel upward so every choice stays on screen.
     const overflow = this.menu.bottom + 16 - (GAME_HEIGHT - 20);
     if (overflow > 0) {
-      const newTop = Math.max(top - overflow, 20);
+      const newTop = Math.max(top - overflow, minTop);
       const shift = newTop - top;
       prompt.setY(prompt.y + shift);
       this.menu.shiftY(shift);
-      (this.objects[0] as Phaser.GameObjects.Rectangle).setPosition(20, newTop).setSize(width, GAME_HEIGHT - newTop - 20);
+      (this.objects[0] as Phaser.GameObjects.Rectangle).setPosition(READING_BOX.x, newTop).setSize(READING_BOX.width, GAME_HEIGHT - newTop - 20);
     }
   }
 

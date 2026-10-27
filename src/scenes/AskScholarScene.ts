@@ -6,7 +6,7 @@ import { NES, css } from "../palette";
 import { TEXT_SPEED_MS, loadSettings } from "../save";
 import { QUESTIONS_PER_LESSON } from "../scholar";
 import { askScholar } from "../scholarClient";
-import { GAME_HEIGHT, GAME_WIDTH, fitTextToHeight, panel, textStyle } from "../ui";
+import { GAME_HEIGHT, GAME_WIDTH, READING, fitTextToHeight, panel, textStyle } from "../ui";
 import { drawBackdrop } from "./backdrop";
 
 // Ask the Scholar: after a lesson, the player types a question and the
@@ -19,9 +19,12 @@ export interface AskScholarData {
   onDone: () => void;
 }
 
-// A little taller than the lessons' box, to fit a full answer.
-const SPEECH_BOX = { x: 20, y: 236, width: GAME_WIDTH - 40, height: 200 };
-const QUESTION_BOX = { x: 200, y: 96, width: GAME_WIDTH - 220, height: 132 };
+// Beside the professor, like the lessons, so answers come in short lines.
+const SPEECH_BOX = { x: 200, y: 228, width: GAME_WIDTH - 220, height: 214 }; // fits 7 short lines
+const PROFESSOR = { x: 104, y: 314 }; // standing on the ground, left of the box
+const QUESTION_BOX = { x: 200, y: 88, width: GAME_WIDTH - 220, height: 124 };
+const HEADING_Y = 24;
+const ABOUT_Y = 56;
 const THINKING_DOT_MS = 350;
 const PLACEHOLDER = "e.g. Why does this matter?"; // one line, even on phones
 const NO_QUESTIONS_LEFT = "All asked! Press DONE.";
@@ -48,16 +51,16 @@ export class AskScholarScene extends Phaser.Scene {
     // The same look as the lesson it came from.
     drawBackdrop(this);
     this.add.rectangle(0, 0, GAME_WIDTH, GAME_HEIGHT, NES.black, 0.6).setOrigin(0, 0);
-    this.add.image(110, 150, "professor").setScale(3);
-    this.add.text(200, 30, "ASK THE SCHOLAR", textStyle(24, NES.yellow));
-    const about = this.add.text(200, 66, `About: ${data.cutscene.title}`, textStyle(16, NES.lightGray, QUESTION_BOX.width));
-    fitTextToHeight(about, QUESTION_BOX.y - 66 - 12);
+    this.add.image(PROFESSOR.x, PROFESSOR.y, "professor").setScale(3);
+    this.add.text(200, HEADING_Y, "ASK THE SCHOLAR", textStyle(24, NES.yellow));
+    const about = this.add.text(200, ABOUT_Y, `About: ${data.cutscene.title}`, textStyle(16, NES.lightGray, QUESTION_BOX.width));
+    fitTextToHeight(about, QUESTION_BOX.y - ABOUT_Y - 12);
 
     panel(this, SPEECH_BOX.x, SPEECH_BOX.y, SPEECH_BOX.width, SPEECH_BOX.height);
     this.add
       .text(SPEECH_BOX.x + 20, SPEECH_BOX.y - 8, ` ${data.cutscene.speaker} `, textStyle(16, NES.sky))
       .setBackgroundColor("#000000");
-    this.speech = this.add.text(SPEECH_BOX.x + 20, SPEECH_BOX.y + 24, "", textStyle(16, NES.white, SPEECH_BOX.width - 40));
+    this.speech = this.add.text(SPEECH_BOX.x + 20, SPEECH_BOX.y + 20, "", textStyle(16, NES.white, READING.width));
     this.say("Ask me anything about this lesson! Type your question above, then press ASK.");
 
     this.setUpForm();
@@ -156,7 +159,7 @@ export class AskScholarScene extends Phaser.Scene {
     this.typing?.remove();
     // Measure the whole text first, so the typing never runs past the box.
     this.speech.setText(text);
-    fitTextToHeight(this.speech, SPEECH_BOX.y + SPEECH_BOX.height - 14 - this.speech.y);
+    fitTextToHeight(this.speech, SPEECH_BOX.y + SPEECH_BOX.height - 12 - this.speech.y);
     text = this.speech.text;
     this.speech.setColor(css(color)).setText("");
     let shown = 0;

@@ -27,6 +27,8 @@ import {
   HeartBar,
   Menu,
   QuestionPanel,
+  READING,
+  READING_BOX,
   onceAdvance,
   TITLE_CARD_MS,
   panel,
@@ -44,6 +46,7 @@ type StaticSprite = Phaser.Types.Physics.Arcade.SpriteWithStaticBody;
 
 const FLOOR_Y = 12 * TILE;
 const PANEL_TOP = 200;
+const FEEDBACK_MIN_HEIGHT = 230;
 const BAR = { x: 480, y: 34, width: 300, height: 16 };
 // Tuned to be a fun obstacle, not a wall: the game is about enjoying a hard
 // paper, so a player still learning the answers should be able to win.
@@ -288,11 +291,16 @@ export class BossScene extends Phaser.Scene {
 
     const heading = correct ? "HIT! BOSS TAKES DAMAGE" : "WRONG! THE BOSS GETS ANGRIER";
     const detail = correct ? explanation : `Answer: ${answer}\n\n${explanation}`;
+    // The box grows upward to fit the explanation in the reading column.
+    const detailText = this.add.text(READING.x, 0, detail, textStyle(16, NES.white, READING.width)).setDepth(1);
+    const height = Math.max(FEEDBACK_MIN_HEIGHT, detailText.height + 100);
+    const top = Math.min(PANEL_TOP, GAME_HEIGHT - 20 - height);
+    detailText.setY(top + 60);
     const feedback = [
-      panel(this, 20, PANEL_TOP, GAME_WIDTH - 40, 230),
-      this.add.text(40, PANEL_TOP + 20, heading, textStyle(16, correct ? NES.lime : NES.salmon)),
-      this.add.text(40, PANEL_TOP + 60, detail, textStyle(16, NES.white, GAME_WIDTH - 80)),
-      this.add.text(GAME_WIDTH - 40, PANEL_TOP + 214, "SPACE / CLICK", textStyle(8, NES.yellow)).setOrigin(1, 1),
+      panel(this, READING_BOX.x, top, READING_BOX.width, height),
+      this.add.text(READING.x, top + 20, heading, textStyle(16, correct ? NES.lime : NES.salmon)).setDepth(1),
+      detailText,
+      this.add.text(READING_BOX.x + READING_BOX.width - 20, top + height - 16, "SPACE / CLICK", textStyle(8, NES.yellow)).setOrigin(1, 1).setDepth(1),
     ];
     onceAdvance(this, () => {
       feedback.forEach((object) => object.destroy());

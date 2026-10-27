@@ -4,7 +4,7 @@ import type { Cutscene, Question } from "../content/types";
 import { NES } from "../palette";
 import { TEXT_SPEED_MS, loadSettings } from "../save";
 import { isTouchDevice } from "../touchControls";
-import { GAME_HEIGHT, GAME_WIDTH, MAX_LIVES, Menu, QuestionPanel, fitTextToHeight, onceAdvance, panel, textStyle } from "../ui";
+import { GAME_HEIGHT, GAME_WIDTH, MAX_LIVES, Menu, QuestionPanel, READING, fitTextToHeight, onceAdvance, panel, textStyle } from "../ui";
 import type { AskScholarData } from "./AskScholarScene";
 import { recordAnswer } from "../run";
 import { drawBackdrop } from "./backdrop";
@@ -30,6 +30,9 @@ const PROFESSOR = { x: 150, y: 290, scale: 4 }; // standing on the ground
 const BOX = { x: 290, y: 116, width: GAME_WIDTH - 310, height: 240 };
 const TITLE_Y = 36;
 const AFTER_PRACTICE_MENU_Y = 372;
+// The practice question's box, which may grow up to just under its headings.
+const PRACTICE_TOP = 96;
+const PRACTICE_MIN_TOP = 80;
 
 const FORWARD_KEYS = [" ", "Enter", "d", "D", "s", "S", "ArrowRight", "ArrowDown"];
 const BACK_KEYS = ["a", "A", "w", "W", "ArrowLeft", "ArrowUp"];
@@ -164,13 +167,14 @@ export class CutsceneScene extends Phaser.Scene {
   private askPractice(question: Question): void {
     this.children.removeAll(true);
     this.add.rectangle(0, 0, GAME_WIDTH, GAME_HEIGHT, NES.black, 0.85).setOrigin(0, 0);
-    this.add.text(GAME_WIDTH / 2, 50, "PRACTICE!", textStyle(24, NES.yellow)).setOrigin(0.5);
-    this.add
-      .text(GAME_WIDTH / 2, 90, "Get it right to earn a life", textStyle(16, NES.lime))
-      .setOrigin(0.5);
+    const headings = [
+      this.add.text(GAME_WIDTH / 2, 36, "PRACTICE!", textStyle(24, NES.yellow)).setOrigin(0.5),
+      this.add.text(GAME_WIDTH / 2, 66, "Get it right to earn a life", textStyle(16, NES.lime)).setOrigin(0.5),
+    ];
 
-    const questionPanel = new QuestionPanel(this, question, 130, (choiceIndex) => {
+    const questionPanel = new QuestionPanel(this, question, PRACTICE_TOP, (choiceIndex) => {
       questionPanel.destroy();
+      headings.forEach((heading) => heading.destroy()); // the result takes the screen
       const correct = choiceIndex === question.answerIndex;
       const { runQuestion } = this.params;
       if (runQuestion) recordAnswer(runQuestion.paperId, runQuestion.key, correct);
@@ -181,8 +185,8 @@ export class CutsceneScene extends Phaser.Scene {
         heading += " +1 LIFE";
       }
       const answer = `Answer: ${question.choices[question.answerIndex]}`;
-      this.add.text(40, 150, heading, textStyle(24, correct ? NES.lime : NES.salmon));
-      const explanation = this.add.text(40, 210, `${answer}\n\n${question.explanation}`, textStyle(16, NES.white, GAME_WIDTH - 80));
+      this.add.text(READING.x, 70, heading, textStyle(24, correct ? NES.lime : NES.salmon));
+      const explanation = this.add.text(READING.x, 130, `${answer}\n\n${question.explanation}`, textStyle(16, NES.white, READING.width));
       const { askAbout } = this.params;
       if (!askAbout) {
         this.add.text(GAME_WIDTH - 40, 410, "SPACE / TAP", textStyle(8, NES.yellow)).setOrigin(1, 1);
@@ -192,7 +196,7 @@ export class CutsceneScene extends Phaser.Scene {
       fitTextToHeight(explanation, AFTER_PRACTICE_MENU_Y - 16 - explanation.y);
       // Next frame, so the key that answered can't also pick from this menu.
       this.time.delayedCall(0, () => this.offerScholar(askAbout));
-    });
+    }, PRACTICE_MIN_TOP);
   }
 
   // CONTINUE comes first, so Space still moves on as before.
