@@ -1,5 +1,6 @@
 import Phaser from "phaser";
 import { audio } from "./audio/audio";
+import { JUMP_VELOCITY } from "./jump";
 import { TouchControls, isTouchDevice } from "./touchControls";
 
 // WASD (or on-screen buttons on phones) movement and jumping, shared by the levels and the boss arena so the
@@ -7,8 +8,6 @@ import { TouchControls, isTouchDevice } from "./touchControls";
 
 export type Sprite = Phaser.Types.Physics.Arcade.SpriteWithDynamicBody;
 
-export const GRAVITY = 1400;
-export const JUMP_VELOCITY = -600;
 const RUN_SPEED = 210;
 const COYOTE_MS = 100; // can still jump just after running off a ledge
 const JUMP_BUFFER_MS = 120; // a jump pressed just before landing still counts

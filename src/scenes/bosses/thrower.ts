@@ -2,7 +2,8 @@ import Phaser from "phaser";
 import { audio } from "../../audio/audio";
 import { burst } from "../../effects";
 import { NES } from "../../palette";
-import { GRAVITY, type Sprite } from "../../player";
+import { GRAVITY } from "../../jump";
+import type { Sprite } from "../../player";
 import { GAME_WIDTH } from "../../ui";
 import { floorWarning, type BossArena, type BossBehavior } from "./arena";
 

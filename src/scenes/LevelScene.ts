@@ -7,10 +7,11 @@ import { farKey, groundKey, groundTopKey, hillsKey } from "../levels/themeTextur
 import { themeFor, type Theme } from "../levels/themes";
 import { TILE, isSolidTile, parseLevel, type BlockContents } from "../levels/parseLevel";
 import { NES, css } from "../palette";
-import { GRAVITY, JUMP_VELOCITY, PlayerController, makeOneWay, type Sprite } from "../player";
+import { GRAVITY, JUMP_VELOCITY } from "../jump";
+import { PlayerController, makeOneWay, type Sprite } from "../player";
 import { advanceProgress, currentTuning, markCleared, saveBestStars, startLives, unlockNote } from "../save";
 import { addPlayTime, practiceKey, recordStars } from "../run";
-import { addFoundFact } from "../foundFacts";
+import { nextFact } from "../foundFacts";
 import type { Tuning } from "../difficulty";
 import { COIN_GOAL, levelStars } from "../stars";
 import type { StageData } from "../stage";
@@ -26,7 +27,6 @@ const MOVING_PLATFORM_SPEED = 70;
 const MOVING_PLATFORM_RANGE = TILE * 3;
 const INVULNERABLE_MS = 1200;
 const STOMP_TIP_MS = 2000;
-const FACT_INDEX_KEY = "factIndex";
 const HUD_HEIGHT = 48;
 const TICKER_TOP = HUD_HEIGHT + 6; // a small gap under the HUD
 // The fun-fact card: fades in just under the HUD, in the reading column,
@@ -62,6 +62,7 @@ export class LevelScene extends Phaser.Scene {
   private coinText!: Phaser.GameObjects.Text;
   private shieldIcon!: Phaser.GameObjects.Image;
   private factsFound: number[] = [];
+  private stompTip?: Phaser.GameObjects.Container;
   private playMs = 0; // for the leaderboard run, saved when the level ends
   private ticker!: Phaser.GameObjects.Container;
   private tickerChain?: Phaser.Tweens.TweenChain;
@@ -252,7 +253,7 @@ export class LevelScene extends Phaser.Scene {
 
   // At the start of every paper: a quick reminder that bears hold fun facts.
   private showStompTip(): void {
-    const tip = this.add
+    const tip = (this.stompTip = this.add
       .container(GAME_WIDTH / 2, 130, [
         this.add.rectangle(0, 0, 580, 56, NES.black, 0.85).setStrokeStyle(4, NES.yellow),
         this.add.image(-250, 0, "bear-walk1"),
@@ -260,7 +261,7 @@ export class LevelScene extends Phaser.Scene {
       ])
       .setScrollFactor(0)
       .setDepth(15)
-      .setAlpha(0);
+      .setAlpha(0));
     this.tweens.chain({
       targets: tip,
       tweens: [
@@ -395,6 +396,10 @@ export class LevelScene extends Phaser.Scene {
 
   private floatText(x: number, y: number, message: string, color: number): void {
     const text = this.add.text(x, y, message, textStyle(16, color)).setOrigin(0.5).setStroke(css(NES.black), 4).setDepth(8);
+    // Near the screen's edge, slide the text in so none of it is cut off.
+    const view = this.cameras.main.worldView;
+    const half = text.width / 2 + 8;
+    text.x = Phaser.Math.Clamp(x, view.left + half, view.right - half);
     this.tweens.add({ targets: text, y: y - 40, alpha: 0, duration: 900, onComplete: () => text.destroy() });
   }
 
@@ -418,19 +423,27 @@ export class LevelScene extends Phaser.Scene {
     }
   }
 
-  // Stomping a bear collects the world's next fact without covering the
+  // Stomping a bear collects one of this level's facts without covering the
   // level: a "+FACT" pops up, the fact shows in a slim ticker under the HUD,
-  // and the facts found are listed again on the LEVEL CLEAR card.
+  // and the facts found are listed again on the LEVEL CLEAR card. Once the
+  // level's facts are all found, bears say so instead of repeating one.
   private collectFact(x: number, y: number): void {
-    const facts = this.stage.paper.worlds[this.stage.worldIndex].facts;
-    if (facts.length === 0) return;
-    // The registry outlives this scene, so facts keep cycling across levels.
-    const index = ((this.registry.get(FACT_INDEX_KEY) as number | undefined) ?? 0) % facts.length;
-    this.registry.set(FACT_INDEX_KEY, index + 1);
+    const world = this.stage.paper.worlds[this.stage.worldIndex];
+    const facts = world.facts;
+    const index = nextFact(this.factsFound, facts.length, world.cutscenes.length, this.stage.checkpointsCleared);
+    if (index === undefined) {
+      this.floatText(x, y, "ALL FACTS FOUND", NES.lightGray);
+      return;
+    }
     unlockNote(this.stage.paper.id, this.stage.worldIndex, "fact", index);
-    this.factsFound = addFoundFact(this.factsFound, index);
+    this.factsFound = [...this.factsFound, index];
     audio.playSfx("powerup");
     this.floatText(x, y, "+FACT", NES.lime);
+    // The first fact shows where the tip is, and the tip has done its job.
+    if (this.stompTip?.active) {
+      this.tweens.killTweensOf(this.stompTip);
+      this.stompTip.destroy();
+    }
     this.showFactTicker(facts[index]);
   }
 
