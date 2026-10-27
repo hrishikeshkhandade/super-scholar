@@ -20,7 +20,6 @@ interface NotebookData {
 }
 
 const PAGE_BOX = { x: 24, y: 66, width: GAME_WIDTH - 48, height: 324 };
-const CHOICE_LETTERS = ["A", "B", "C", "D", "E", "F"];
 
 const fraction = ({ unlocked, total }: { unlocked: number; total: number }) => `${unlocked}/${total}`;
 
@@ -189,9 +188,7 @@ export class NotebookScene extends Phaser.Scene {
     this.counter.setText(pages.length > 0 ? `${this.pageIndex + 1}/${pages.length}` : "0/0");
     const page = pages[this.pageIndex];
     const left = PAGE_BOX.x + 20;
-    // Lessons and facts use the short reading lines. Question cards keep the
-    // full width: a question and four choices wouldn't fit the page otherwise.
-    const wrap = page?.question ? PAGE_BOX.width - 40 : READING.width;
+    const wrap = READING.width; // short reading lines, like the rest of the game
     if (!page) {
       this.flipHint.setText("");
       this.pageObjects = [this.add.text(left, PAGE_BOX.y + 20, "Nothing in this section.", textStyle(16, NES.lightGray, wrap))];
@@ -209,12 +206,10 @@ export class NotebookScene extends Phaser.Scene {
   private bodyText(page: NotePage): string {
     const question = page.question;
     if (!question) return page.text;
-    if (!this.flipped) {
-      const choices = question.choices.map((choice, i) => `${CHOICE_LETTERS[i]}) ${choice}`);
-      return [question.prompt, "", ...choices].join("\n");
-    }
-    const letter = CHOICE_LETTERS[question.answerIndex];
-    return `Answer: ${letter}) ${question.choices[question.answerIndex]}\n\n${question.explanation}`;
+    // A flashcard: the question alone, so the answer is recalled, not
+    // picked from a list (and it fits the short reading lines).
+    if (!this.flipped) return question.prompt;
+    return `Answer: ${question.choices[question.answerIndex]}\n\n${question.explanation}`;
   }
 
   private bodyColor(page: NotePage): number {

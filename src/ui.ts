@@ -91,6 +91,8 @@ export class Menu {
       wrapWidth?: number;
       align?: "left" | "center";
       onEdge?: (direction: -1 | 1) => void;
+      // false when Space does something else on the screen (like flipping a card).
+      spaceChooses?: boolean;
     } = {},
   ) {
     this.items = items;
@@ -207,7 +209,7 @@ export class Menu {
     if (key === "arrowup" || (key === "w" && !typing)) this.move(-1);
     else if (key === "arrowdown" || (key === "s" && !typing)) this.move(1);
     else if (event.key === "Enter") this.choose(this.selected);
-    else if (event.key === " " && !typing) this.choose(this.selected);
+    else if (event.key === " " && !typing && this.options.spaceChooses !== false) this.choose(this.selected);
     else return;
     event.preventDefault();
   }
