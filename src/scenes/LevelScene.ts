@@ -16,7 +16,7 @@ import { COIN_GOAL, levelStars } from "../stars";
 import type { StageData } from "../stage";
 import { enablePause } from "./PauseScene";
 import { isTouchDevice } from "../touchControls";
-import { GAME_HEIGHT, GAME_WIDTH, HeartBar, MAX_LIVES, Menu, TITLE_CARD_MS, fitTextToHeight, onceAdvance, panel, showStars, showTitleCard, textStyle } from "../ui";
+import { GAME_HEIGHT, GAME_WIDTH, HeartBar, MAX_LIVES, Menu, TITLE_CARD_MS, fitTextToHeight, onceAdvance, panel, showStars, showTitleCard, textStyle, READING_BOX } from "../ui";
 
 type StaticSprite = Phaser.Types.Physics.Arcade.SpriteWithStaticBody;
 
@@ -28,8 +28,21 @@ const INVULNERABLE_MS = 1200;
 const STOMP_TIP_MS = 2000;
 const FACT_INDEX_KEY = "factIndex";
 const HUD_HEIGHT = 48;
-// The fun-fact ticker: a slim strip that fades in just under the HUD.
-const TICKER = { textX: 104, padding: 8, slide: 8, maxTextHeight: 34, minMs: 3000, msPerChar: 40, maxMs: 7000 };
+const TICKER_TOP = HUD_HEIGHT + 6; // a small gap under the HUD
+// The fun-fact card: fades in just under the HUD, in the reading column,
+// with text the size of the lessons'. It turns see-through whenever the
+// scholar is behind it, so it never hides the player.
+const TICKER = {
+  padding: 18,
+  textTop: 28, // under the small FUN FACT tag
+  maxTextHeight: 110, // four lines; the LEVEL CLEAR card has the full text
+  slide: 8,
+  minMs: 4000,
+  msPerChar: 45,
+  maxMs: 8000,
+  behindAlpha: 0.2, // while the scholar is behind it
+  playerMargin: 24,
+};
 
 export class LevelScene extends Phaser.Scene {
   private stage!: StageData;
@@ -52,6 +65,7 @@ export class LevelScene extends Phaser.Scene {
   private playMs = 0; // for the leaderboard run, saved when the level ends
   private ticker!: Phaser.GameObjects.Container;
   private tickerChain?: Phaser.Tweens.TweenChain;
+  private tickerContent!: Phaser.GameObjects.Container; // dims when the scholar is behind it
   private tickerBackground!: Phaser.GameObjects.Rectangle;
   private tickerText!: Phaser.GameObjects.Text;
   private controlsHint!: Phaser.GameObjects.Text;
@@ -262,6 +276,7 @@ export class LevelScene extends Phaser.Scene {
     // Only time spent actually playing counts (not the title card).
     if (!this.cardShowing()) this.playMs += deltaMs;
     this.controls.update(time);
+    this.updateFactTicker();
     this.updateBears();
     this.updateMovingPlatforms();
     this.updateBubbles(time);
@@ -419,14 +434,27 @@ export class LevelScene extends Phaser.Scene {
     this.showFactTicker(facts[index]);
   }
 
-  // A slim strip just under the HUD, in the HUD's colours, so it reads as
-  // part of it rather than a pop-up.
   private createFactTicker(): void {
-    this.tickerBackground = this.add.rectangle(0, 0, GAME_WIDTH, 0, NES.black, 0.6).setOrigin(0, 0);
-    const label = this.add.text(16, TICKER.padding, "FUN FACT", textStyle(8, NES.yellow));
-    this.tickerText = this.add.text(TICKER.textX, TICKER.padding, "", textStyle(8, NES.white, GAME_WIDTH - TICKER.textX - 16));
-    this.tickerText.setLineSpacing(4);
-    this.ticker = this.add.container(0, 0, [this.tickerBackground, label, this.tickerText]).setScrollFactor(0).setDepth(10).setAlpha(0);
+    this.tickerBackground = this.add.rectangle(0, 0, READING_BOX.width, 0, NES.black, 0.75).setOrigin(0, 0).setStrokeStyle(2, NES.yellow);
+    const label = this.add.text(TICKER.padding, 10, "FUN FACT", textStyle(8, NES.yellow));
+    this.tickerText = this.add.text(TICKER.padding, TICKER.textTop, "", textStyle(16, NES.white, READING_BOX.width - TICKER.padding * 2));
+    this.tickerContent = this.add.container(0, 0, [this.tickerBackground, label, this.tickerText]);
+    this.ticker = this.add.container(READING_BOX.x, 0, [this.tickerContent]).setScrollFactor(0).setDepth(10).setAlpha(0);
+  }
+
+  // See-through while the scholar is behind the card, solid otherwise.
+  private updateFactTicker(): void {
+    if (this.ticker.alpha === 0) return;
+    const camera = this.cameras.main;
+    const x = this.player.x - camera.scrollX;
+    const y = this.player.y - camera.scrollY;
+    const margin = TICKER.playerMargin;
+    const behind =
+      x > this.ticker.x - margin &&
+      x < this.ticker.x + READING_BOX.width + margin &&
+      y < this.ticker.y + this.tickerBackground.height + margin;
+    const target = behind ? TICKER.behindAlpha : 1;
+    this.tickerContent.setAlpha(Phaser.Math.Linear(this.tickerContent.alpha, target, 0.2));
   }
 
   private showFactTicker(fact: string): void {
@@ -435,15 +463,15 @@ export class LevelScene extends Phaser.Scene {
     this.controlsHint.setAlpha(0);
     this.tickerText.setText(fact);
     fitTextToHeight(this.tickerText, TICKER.maxTextHeight); // the end card has the full text
-    const height = this.tickerText.height + TICKER.padding * 2;
-    this.tickerBackground.setSize(GAME_WIDTH, height);
+    const height = TICKER.textTop + this.tickerText.height + 14;
+    this.tickerBackground.setSize(READING_BOX.width, height);
     const shownMs = Phaser.Math.Clamp(TICKER.minMs + fact.length * TICKER.msPerChar, TICKER.minMs, TICKER.maxMs);
     this.hideFactTicker();
-    this.ticker.setY(HUD_HEIGHT - TICKER.slide).setAlpha(0);
+    this.ticker.setY(TICKER_TOP - TICKER.slide).setAlpha(0);
     this.tickerChain = this.tweens.chain({
       targets: this.ticker,
       tweens: [
-        { y: HUD_HEIGHT, alpha: 1, duration: 200, ease: "Quad.easeOut" },
+        { y: TICKER_TOP, alpha: 1, duration: 200, ease: "Quad.easeOut" },
         { alpha: 0, delay: shownMs, duration: 300 },
       ],
     });
