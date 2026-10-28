@@ -49,6 +49,7 @@ const FLOOR_Y = 12 * TILE;
 const PANEL_TOP = 200;
 const FEEDBACK_MIN_HEIGHT = 230;
 const BAR = { x: 480, y: 34, width: 300, height: 16 };
+const PAUSE_BUTTON_X = 337; // between the HARD label and the RAGE meter
 // Tuned to be a fun obstacle, not a wall: the game is about enjoying a hard
 // paper, so a player still learning the answers should be able to win.
 // Wrong answers make the boss a little angrier (rage), never much harder.
@@ -165,7 +166,7 @@ export class BossScene extends Phaser.Scene {
     this.dizzyStars = Array.from({ length: DIZZY_STARS }, () => this.add.image(0, 0, "star").setScale(0.6).setVisible(false));
     this.drawHud(world.boss.name);
     // No pausing during a question: the fight is already stopped then.
-    enablePause(this, () => this.mode !== "question" && this.mode !== "over" && !this.cardShowing());
+    enablePause(this, () => this.mode !== "question" && this.mode !== "over" && !this.cardShowing(), PAUSE_BUTTON_X);
     this.cardShowing = showTitleCard(this, {
       title: `WORLD ${this.stage.worldIndex + 1} BOSS`,
       subtitle: world.boss.name,

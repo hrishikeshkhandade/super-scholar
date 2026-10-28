@@ -28,6 +28,7 @@ const MOVING_PLATFORM_RANGE = TILE * 3;
 const INVULNERABLE_MS = 1200;
 const STOMP_TIP_MS = 2000;
 const HUD_HEIGHT = 48;
+const PAUSE_BUTTON_X = 384; // between the coin count and the level name
 const TICKER_TOP = HUD_HEIGHT + 6; // a small gap under the HUD
 // The fun-fact card: fades in just under the HUD, in the reading column,
 // with text the size of the lessons'. It turns see-through whenever the
@@ -191,7 +192,7 @@ export class LevelScene extends Phaser.Scene {
     this.cameras.main.setDeadzone(120, 80);
 
     this.drawHud(layout.name);
-    enablePause(this, () => !this.finished && !this.cardShowing());
+    enablePause(this, () => !this.finished && !this.cardShowing(), PAUSE_BUTTON_X);
   }
 
   // Sky in NES-style color bands, then far scenery and hills that scroll
@@ -225,7 +226,8 @@ export class LevelScene extends Phaser.Scene {
     this.shieldIcon = fixed(this.add.image(196, 24, "shield").setDepth(10).setVisible(false));
     fixed(this.add.image(240, 24, "coin1").setDepth(10));
     this.coinText = fixed(this.add.text(256, 18, "x 0", textStyle(16, NES.white)).setDepth(10));
-    if (this.tuning.hudLabel) fixed(this.add.text(352, 18, this.tuning.hudLabel, textStyle(16, NES.red)).setDepth(10));
+    // Small, under the coin count, leaving room for the pause button.
+    if (this.tuning.hudLabel) fixed(this.add.text(256, 38, this.tuning.hudLabel, textStyle(8, NES.red)).setDepth(10));
     const world = this.stage.paper.worlds[this.stage.worldIndex];
     const label = `${this.stage.worldIndex + 1}-${this.stage.checkpointsCleared + 1} ${levelName.toUpperCase()}`;
     fixed(this.add.text(GAME_WIDTH - 16, 8, label, textStyle(16, NES.yellow)).setOrigin(1, 0).setDepth(10));

@@ -1,6 +1,6 @@
 import Phaser from "phaser";
 import { audio } from "../audio/audio";
-import { NES } from "../palette";
+import { NES, css } from "../palette";
 import { VOLUME_LEVELS, loadSettings, saveSettings } from "../save";
 import { addTapButton, isTouchDevice } from "../touchControls";
 import { GAME_HEIGHT, GAME_WIDTH, Menu, panel, textStyle, volumeLabel } from "../ui";
@@ -73,10 +73,11 @@ export class PauseScene extends Phaser.Scene {
   }
 }
 
-// Lets a gameplay scene be paused with Esc or P, and pauses it on its own
-// when the game window loses focus. canPause says when pausing makes sense
-// (not during a question or after the level ended).
-export function enablePause(scene: Phaser.Scene, canPause: () => boolean): void {
+// Lets a gameplay scene be paused with Esc or P or its pause button, and
+// pauses it on its own when the game window loses focus. canPause says when
+// pausing makes sense (not during a question or after the level ended).
+// buttonX is a free spot in the scene's top bar.
+export function enablePause(scene: Phaser.Scene, canPause: () => boolean, buttonX: number): void {
   const pause = () => {
     if (!scene.scene.isActive() || !canPause()) return;
     scene.scene.pause();
@@ -86,8 +87,10 @@ export function enablePause(scene: Phaser.Scene, canPause: () => boolean): void 
   scene.input.keyboard?.on("keydown-ESC", pause);
   scene.input.keyboard?.on("keydown-P", pause);
   scene.game.events.on(Phaser.Core.Events.BLUR, pause);
-  // Phones have no Esc key, so they get a pause button at the top.
-  if (isTouchDevice()) addTapButton(scene, GAME_WIDTH / 2, 26, "II", pause);
+  // A pause button in the top bar, so new players can find the pause menu
+  // (and QUIT TO TITLE) without knowing the keys. Phones get a bigger "II".
+  if (isTouchDevice()) addTapButton(scene, buttonX, 26, "II", pause);
+  else addPauseButton(scene, buttonX, pause);
 
   // Keys released while paused never reached this scene, so forget them;
   // otherwise the player would keep running after resuming.
@@ -96,4 +99,18 @@ export function enablePause(scene: Phaser.Scene, canPause: () => boolean): void 
     scene.game.events.off(Phaser.Core.Events.BLUR, pause);
     scene.events.off(Phaser.Scenes.Events.RESUME);
   });
+}
+
+function addPauseButton(scene: Phaser.Scene, x: number, onClick: () => void): void {
+  const button = scene.add
+    .text(x, 24, "PAUSE\n(P)", { ...textStyle(8, NES.white), align: "center" })
+    .setOrigin(0.5)
+    .setPadding(10, 8, 10, 8)
+    .setBackgroundColor(css(NES.black))
+    .setScrollFactor(0)
+    .setDepth(30)
+    .setInteractive({ useHandCursor: true })
+    .on("pointerdown", onClick);
+  button.on("pointerover", () => button.setColor(css(NES.yellow)));
+  button.on("pointerout", () => button.setColor(css(NES.white)));
 }
