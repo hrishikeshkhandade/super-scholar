@@ -277,7 +277,6 @@ export class BossScene extends Phaser.Scene {
   }
 
   private showFeedback(correct: boolean, answer: string, explanation: string): void {
-    audio.playSfx(correct ? "correct" : "wrong");
     if (correct) {
       this.tweens.add({
         targets: this.healthFill,

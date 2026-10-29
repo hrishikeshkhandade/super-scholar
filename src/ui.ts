@@ -156,6 +156,14 @@ export class Menu {
     this.select(this.selected);
   }
 
+  // Freezes the menu once a question is answered: no cursor, keys and clicks
+  // do nothing, and each option keeps its color from colors (the rest dim).
+  lock(colors: ReadonlyMap<number, number>): void {
+    this.active = false;
+    this.cursor.setVisible(false);
+    this.texts.forEach((text, i) => text.setColor(css(colors.get(i) ?? NES.lightGray)).disableInteractive());
+  }
+
   setLabel(index: number, label: string): void {
     this.texts[index]?.setText(label);
   }
@@ -337,14 +345,25 @@ export function panel(scene: Phaser.Scene, x: number, y: number, width: number, 
 }
 
 const CHOICE_LETTERS = ["A", "B", "C", "D", "E", "F"];
+// Room under the last choice for the "SPACE / TAP: WHY" hint.
+const HINT_ROW = 32;
 
 // A multiple-choice question: the prompt on top, choices as a Menu below.
+// After a pick, the choices stay up with the right one green (and a wrong
+// pick red) until the next press, so the player sees what they missed.
 export class QuestionPanel {
   private readonly objects: Phaser.GameObjects.GameObject[] = [];
   private readonly menu: Menu;
 
+  // onAnswer runs on the press after the answer is shown.
   // minTop: how far up the panel may grow for a long question.
-  constructor(scene: Phaser.Scene, question: Question, top: number, onAnswer: (choiceIndex: number) => void, minTop = 20) {
+  constructor(
+    private readonly scene: Phaser.Scene,
+    private readonly question: Question,
+    top: number,
+    onAnswer: (choiceIndex: number) => void,
+    minTop = 20,
+  ) {
     this.objects.push(panel(scene, READING_BOX.x, top, READING_BOX.width, GAME_HEIGHT - top - 20));
     const prompt = scene.add.text(READING.x, top + 20, question.prompt, textStyle(16, NES.white, READING.width));
     this.objects.push(prompt);
@@ -354,7 +373,7 @@ export class QuestionPanel {
       onSelect: () => {
         if (answered) return;
         answered = true;
-        onAnswer(index);
+        this.showAnswer(index, onAnswer);
       },
     }));
     this.menu = new Menu(scene, READING.x + 32, prompt.y + prompt.height + 20, items, {
@@ -363,8 +382,9 @@ export class QuestionPanel {
       wrapWidth: READING.width - 32,
     });
 
-    // A long question grows the panel upward so every choice stays on screen.
-    const overflow = this.menu.bottom + 16 - (GAME_HEIGHT - 20);
+    // A long question grows the panel upward so every choice stays on screen,
+    // with a row left under them for the hint shown after answering.
+    const overflow = this.menu.bottom + HINT_ROW - (GAME_HEIGHT - 20);
     if (overflow > 0) {
       const newTop = Math.max(top - overflow, minTop);
       const shift = newTop - top;
@@ -372,6 +392,19 @@ export class QuestionPanel {
       this.menu.shiftY(shift);
       (this.objects[0] as Phaser.GameObjects.Rectangle).setPosition(READING_BOX.x, newTop).setSize(READING_BOX.width, GAME_HEIGHT - newTop - 20);
     }
+  }
+
+  private showAnswer(choiceIndex: number, onAnswer: (choiceIndex: number) => void): void {
+    const correct = choiceIndex === this.question.answerIndex;
+    audio.playSfx(correct ? "correct" : "wrong");
+    const colors = new Map<number, number>([[this.question.answerIndex, NES.lime]]);
+    if (!correct) colors.set(choiceIndex, NES.red);
+    this.menu.lock(colors);
+    const hint = this.scene.add
+      .text(READING_BOX.x + READING_BOX.width - 20, GAME_HEIGHT - 30, "SPACE / TAP: WHY", textStyle(8, NES.yellow))
+      .setOrigin(1, 1);
+    this.objects.push(hint);
+    onceAdvance(this.scene, () => onAnswer(choiceIndex));
   }
 
   destroy(): void {

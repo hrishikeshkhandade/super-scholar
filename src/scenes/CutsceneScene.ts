@@ -178,7 +178,6 @@ export class CutsceneScene extends Phaser.Scene {
       const correct = choiceIndex === question.answerIndex;
       const { runQuestion } = this.params;
       if (runQuestion) recordAnswer(runQuestion.paperId, runQuestion.key, correct);
-      audio.playSfx(correct ? "correct" : "wrong");
       let heading = correct ? "CORRECT!" : "NOT QUITE.";
       if (correct && this.lives < MAX_LIVES) {
         this.lives += 1;
