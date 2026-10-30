@@ -27,6 +27,16 @@ describe("BossFight", () => {
     expect(fight.current?.prompt).toBe("q1");
   });
 
+  it("knows when the current question is one missed earlier", () => {
+    const fight = new BossFight([question("q1"), question("q2")]);
+    expect(fight.currentIsRetry).toBe(false);
+    fight.answer(1);
+    expect(fight.currentIsRetry).toBe(false);
+    fight.answer(0);
+    expect(fight.current?.prompt).toBe("q1");
+    expect(fight.currentIsRetry).toBe(true);
+  });
+
   it("caps rage so the boss can't get impossibly fast", () => {
     const fight = new BossFight([question("q1")]);
     for (let i = 0; i < 10; i++) fight.answer(3);

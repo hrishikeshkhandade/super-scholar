@@ -357,14 +357,23 @@ export class QuestionPanel {
 
   // onAnswer runs on the press after the answer is shown.
   // minTop: how far up the panel may grow for a long question.
+  // tag: a short yellow label on the panel's top edge, such as why a question is back.
   constructor(
     private readonly scene: Phaser.Scene,
     private readonly question: Question,
     top: number,
     onAnswer: (choiceIndex: number) => void,
-    minTop = 20,
+    { minTop = 20, tag }: { minTop?: number; tag?: string } = {},
   ) {
     this.objects.push(panel(scene, READING_BOX.x, top, READING_BOX.width, GAME_HEIGHT - top - 20));
+    const tagText = tag
+      ? scene.add
+          .text(READING_BOX.x + READING_BOX.width - 20, top, tag, textStyle(8, NES.yellow))
+          .setOrigin(1, 0.5)
+          .setPadding(6, 4, 6, 4)
+          .setBackgroundColor(css(NES.black))
+      : undefined;
+    if (tagText) this.objects.push(tagText);
     const prompt = scene.add.text(READING.x, top + 20, question.prompt, textStyle(16, NES.white, READING.width));
     this.objects.push(prompt);
     let answered = false;
@@ -390,6 +399,7 @@ export class QuestionPanel {
       const shift = newTop - top;
       prompt.setY(prompt.y + shift);
       this.menu.shiftY(shift);
+      tagText?.setY(newTop);
       (this.objects[0] as Phaser.GameObjects.Rectangle).setPosition(READING_BOX.x, newTop).setSize(READING_BOX.width, GAME_HEIGHT - newTop - 20);
     }
   }

@@ -195,7 +195,7 @@ export class CutsceneScene extends Phaser.Scene {
       fitTextToHeight(explanation, AFTER_PRACTICE_MENU_Y - 16 - explanation.y);
       // Next frame, so the key that answered can't also pick from this menu.
       this.time.delayedCall(0, () => this.offerScholar(askAbout));
-    }, PRACTICE_MIN_TOP);
+    }, { minTop: PRACTICE_MIN_TOP });
   }
 
   // CONTINUE comes first, so Space still moves on as before.

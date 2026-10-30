@@ -266,6 +266,8 @@ export class BossScene extends Phaser.Scene {
     const world = this.stage.paper.worlds[this.stage.worldIndex];
     const questionIndex = world.boss.questions.indexOf(question);
     unlockNote(this.stage.paper.id, this.stage.worldIndex, "boss", questionIndex);
+    // A question missed earlier says so, so its return doesn't look like a glitch.
+    const tag = this.fight.currentIsRetry ? "MISSED EARLIER, TRY AGAIN" : undefined;
     const questionPanel = new QuestionPanel(this, question, PANEL_TOP, (choiceIndex) => {
       questionPanel.destroy();
       const correct = this.fight.answer(choiceIndex);
@@ -273,7 +275,7 @@ export class BossScene extends Phaser.Scene {
       // Tagged in the Notebook so the player can find it to study.
       if (!correct) unlockNote(this.stage.paper.id, this.stage.worldIndex, "missed", questionIndex);
       this.showFeedback(correct, question.choices[question.answerIndex], question.explanation);
-    });
+    }, { tag });
   }
 
   private showFeedback(correct: boolean, answer: string, explanation: string): void {
@@ -294,12 +296,16 @@ export class BossScene extends Phaser.Scene {
     const detail = correct ? explanation : `Answer: ${answer}\n\n${explanation}`;
     // The box grows upward to fit the explanation in the reading column.
     const detailText = this.add.text(READING.x, 0, detail, textStyle(16, NES.white, READING.width)).setDepth(1);
-    const height = Math.max(FEEDBACK_MIN_HEIGHT, detailText.height + 100);
+    // A wrong answer has an extra line under the heading, so its text starts lower.
+    const detailOffset = correct ? 60 : 78;
+    const height = Math.max(FEEDBACK_MIN_HEIGHT, detailText.height + detailOffset + 40);
     const top = Math.min(PANEL_TOP, GAME_HEIGHT - 20 - height);
-    detailText.setY(top + 60);
+    detailText.setY(top + detailOffset);
     const feedback = [
       panel(this, READING_BOX.x, top, READING_BOX.width, height),
       this.add.text(READING.x, top + 20, heading, textStyle(16, correct ? NES.lime : NES.salmon)).setDepth(1),
+      // Warns that a missed question returns, so the repeat is expected.
+      ...(correct ? [] : [this.add.text(READING.x, top + 48, "THIS QUESTION COMES BACK LATER", textStyle(8, NES.yellow)).setDepth(1)]),
       detailText,
       this.add.text(READING_BOX.x + READING_BOX.width - 20, top + height - 16, "SPACE / CLICK", textStyle(8, NES.yellow)).setOrigin(1, 1).setDepth(1),
     ];

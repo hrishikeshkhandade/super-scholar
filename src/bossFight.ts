@@ -25,6 +25,12 @@ export class BossFight {
     return this.defeated ? undefined : this.queue[0];
   }
 
+  // True when the current question was answered wrong earlier in this fight.
+  get currentIsRetry(): boolean {
+    const question = this.current;
+    return question !== undefined && this.missed.includes(question);
+  }
+
   get defeated(): boolean {
     return this.health <= 0;
   }
