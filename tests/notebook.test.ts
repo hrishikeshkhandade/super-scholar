@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { LIBRARY } from "../src/content/library";
-import { paperProgress, worldSections } from "../src/notebook";
+import { paperProgress, savedNotesLine, worldSections } from "../src/notebook";
 import { clearProgress, loadNotebook, saveProgress, unlockNote } from "../src/save";
 
 function memoryStorage() {
@@ -77,5 +77,12 @@ describe("Scholar's Notebook", () => {
     expect(bossCards[0].heading).toBe("BOSS QUESTION 1");
     expect(bossCards[1].heading).toBe("BOSS QUESTION 2 (MISSED)");
   });
-});
 
+  it("says on LEVEL CLEAR exactly what the level saved to the Notebook", () => {
+    expect(savedNotesLine(2, true)).toBe("LESSON, FLASHCARD & 2 FACTS SAVED TO YOUR NOTEBOOK");
+    expect(savedNotesLine(1, true)).toBe("LESSON, FLASHCARD & 1 FACT SAVED TO YOUR NOTEBOOK");
+    expect(savedNotesLine(0, true)).toBe("LESSON & FLASHCARD SAVED TO YOUR NOTEBOOK");
+    expect(savedNotesLine(3, false)).toBe("LESSON & 3 FACTS SAVED TO YOUR NOTEBOOK");
+    expect(savedNotesLine(0, false)).toBe("LESSON SAVED TO YOUR NOTEBOOK");
+  });
+});

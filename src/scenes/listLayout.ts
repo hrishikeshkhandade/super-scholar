@@ -13,9 +13,10 @@ const MAX_TITLE_CHARS = 26;
 
 export const shorten = (text: string, max: number) => (text.length > max ? `${text.slice(0, max - 3).trimEnd()}...` : text);
 
-// The y that centers a list of this many options in the space under the heading.
-export const listTop = (options: number) =>
-  Math.max(LIST_AREA.top, Math.round((LIST_AREA.top + LIST_AREA.bottom - options * ROW_HEIGHT) / 2));
+// The y that centers a list of this many options in the space under the
+// heading (or under top, for a screen with more above its list).
+export const listTop = (options: number, top = LIST_AREA.top) =>
+  Math.max(top, Math.round((top + LIST_AREA.bottom - options * ROW_HEIGHT) / 2));
 
 // The pixel font draws "fi" and "fl" as one letter, which would pull a row's
 // count one letter left of the others. An invisible zero-width non-joiner

@@ -12,6 +12,7 @@ import { PlayerController, makeOneWay, type Sprite } from "../player";
 import { advanceProgress, currentTuning, markCleared, saveBestStars, startLives, unlockNote } from "../save";
 import { addPlayTime, practiceKey, recordStars } from "../run";
 import { nextFact } from "../foundFacts";
+import { savedNotesLine } from "../notebook";
 import type { Tuning } from "../difficulty";
 import { COIN_GOAL, levelStars } from "../stars";
 import type { StageData } from "../stage";
@@ -587,12 +588,24 @@ export class LevelScene extends Phaser.Scene {
     const stars = levelStars({ coinsCollected: this.coins, coinsInLevel: this.coinsInLevel, hits: this.hits });
     saveBestStars(this.stage.paper.id, this.stage.worldIndex, this.stage.checkpointsCleared, stars);
     if (!this.stage.replay) recordStars(this.stage.paper.id, this.stage.worldIndex, this.stage.checkpointsCleared, stars);
-    // A dark band so the stars stand out from the level behind them.
-    this.add.rectangle(GAME_WIDTH / 2, 228, 360, 64, NES.black, 0.75).setScrollFactor(0).setDepth(19);
+    // A dark band so the stars and the Notebook line stand out from the level.
+    this.add.rectangle(GAME_WIDTH / 2, 246, 440, 100, NES.black, 0.85).setScrollFactor(0).setDepth(19);
     for (const star of showStars(this, GAME_WIDTH / 2, 214, stars)) star.setScrollFactor(0).setDepth(20);
     const coinGoal = Math.ceil(this.coinsInLevel * COIN_GOAL);
     this.add
       .text(GAME_WIDTH / 2, 248, `COINS ${this.coins}/${this.coinsInLevel}   STAR AT ${coinGoal}   HITS ${this.hits}`, textStyle(8, NES.white))
+      .setOrigin(0.5)
+      .setScrollFactor(0)
+      .setDepth(20);
+    // Tells new players the Notebook exists and where to find it.
+    const hasFlashcard = world.cutscenes[this.stage.checkpointsCleared].practice !== undefined;
+    this.add
+      .text(GAME_WIDTH / 2, 272, savedNotesLine(this.factsFound.length, hasFlashcard), textStyle(8, NES.lime))
+      .setOrigin(0.5)
+      .setScrollFactor(0)
+      .setDepth(20);
+    this.add
+      .text(GAME_WIDTH / 2, 286, "OPEN NOTEBOOK ON THE TITLE MENU TO REVIEW", textStyle(8, NES.lightGray))
       .setOrigin(0.5)
       .setScrollFactor(0)
       .setDepth(20);

@@ -92,3 +92,12 @@ export function progressOf(sections: NoteSection[]): { unlocked: number; total: 
 export function paperProgress(paper: Paper, notebook: Notebook): { unlocked: number; total: number } {
   return progressOf(paper.worlds.flatMap((_, i) => worldSections(paper, i, notebook)));
 }
+
+// The LEVEL CLEAR line telling the player what this level added to the
+// Notebook, so they know it exists and what's in it.
+export function savedNotesLine(factCount: number, hasFlashcard: boolean): string {
+  const facts = factCount === 1 ? "1 FACT" : `${factCount} FACTS`;
+  const saved = ["LESSON", ...(hasFlashcard ? ["FLASHCARD"] : []), ...(factCount > 0 ? [facts] : [])];
+  const list = saved.length === 1 ? saved[0] : `${saved.slice(0, -1).join(", ")} & ${saved[saved.length - 1]}`;
+  return `${list} SAVED TO YOUR NOTEBOOK`;
+}

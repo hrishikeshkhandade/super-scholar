@@ -20,6 +20,15 @@ interface NotebookData {
 }
 
 const PAGE_BOX = { x: 24, y: 66, width: GAME_WIDTH - 48, height: 324 };
+// What each section holds, on the first screen, so new players know what the
+// Notebook is for (a classmate found it unclear).
+const SECTION_KEY: [string, string][] = [
+  ["LESSONS", "The professor's lessons, from each level's flag"],
+  ["FACTS", "Fun facts from the bears you stomp"],
+  ["CARDS", "Flashcards of practice and boss questions"],
+];
+const KEY = { top: 106, lineHeight: 16, tabWidth: 10 }; // tabWidth in letters
+const LIST_TOP = KEY.top + SECTION_KEY.length * KEY.lineHeight + 20;
 
 const fraction = ({ unlocked, total }: { unlocked: number; total: number }) => `${unlocked}/${total}`;
 
@@ -61,17 +70,24 @@ export class NotebookScene extends Phaser.Scene {
   }
 
   private showPapers(): void {
-    this.heading("SCHOLAR'S NOTEBOOK", "Everything you've unlocked, to review");
+    this.heading("SCHOLAR'S NOTEBOOK", "Review everything you've unlocked");
+    const keyWidth = (KEY.tabWidth + Math.max(...SECTION_KEY.map(([, about]) => about.length))) * 8;
+    const keyX = Math.round((GAME_WIDTH - keyWidth) / 2);
+    SECTION_KEY.forEach(([tab, about], i) => {
+      const y = KEY.top + i * KEY.lineHeight;
+      this.add.text(keyX, y, tab, textStyle(8, NES.yellow));
+      this.add.text(keyX + KEY.tabWidth * 8, y, about, textStyle(8, NES.white));
+    });
+
     const papers = playablePapers();
     const { labels, x } = tableLabels(papers.map((paper) => [paperLabel(paper), fraction(paperProgress(paper, this.notebook))]));
     const items = papers.map((paper, i) => ({
       label: labels[i],
       onSelect: () => this.scene.restart({ paperId: paper.id }),
     }));
-    const menu = new Menu(this, x, listTop(items.length + 2), [...items, { label: "BACK", onSelect: () => this.scene.start("Title") }]);
-    this.add
-      .text(GAME_WIDTH / 2, menu.bottom + 30, "Clear levels, stomp bears, and face bosses to fill it in.", textStyle(8, NES.lightGray))
-      .setOrigin(0.5);
+    // With every upload slot full the list only fits with tighter rows.
+    const spacing = items.length > 6 ? 12 : 20;
+    new Menu(this, x, listTop(items.length + 1, LIST_TOP), [...items, { label: "BACK", onSelect: () => this.scene.start("Title") }], { spacing });
     this.onEsc(() => this.scene.start("Title"));
   }
 
