@@ -6,7 +6,7 @@ import { BOSS_STYLE_NAMES, bossStyleFor, type BossStyle } from "../bossStyles";
 import { TILE } from "../levels/parseLevel";
 import { farKey } from "../levels/themeTextures";
 import { THEMES } from "../levels/themes";
-import { NES } from "../palette";
+import { NES, css } from "../palette";
 import { GRAVITY, JUMP_VELOCITY } from "../jump";
 import { PlayerController, makeOneWay, type Sprite } from "../player";
 import { advanceProgress, currentTuning, markCleared, saveBestStars, startLives, unlockNote } from "../save";
@@ -88,6 +88,7 @@ export class BossScene extends Phaser.Scene {
   private hits = 0;
   private cardShowing: () => boolean = () => false;
   private stompableAt = 0;
+  private touchExplained = false; // the "don't touch it" tip shows once per fight
   private tuning!: Tuning;
   private playMs = 0; // for the leaderboard run, saved when the fight ends
 
@@ -105,6 +106,7 @@ export class BossScene extends Phaser.Scene {
     this.introMs = INTRO_MS + TITLE_CARD_MS;
     this.invulnerableUntil = 0;
     this.stompableAt = 0;
+    this.touchExplained = false;
     this.tuning = currentTuning();
     this.playMs = 0;
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.savePlayTime());
@@ -246,7 +248,24 @@ export class BossScene extends Phaser.Scene {
     const fromAbove = this.player.body.bottom <= this.boss.body.top + 20;
     if (falling && fromAbove && this.time.now >= this.stompableAt) this.stomp();
     // A stunned boss is dizzy and harmless: that's the moment to jump on it.
-    else if (!this.behavior.harmless) this.damage(this.boss.x);
+    else if (!this.behavior.harmless && this.damage(this.boss.x)) this.explainBossTouch();
+  }
+
+  // New players don't know the boss's body hurts, so the first time it does,
+  // say why and what to do instead.
+  private explainBossTouch(): void {
+    if (this.touchExplained || this.mode === "over") return;
+    this.touchExplained = true;
+    const tip = this.add
+      .text(0, 0, "OUCH! DON'T TOUCH IT,\nJUMP ON ITS HEAD", { ...textStyle(16, NES.yellow), align: "center" })
+      .setOrigin(0.5)
+      .setPadding(8, 6, 8, 6)
+      .setBackgroundColor(css(NES.black))
+      .setDepth(25);
+    // Where the intro hint was, in the open sky, so it never hides the player
+    // (the knockback bounces them up) or the boss.
+    tip.setPosition(GAME_WIDTH / 2, 130);
+    this.tweens.add({ targets: tip, alpha: 0, delay: 2000, duration: 400, onComplete: () => tip.destroy() });
   }
 
   private stomp(): void {
@@ -323,8 +342,9 @@ export class BossScene extends Phaser.Scene {
     this.invulnerableUntil = this.time.now + PLAYER_INVULNERABLE_MS;
   }
 
-  private damage(fromX: number): void {
-    if (this.mode === "over" || this.time.now < this.invulnerableUntil) return;
+  // Returns whether the player was actually hurt (not while invulnerable).
+  private damage(fromX: number): boolean {
+    if (this.mode === "over" || this.time.now < this.invulnerableUntil) return false;
     this.invulnerableUntil = this.time.now + PLAYER_INVULNERABLE_MS;
     this.hits += 1;
     this.stage.lives -= 1;
@@ -334,6 +354,7 @@ export class BossScene extends Phaser.Scene {
     this.cameras.main.shake(150, 0.01);
     this.tweens.add({ targets: this.player, alpha: 0.2, duration: 100, yoyo: true, repeat: 5 });
     if (this.stage.lives <= 0) this.lose();
+    return true;
   }
 
   private flash(target: Phaser.GameObjects.Components.Alpha): void {
