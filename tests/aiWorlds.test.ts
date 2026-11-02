@@ -99,6 +99,13 @@ describe("AI world checks", () => {
     expect(world.cutscenes[0].pages).toHaveLength(3);
     expect(world.facts).toHaveLength(2);
   });
+
+  it("drops a fact the AI wrote twice, so no fact shows up in two levels", () => {
+    const reply = aiReply();
+    reply.facts.push("Plants fix about 120 billion tonnes of carbon a year!", "rubisco may be the MOST common protein on Earth");
+    const world = parseAiWorld(reply, section, 0)!;
+    expect(world.facts).toEqual(["Plants fix about 120 billion tonnes of carbon a year!", "Rubisco may be the most common protein on Earth."]);
+  });
 });
 
 describe("copying checks", () => {

@@ -15,6 +15,15 @@ describe("generateGame", () => {
     expect(validatePaper(paper)).toEqual([]);
   });
 
+  it("doesn't use a sentence the paper repeats as two facts", () => {
+    // Papers often repeat a sentence, e.g. in the abstract and the introduction.
+    const lines = fakePaper();
+    const repeated = SECTIONS["1 Introduction"][6];
+    lines.splice(2, 0, { text: repeated, size: 10, page: 1 });
+    const facts = generateGame(lines, "plants.pdf").worlds[0].facts;
+    expect(facts.filter((fact) => fact === repeated)).toHaveLength(1);
+  });
+
   it("finds the title and turns each section into a world, stopping at References", () => {
     expect(paper.title).toBe("How Plants Make Food From Light");
     expect(paper.worlds.map((world) => world.section)).toEqual(["Introduction", "The light reactions", "The Calvin cycle"]);

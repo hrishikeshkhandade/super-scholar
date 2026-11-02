@@ -1,6 +1,7 @@
 import type { Cutscene, Question, World } from "../content/types";
 import { MAX_CHOICES, MAX_FACT_CHARS, MAX_PAGE_CHARS } from "../content/validate";
 import { hashString, seededRandom } from "./questions";
+import { uniqueTexts } from "./sentences";
 
 // Shared by the game and the server function that asks an AI to write a
 // paper's worlds: the request format, the prompt, and the strict checks that
@@ -226,11 +227,12 @@ export function parseAiWorld(value: unknown, section: AiSection, index: number):
   }
   if (cutscenes.length < AI_LESSONS_PER_WORLD) return undefined;
 
-  const facts = (Array.isArray(raw.facts) ? raw.facts : [])
-    .filter((fact): fact is string => isString(fact, MAX_FACT_CHARS))
-    .map(clean)
-    .filter(original)
-    .slice(0, MAX_FACTS);
+  const facts = uniqueTexts(
+    (Array.isArray(raw.facts) ? raw.facts : [])
+      .filter((fact): fact is string => isString(fact, MAX_FACT_CHARS))
+      .map(clean)
+      .filter(original),
+  ).slice(0, MAX_FACTS);
   const questions = (Array.isArray(raw.boss) ? raw.boss : [])
     .map((question) => parseQuestion(question, random))
     .filter((question): question is Question => originalQuestion(question))

@@ -39,3 +39,15 @@ export function isReadable(sentence: string): boolean {
   if ((sentence.match(/\(\d{4}\)|\[\d+\]/g) ?? []).length > 2) return false;
   return true;
 }
+
+// Keeps the first of any texts that match apart from case, spacing and
+// punctuation, so the same fact can't be handed to two levels.
+export function uniqueTexts(texts: string[]): string[] {
+  const seen = new Set<string>();
+  return texts.filter((text) => {
+    const key = text.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}

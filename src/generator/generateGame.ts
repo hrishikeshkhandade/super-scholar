@@ -5,7 +5,7 @@ import { LEVEL_LAYOUTS } from "../levels/layouts";
 import { containsTerm, findKeyTerms, type Term } from "./keywords";
 import { hashString, makeQuestion, seededRandom } from "./questions";
 import { cleanHeading, outlinePaper, type Section } from "./sections";
-import { isReadable, splitSentences } from "./sentences";
+import { isReadable, splitSentences, uniqueTexts } from "./sentences";
 import type { TextLine } from "./textLines";
 
 // Builds a whole game from a paper's text with plain rules, no AI:
@@ -79,7 +79,7 @@ function makeFacts(sentences: ScoredSentence[], terms: Term[], worldText: string
   // "...shown in Figure 3" only makes sense next to the figure, so those go last.
   const mentionsFigure = (s: ScoredSentence) => /\b(fig(ure)?s?|tables?)\.?\s*\d/i.test(s.text);
   const ranked = [...withNumbers, ...short].sort((a, b) => Number(mentionsFigure(a)) - Number(mentionsFigure(b)));
-  const facts = ranked.slice(0, 6).map((s) => s.text);
+  const facts = uniqueTexts(ranked.map((s) => s.text)).slice(0, 6);
   if (facts.length > 0) return facts;
   return terms
     .filter((term) => containsTerm(worldText, term))
