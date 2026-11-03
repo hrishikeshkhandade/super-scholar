@@ -107,7 +107,7 @@ export class LevelScene extends Phaser.Scene {
     this.finished = false;
 
     this.theme = themeFor(hashString(this.stage.paper.id), this.stage.worldIndex, this.stage.checkpointsCleared);
-    const layout = layoutFor(this.stage.paper.id, this.stage.worldIndex, this.stage.checkpointsCleared);
+    const layout = layoutFor(this.stage.paper.id, this.stage.worldIndex, this.stage.checkpointsCleared, this.tuning.levelDifficulty);
     this.rows = layout.rows;
     const level = parseLevel(layout.rows);
     const worldWidth = level.widthTiles * TILE;

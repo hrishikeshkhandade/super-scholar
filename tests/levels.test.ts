@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { LIBRARY } from "../src/content/library";
 import { layoutFor } from "../src/levels/chooseLayout";
-import { LEVEL_LAYOUTS } from "../src/levels/layouts";
+import { LEVELS_PER_WORLD, TUTORIAL_LAYOUT } from "../src/levels/layouts";
 import { THEMES, themeFor } from "../src/levels/themes";
 import { parseLevel } from "../src/levels/parseLevel";
 import { layoutProblems } from "../src/levels/validateLayout";
@@ -36,7 +36,37 @@ describe("layoutProblems", () => {
 
   it("accepts a beatable level and flags an unjumpable pit", () => {
     expect(layoutProblems(rows("####  ####"))).toEqual([]);
-    expect(layoutProblems(rows("##      ##")).join()).toMatch(/too wide/);
+    expect(layoutProblems(rows("##        ##")).join()).toMatch(/can't be reached/);
+  });
+
+  // The level's art, rows 5 to 11 (above the ground), then the ground row.
+  const level = (art: string[], ground: string) => {
+    const width = ground.length;
+    const blank = " ".repeat(width);
+    const body = [...Array(5).fill(blank), ...art];
+    body[11] = "P" + body[11].slice(1, -1) + "F";
+    return [...body, ground, ground];
+  };
+
+  it("allows a 5-tile pit, which takes a running jump, but not 6", () => {
+    expect(layoutProblems(rows("##     ##"))).toEqual([]);
+    expect(layoutProblems(rows("##      ##")).join()).toMatch(/can't be reached/);
+  });
+
+  it("rejects a wall too tall to jump, unless ledges lead up to it", () => {
+    // A wall 5 tiles tall; the jump rises less than 5.
+    const tall = level(["            ", "            ", "      ##    ", "      ##    ", "      ##    ", "      ##    ", "      ##    "], "############");
+    expect(layoutProblems(tall).join()).toMatch(/can't be reached/);
+    const ledge = level(["            ", "            ", "      ##    ", "      ##    ", "  --  ##    ", "      ##    ", "      ##    "], "############");
+    expect(layoutProblems(ledge)).toEqual([]);
+  });
+
+  it("can't stand on candle spikes, so a long spike bed needs a way over", () => {
+    const blank = " ".repeat(12);
+    const spikes = level([blank, blank, blank, blank, blank, blank, "  ^^^^^^^   "], "############");
+    expect(layoutProblems(spikes).join()).toMatch(/can't be reached/);
+    const bridged = level([blank, blank, blank, blank, "   --  --   ", blank, "  ^^^^^^^   "], "############");
+    expect(layoutProblems(bridged)).toEqual([]);
   });
 
   it("flags a player or flag floating over a pit", () => {
@@ -44,22 +74,21 @@ describe("layoutProblems", () => {
   });
 });
 
-describe.each(LEVEL_LAYOUTS)("hand-made level $name", (layout) => {
-  it("is beatable", () => {
-    expect(layoutProblems(layout.rows)).toEqual([]);
-  });
+it("the hand-made tutorial level is beatable", () => {
+  expect(layoutProblems(TUTORIAL_LAYOUT.rows)).toEqual([]);
 });
 
-it("has a hand-made level for every lesson in the built-in papers", () => {
+it("has a level for every lesson in the built-in papers", () => {
   for (const paper of LIBRARY) {
-    for (const world of paper.worlds) expect(world.cutscenes.length).toBeLessThanOrEqual(LEVEL_LAYOUTS.length);
+    for (const world of paper.worlds) expect(world.cutscenes.length).toBeLessThanOrEqual(LEVELS_PER_WORLD);
   }
 });
 
 describe("level variety", () => {
-  it("keeps the hand-made maps for the built-in paper and generates maps for every other paper", () => {
-    expect(layoutFor(LIBRARY[0].id, 0, 1)).toBe(LEVEL_LAYOUTS[1]);
-    expect(LEVEL_LAYOUTS).not.toContain(layoutFor("upload-123", 0, 1));
+  it("starts the built-in paper with the tutorial and generates every other level", () => {
+    expect(layoutFor(LIBRARY[0].id, 0, 0)).toBe(TUTORIAL_LAYOUT);
+    expect(layoutFor(LIBRARY[0].id, 0, 1)).not.toBe(TUTORIAL_LAYOUT);
+    expect(layoutFor("upload-123", 0, 0)).not.toBe(TUTORIAL_LAYOUT);
   });
 
   it("gives every level of a paper its own map, and different papers different maps", () => {

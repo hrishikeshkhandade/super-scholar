@@ -5,8 +5,14 @@ import type { LevelLayout } from "./layouts";
 // way games like Spelunky make endless levels: each chunk is beatable on its
 // own, so the whole level is too. The same seed always gives the same level.
 
+// The kinds of challenge that make a level more than single hops. Every
+// generated level has at least two (see generateLayout's required).
+export type ChallengeKind = "chain" | "gap" | "timing" | "climb";
+export const CHALLENGE_KINDS: ChallengeKind[] = ["chain", "gap", "timing", "climb"];
+
 interface Chunk {
   difficulty: number; // 0 (easy) to 1 (hard)
+  kind?: ChallengeKind;
   // Rows 5 to 11 (above the ground), then the ground row. Every string in a
   // chunk has the same width. "X" becomes a random block (mostly coins).
   art: [string, string, string, string, string, string, string];
@@ -35,16 +41,18 @@ const CHUNKS: Chunk[] = [
   // Platforms up to a coin stash
   {
     difficulty: 0.45,
+    kind: "climb",
     art: ["       ooo  ", "       ---  ", blank(12), blank(12), "  ---       ", blank(12), blank(12)],
     ground: "############",
   },
   // A wide pit
-  { difficulty: 0.5, art: [blank(10), blank(10), blank(10), "   oooo   ", blank(10), blank(10), blank(10)], ground: "###    ###" },
+  { difficulty: 0.5, kind: "gap", art: [blank(10), blank(10), blank(10), "   oooo   ", blank(10), blank(10), blank(10)], ground: "###    ###" },
   // Two spikes
   { difficulty: 0.5, art: [blank(9), blank(9), blank(9), blank(9), blank(9), blank(9), "   ^^    "], ground: "#########" },
   // A moving platform over a long pit
   {
     difficulty: 0.6,
+    kind: "timing",
     art: [blank(12), blank(12), "   ooo      ", blank(12), "  ~         ", blank(12), blank(12)],
     ground: "##      ####",
   },
@@ -53,6 +61,7 @@ const CHUNKS: Chunk[] = [
   // Stepping-stone platforms across a pit
   {
     difficulty: 0.75,
+    kind: "chain",
     art: [blank(12), blank(12), blank(12), "      oo    ", "  --  --    ", blank(12), blank(12)],
     ground: "##        ##",
   },
@@ -90,6 +99,71 @@ const CHUNKS: Chunk[] = [
     art: [blank(12), blank(12), blank(12), blank(12), blank(12), "     ##     ", "  ^  ##  b  "],
     ground: "############",
   },
+  // Stepping stones at changing heights over a long pit
+  {
+    difficulty: 0.35,
+    kind: "chain",
+    art: [blank(14), blank(14), "      oo      ", "      --      ", "         --   ", "   --         ", blank(14)],
+    ground: "##          ##",
+  },
+  // Brick hops over a bed of candles
+  {
+    difficulty: 0.6,
+    kind: "chain",
+    art: [blank(14), blank(14), blank(14), "   oo   oo    ", "   BB   BB    ", blank(14), "  ^^^^^^^^^^  "],
+    ground: "##############",
+  },
+  // A pit wide enough to need a running jump
+  { difficulty: 0.45, kind: "gap", art: [blank(12), blank(12), "    ooo     ", blank(12), blank(12), blank(12), blank(12)], ground: "###     ####" },
+  // A pit with a higher ledge on the far side
+  {
+    difficulty: 0.7,
+    kind: "gap",
+    art: [blank(12), blank(12), blank(12), "         o  ", blank(12), "       #####", "       #####"],
+    ground: "###    #####",
+  },
+  // Two pits with a small island between them
+  {
+    difficulty: 0.85,
+    kind: "gap",
+    art: [blank(15), blank(15), "   oo     ooo  ", blank(15), blank(15), blank(15), blank(15)],
+    ground: "##    ##     ##",
+  },
+  // A bear patrolling the island you have to land on
+  {
+    difficulty: 0.5,
+    kind: "timing",
+    art: [blank(14), blank(14), blank(14), "      oo      ", blank(14), blank(14), "       b      "],
+    ground: "##   ####   ##",
+  },
+  // A moving platform to ride over a bed of candles
+  {
+    difficulty: 0.65,
+    kind: "timing",
+    art: [blank(13), blank(13), "    ooo      ", blank(13), blank(13), "  ~          ", "  ^^^^^^^^^  "],
+    ground: "#############",
+  },
+  // A bear on a brick bridge over a pit
+  {
+    difficulty: 0.8,
+    kind: "timing",
+    art: [blank(12), blank(12), blank(12), blank(12), "      b     ", "  BBBBBBBB  ", blank(12)],
+    ground: "##        ##",
+  },
+  // Ledges up and over a wall too tall to jump
+  {
+    difficulty: 0.4,
+    kind: "climb",
+    art: [blank(14), "          oo  ", "          ##  ", "      --  ##  ", "          ##  ", "   --     ##  ", "          ##  "],
+    ground: "##############",
+  },
+  // A brick staircase over a bed of candles
+  {
+    difficulty: 0.75,
+    kind: "climb",
+    art: [blank(14), "         oo   ", blank(14), "      BB      ", "         BB   ", "   BB         ", "   ^^^^^^^^   "],
+    ground: "##############",
+  },
 ];
 
 const NAMES = [
@@ -111,8 +185,49 @@ const BEAR_EVERY = 3;
 
 const hasBear = (chunk: Chunk) => chunk.art.some((line) => line.includes("b"));
 
-export function generateLayout(seed: number, difficulty: number): LevelLayout {
+// required: challenge kinds the level must include at least once.
+export function generateLayout(seed: number, difficulty: number, required: ChallengeKind[] = []): GeneratedLayout {
   const random = seededRandom(seed);
+  // Chunks far easier than the level (other than bear ones) are left out, so
+  // later levels aren't padded with single hops.
+  const usable = CHUNKS.filter(
+    (chunk) => chunk.difficulty <= difficulty + 0.15 && (chunk.difficulty >= difficulty - 0.5 || hasBear(chunk)),
+  );
+  const withBears = usable.filter(hasBear);
+  const count = 8 + Math.round(difficulty * 5);
+  // Harder settings favour harder chunks, but easier ones still appear as breathers.
+  const pickFrom = (choices: Chunk[]) => {
+    const weights = choices.map((chunk) => 1 + chunk.difficulty * difficulty * 8);
+    let pick = random() * weights.reduce((sum, w) => sum + w, 0);
+    return choices.find((_, index) => (pick -= weights[index]) <= 0) ?? choices[0];
+  };
+  const picks = Array.from({ length: count }, (_, i) => pickFrom(i % BEAR_EVERY === 1 ? withBears : usable));
+  // Each missing required kind replaces one pick, never a bear slot or a
+  // chunk of another required kind, using the easiest chunk of that kind if
+  // none is in range yet.
+  for (const kind of required) {
+    if (picks.some((chunk) => chunk.kind === kind)) continue;
+    const ofKind = usable.filter((chunk) => chunk.kind === kind);
+    const easiest = CHUNKS.filter((chunk) => chunk.kind === kind).sort((a, b) => a.difficulty - b.difficulty)[0];
+    const isRequired = (chunk: Chunk) => chunk.kind !== undefined && required.includes(chunk.kind);
+    const slots = picks.map((_, i) => i).filter((i) => i % BEAR_EVERY !== 1 && !isRequired(picks[i]));
+    picks[slots[Math.floor(random() * slots.length)]] = ofKind.length > 0 ? pickFrom(ofKind) : easiest;
+  }
+
+  return {
+    name: NAMES[Math.floor(random() * NAMES.length)],
+    rows: stitch(picks, random),
+    challenges: CHALLENGE_KINDS.filter((kind) => picks.some((chunk) => chunk.kind === kind)),
+  };
+}
+
+// A generated level also says which kinds of challenge it has (for the tests).
+export interface GeneratedLayout extends LevelLayout {
+  challenges: ChallengeKind[];
+}
+
+// Joins chunks into level rows, between a safe start and a safe finish.
+function stitch(chunks: Chunk[], random: () => number): string[] {
   const rows: string[][] = Array.from({ length: HEIGHT }, () => []);
   const append = (art: string[], ground: string) => {
     const width = ground.length;
@@ -121,18 +236,8 @@ export function generateLayout(seed: number, difficulty: number): LevelLayout {
     rows[12].push(...ground);
     rows[13].push(...ground);
   };
-
-  // A safe start and a safe finish, with the chosen chunks in between.
   append([blank(6), blank(6), blank(6), blank(6), blank(6), blank(6), "  P   "], "######");
-  const usable = CHUNKS.filter((chunk) => chunk.difficulty <= difficulty + 0.15);
-  const withBears = usable.filter(hasBear);
-  const count = 8 + Math.round(difficulty * 5);
-  for (let i = 0; i < count; i++) {
-    const choices = i % BEAR_EVERY === 1 ? withBears : usable;
-    // Harder settings favour harder chunks, but easy ones still appear as breathers.
-    const weights = choices.map((chunk) => 1 + chunk.difficulty * difficulty * 4);
-    let pick = random() * weights.reduce((sum, w) => sum + w, 0);
-    const chunk = choices.find((_, index) => (pick -= weights[index]) <= 0) ?? choices[0];
+  for (const chunk of chunks) {
     const art = chunk.art.map((line) =>
       line.replace(/X/g, () => {
         const roll = random();
@@ -142,6 +247,9 @@ export function generateLayout(seed: number, difficulty: number): LevelLayout {
     append(art, chunk.ground);
   }
   append([blank(8), blank(8), blank(8), blank(8), blank(8), blank(8), " o o  F "], "########");
-
-  return { name: NAMES[Math.floor(random() * NAMES.length)], rows: rows.map((row) => row.join("")) };
+  return rows.map((row) => row.join(""));
 }
+
+// Each chunk alone between the safe start and finish, so tests can check
+// every one is beatable on its own.
+export const chunkLevels = (): string[][] => CHUNKS.map((chunk) => stitch([chunk], () => 0.5));

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { layoutFor } from "../src/levels/chooseLayout";
-import { generateLayout } from "../src/levels/generateLayout";
+import { CHALLENGE_KINDS, chunkLevels, generateLayout } from "../src/levels/generateLayout";
 import { parseLevel } from "../src/levels/parseLevel";
 import { layoutProblems } from "../src/levels/validateLayout";
 
@@ -43,5 +43,42 @@ describe("generateLayout", () => {
     for (let level = 0; level < 3; level++) {
       expect(parseLevel(layoutFor("upload-123", 0, level).rows).bears.length).toBeGreaterThanOrEqual(2);
     }
+  });
+
+  it("makes every chunk beatable on its own", () => {
+    chunkLevels().forEach((rows, index) => expect(layoutProblems(rows), `chunk ${index}`).toEqual([]));
+  });
+
+  it("always includes the kinds of challenge a level asks for", () => {
+    for (let seed = 1; seed <= 200; seed++) {
+      for (const difficulty of [0.35, 0.6, 1]) {
+        const required = [CHALLENGE_KINDS[seed % 4], CHALLENGE_KINDS[(seed + 1) % 4]];
+        const layout = generateLayout(seed, difficulty, required);
+        for (const kind of required) expect(layout.challenges, `seed ${seed}`).toContain(kind);
+        expect(layoutProblems(layout.rows), `seed ${seed}`).toEqual([]);
+      }
+    }
+  });
+
+  // A classmate found the levels "spoon-fed": single hops only.
+  it("gives World 1 of every paper all four kinds of challenge across its first two levels", () => {
+    for (const paper of ["upload-a", "upload-b", "upload-c"]) {
+      const kinds = new Set([0, 1].flatMap((level) => (layoutFor(paper, 0, level) as ReturnType<typeof generateLayout>).challenges));
+      expect([...kinds].sort()).toEqual([...CHALLENGE_KINDS].sort());
+    }
+  });
+
+  it("makes HARD mode's layouts harder than NORMAL's", () => {
+    const hazards = (extra: number) => {
+      let total = 0;
+      for (const paper of ["a", "b", "c", "d", "e"]) {
+        for (let level = 0; level < 3; level++) {
+          const parsed = parseLevel(layoutFor(paper, 0, level, extra).rows);
+          total += parsed.bears.length + parsed.spikes.length + parsed.movingPlatforms.length;
+        }
+      }
+      return total;
+    };
+    expect(hazards(0.3)).toBeGreaterThan(hazards(0));
   });
 });

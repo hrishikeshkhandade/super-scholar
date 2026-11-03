@@ -3,69 +3,34 @@
 //   S  shield block  -  thin platform (jump up through it, S to drop)
 //   ~  moving platform  ^  candle spikes  b  bear  u  market bubble  o  coin
 //   P  player start  F  goal flag
-// Levels are shared by every paper: a world's Nth lesson uses the Nth layout.
 
 export interface LevelLayout {
   name: string;
   rows: string[];
 }
 
-export const LEVEL_LAYOUTS: LevelLayout[] = [
-  {
-    name: "Warm-Up Market",
-    rows: [
-      "                                                                                                ",
-      "                                                                                                ",
-      "                                                                                                ",
-      "                                                                                                ",
-      "                                                                                                ",
-      "                                                    ooo                                         ",
-      "                                                    ---                                         ",
-      "                                                                                                ",
-      "          ?B?B             ooo      BHB                           ?             #               ",
-      "                           ---                  ---                            ##               ",
-      "                                                                      ##      ###               ",
-      "  P         b     o o o ^               b   ^^          b             ##  b   ###     o o o F   ",
-      "##############################   ###########################  ##################################",
-      "##############################   ###########################  ##################################",
-    ],
-  },
-  {
-    name: "Spread Canyon",
-    rows: [
-      "                                                                                                              ",
-      "                                                                                                              ",
-      "                                                                                                              ",
-      "                                                                                                              ",
-      "                                                                                                              ",
-      "                                                                                                              ",
-      "                                                                                                              ",
-      "                                         ooo                                                                  ",
-      "        B?B          ooo      BSB                     ?B?                        ooo           BHB            ",
-      "                                    --   ~                     --          ##    ---                          ",
-      "                                                                    ##     ##                                 ",
-      "  P           b             ^ b ^                 b  b    ^^        ##  b  ##           b ^ b       o o   F   ",
-      "####################    ################       ###############    ##############    ##########################",
-      "####################    ################       ###############    ##############    ##########################",
-    ],
-  },
-  {
-    name: "Convergence Peak",
-    rows: [
-      "                                                                                                                            ",
-      "                                                                                                                            ",
-      "                                                                                                                            ",
-      "                                                                                                                            ",
-      "                                                              ooo                                                           ",
-      "                                                              ---                                                           ",
-      "                                                                                                                            ",
-      "                               ooo             ooo       H                                 ooo                 #            ",
-      "      ?B?      oo        BSB            B?B               ---                                          ?BH    ##            ",
-      "               --              ~               ~                       --            ###   ~                 ##             ",
-      "                                                                            ##       ###                    ###             ",
-      "  P       b         ^b^               b  ^            b ^^ b      ^ b       ##  b ^  ###          b ^ b ^   ###     ooo F   ",
-      "##############    ############       #########      ##################    ################     #############################",
-      "##############    ############       #########      ##################    ################     #############################",
-    ],
-  },
-];
+// Every world has this many levels, each ending in one lesson.
+export const LEVELS_PER_WORLD = 3;
+
+// The built-in paper's first level, made by hand as a gentle start: a few of
+// each thing the game has, with room to learn the controls. Every other level
+// is generated (see generateLayout.ts).
+export const TUTORIAL_LAYOUT: LevelLayout = {
+  name: "Warm-Up Market",
+  rows: [
+    "                                                                                                ",
+    "                                                                                                ",
+    "                                                                                                ",
+    "                                                                                                ",
+    "                                                                                                ",
+    "                                                    ooo                                         ",
+    "                                                    ---                                         ",
+    "                                                                                                ",
+    "          ?B?B             ooo      BHB                           ?             #               ",
+    "                           ---                  ---                            ##               ",
+    "                                                                      ##      ###               ",
+    "  P         b     o o o ^               b   ^^          b             ##  b   ###     o o o F   ",
+    "##############################   ###########################  ##################################",
+    "##############################   ###########################  ##################################",
+  ],
+};

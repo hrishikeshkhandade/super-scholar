@@ -1,6 +1,7 @@
-// NORMAL keeps the game gentle, so learning comes first. HARD is optional
-// (a classmate asked for a challenge): fewer hearts and faster enemies, but
-// the same questions and lessons, so it only tests the platforming.
+// NORMAL asks for real platforming that ramps up, but stays fair, so learning
+// comes first. HARD is optional (a classmate asked for a challenge): fewer
+// hearts, faster enemies, and harder layouts, but the same questions and
+// lessons, so it only tests the platforming.
 
 export type Difficulty = "normal" | "hard";
 export const DIFFICULTIES: Difficulty[] = ["normal", "hard"];
@@ -11,9 +12,10 @@ export interface Tuning {
   bearSpeed: number; // multiplier on the bears' walking speed
   bossSpeed: number; // multiplier on the boss's walking and charging speed
   bossAttackEvery: number; // multiplier on the time between boss attacks
+  levelDifficulty: number; // added to how hard each generated level's layout is
 }
 
 export const TUNING: Record<Difficulty, Tuning> = {
-  normal: { hudLabel: null, startLives: 3, bearSpeed: 1, bossSpeed: 1, bossAttackEvery: 1 },
-  hard: { hudLabel: "HARD", startLives: 2, bearSpeed: 1.5, bossSpeed: 1.25, bossAttackEvery: 0.75 },
+  normal: { hudLabel: null, startLives: 3, bearSpeed: 1, bossSpeed: 1, bossAttackEvery: 1, levelDifficulty: 0 },
+  hard: { hudLabel: "HARD", startLives: 2, bearSpeed: 1.5, bossSpeed: 1.25, bossAttackEvery: 0.75, levelDifficulty: 0.3 },
 };

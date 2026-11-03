@@ -1,7 +1,7 @@
 import type { Cutscene, Paper, Question, World } from "../content/types";
 import { MAX_ABSTRACT_CHARS, MAX_EXCERPT_CHARS, MAX_TITLE_CHARS, fallbackBossName, type AiRequest } from "./aiWorlds";
 import { MAX_FACT_CHARS, MAX_PAGE_CHARS, validatePaper } from "../content/validate";
-import { LEVEL_LAYOUTS } from "../levels/layouts";
+import { LEVELS_PER_WORLD } from "../levels/layouts";
 import { containsTerm, findKeyTerms, type Term } from "./keywords";
 import { hashString, makeQuestion, seededRandom } from "./questions";
 import { cleanHeading, outlinePaper, type Section } from "./sections";
@@ -92,7 +92,7 @@ function buildWorld(section: Section, index: number, terms: Term[], seed: number
   if (sentences.length < MIN_WORLD_SENTENCES) return undefined;
   const random = seededRandom(seed + index);
 
-  const lessonCount = LEVEL_LAYOUTS.length;
+  const lessonCount = LEVELS_PER_WORLD;
   const best = [...sentences]
     .sort((a, b) => b.score - a.score)
     .slice(0, lessonCount * PAGES_PER_LESSON)
