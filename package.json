@@ -8,14 +8,16 @@
     "build": "tsc && vite build",
     "preview": "vite preview",
     "test": "vitest run",
-    "deploy": "npm test && npm run build && wrangler deploy",
-    "feedback": "node scripts/readFeedback.mjs"
+    "deploy": "npm test && npm run check:game && npm run build && wrangler deploy",
+    "feedback": "node scripts/readFeedback.mjs",
+    "check:game": "playwright test"
   },
   "dependencies": {
     "pdfjs-dist": "^6.4.299",
     "phaser": "^4.2.1"
   },
   "devDependencies": {
+    "@playwright/test": "^1.64.1",
     "tsx": "^4.23.15",
     "typescript": "^7.0.2",
     "vite": "^8.3.3",

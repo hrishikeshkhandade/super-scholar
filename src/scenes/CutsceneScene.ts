@@ -31,8 +31,8 @@ const BOX = { x: 290, y: 116, width: GAME_WIDTH - 310, height: 240 };
 const TITLE_Y = 36;
 const AFTER_PRACTICE_MENU_Y = 372;
 // The practice question's box, which may grow up to just under its headings.
-const PRACTICE_TOP = 96;
-const PRACTICE_MIN_TOP = 80;
+export const PRACTICE_TOP = 96;
+export const PRACTICE_MIN_TOP = 80;
 
 const FORWARD_KEYS = [" ", "Enter", "d", "D", "s", "S", "ArrowRight", "ArrowDown"];
 const BACK_KEYS = ["a", "A", "w", "W", "ArrowLeft", "ArrowUp"];

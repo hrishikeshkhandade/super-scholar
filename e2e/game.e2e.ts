@@ -1,0 +1,198 @@
+import { expect, test } from "@playwright/test";
+import { SHOTS, openGame } from "./play";
+
+// Each check plays part of the real game the way a player would and saves a
+// screenshot of the screen it checked.
+
+const LIBRARY = "/src/content/library.ts";
+
+test("the game loads to the title screen with no errors", async ({ page }) => {
+  const errors = await openGame(page);
+  await page.evaluate(() => window.steps(60));
+  await page.screenshot({ path: `${SHOTS}/1-title.png` });
+  expect(errors).toEqual([]);
+});
+
+test("clearing 1-1 says what was saved to the Notebook", async ({ page }) => {
+  await openGame(page);
+  const texts = await page.evaluate(async (library) => {
+    const { LIBRARY } = await window.importGame(library);
+    const level = window.startScene("Level", { paper: LIBRARY[0], worldIndex: 0, checkpointsCleared: 0, lives: 5, replay: true });
+    window.steps(30);
+    level.reachGoal();
+    window.steps(30);
+    window.hideOverlays(level);
+    return level.children.list.filter((object: { type: string }) => object.type === "Text").map((text: { text: string }) => text.text);
+  }, LIBRARY);
+  await page.screenshot({ path: `${SHOTS}/2-level-clear.png` });
+  expect(texts).toContain("LEVEL CLEAR!");
+  expect(texts).toContainEqual(expect.stringMatching(/SAVED TO YOUR NOTEBOOK$/));
+  expect(texts).toContain("OPEN NOTEBOOK ON THE TITLE MENU TO REVIEW");
+});
+
+test("a normal jump lands on the sky blocks and the boss arena's platforms", async ({ page }) => {
+  await openGame(page);
+  const result = await page.evaluate(async (library) => {
+    const { LIBRARY } = await window.importGame(library);
+    const topOf = (scene: any, texture: string, x: number) =>
+      Math.round(scene.children.list.find((object: any) => object.texture?.key === texture && Math.abs(object.x - x) < 16).body.top);
+
+    // 1-1's second group of sky blocks, 4 tiles up, after the title card.
+    const level = window.startScene("Level", { paper: LIBRARY[0], worldIndex: 0, checkpointsCleared: 0, lives: 99, replay: true });
+    level.bears.clear(true, true); // as if stomped, so none knocks the jumper back
+    window.steps(300);
+    const blockTop = topOf(level, "brick", 1168);
+    const onBlocks = window.jump(level, 1082, 364, "right", 26);
+
+    // Both floating platforms in a boss arena, with the boss moved aside.
+    const boss = window.startScene("Boss", { paper: LIBRARY[0], worldIndex: 2, checkpointsCleared: 3, lives: 99, replay: true });
+    for (let frame = 0; frame < 600 && boss.mode !== "fight"; frame++) window.steps(1);
+    boss.behavior.end();
+    boss.boss.setPosition(400, 100);
+    boss.boss.body.enable = false;
+    const platformTop = topOf(boss, "platform", 112);
+    const onLeft = window.jump(boss, 250, 364, "left", 40);
+    const onRight = window.jump(boss, 560, 364, "right", 40);
+    window.hideOverlays(boss);
+    return { blockTop, onBlocks, platformTop, onLeft, onRight };
+  }, LIBRARY);
+  await page.screenshot({ path: `${SHOTS}/3-jump-boss-platform.png` });
+  expect(result.onBlocks).toEqual({ bottom: result.blockTop, standing: true });
+  expect(result.onLeft).toEqual({ bottom: result.platformTop, standing: true });
+  expect(result.onRight).toEqual({ bottom: result.platformTop, standing: true });
+});
+
+test("a missed boss question warns it comes back, then returns tagged", async ({ page }) => {
+  await openGame(page);
+  await page.evaluate(async (library) => {
+    const { LIBRARY } = await window.importGame(library);
+    const boss = window.startScene("Boss", { paper: LIBRARY[0], worldIndex: 0, checkpointsCleared: 3, lives: 99, replay: true });
+    for (let frame = 0; frame < 600 && boss.mode !== "fight"; frame++) window.steps(1);
+    window.hideOverlays(boss);
+  }, LIBRARY);
+  const texts = () =>
+    page.evaluate(() => window.game.scene.getScene("Boss").children.list.filter((object: any) => object.type === "Text").map((text: any) => text.text));
+  // Stomping is skipped: the check asks the question the way a stomp does.
+  const ask = () =>
+    page.evaluate(() => {
+      const boss = window.game.scene.getScene("Boss");
+      boss.invulnerableUntil = Infinity;
+      boss.mode = "question";
+      boss.physics.pause();
+      boss.askQuestion();
+      window.steps(50);
+    });
+  // Picks an answer, then presses Space to see why.
+  const pick = (right: boolean) =>
+    page.evaluate((pickRight) => {
+      const boss = window.game.scene.getScene("Boss");
+      const question = boss.fight.current;
+      const letter = "ABCD"[pickRight ? question.answerIndex : (question.answerIndex + 1) % 4];
+      boss.children.list.find((object: any) => object.type === "Text" && object.text.startsWith(`${letter})`)).emit("pointerdown", {});
+      window.steps(10);
+      boss.input.keyboard.emit("keydown", { key: " ", repeat: false, preventDefault() {} });
+      window.steps(10);
+    }, right);
+  // Presses Space again to close the explanation, then freezes the arena
+  // again so the idle player can't land on the boss and start a second
+  // question on top of the one this check asks next.
+  const dismiss = () =>
+    page.evaluate(() => {
+      const boss = window.game.scene.getScene("Boss");
+      boss.input.keyboard.emit("keydown", { key: " ", repeat: false, preventDefault() {} });
+      boss.mode = "question";
+      boss.physics.pause();
+      window.steps(5);
+      return boss.fight.currentIsRetry as boolean;
+    });
+
+  await ask();
+  expect(await texts()).not.toContain("MISSED EARLIER, TRY AGAIN");
+  await pick(false);
+  await page.screenshot({ path: `${SHOTS}/4-boss-miss.png` });
+  expect(await texts()).toContain("THIS QUESTION COMES BACK LATER");
+  let retryNext = await dismiss();
+
+  // Answer the rest right until the missed one is next.
+  for (let i = 0; i < 10 && !retryNext; i++) {
+    await ask();
+    await pick(true);
+    retryNext = await dismiss();
+  }
+  expect(retryNext).toBe(true);
+  await ask();
+  await page.screenshot({ path: `${SHOTS}/4-boss-retry.png` });
+  const shown = await texts();
+  expect(shown).toContain("MISSED EARLIER, TRY AGAIN");
+  expect(shown).not.toContain("WRONG! THE BOSS GETS ANGRIER"); // the earlier explanation is gone
+  expect(await page.evaluate(() => window.game.scene.getScene("Boss").fight.wrongAnswers)).toBe(1);
+});
+
+test("touching the boss shows the don't-touch tip once per fight", async ({ page }) => {
+  await openGame(page);
+  const result = await page.evaluate(async (library) => {
+    const { LIBRARY } = await window.importGame(library);
+    const boss = window.startScene("Boss", { paper: LIBRARY[0], worldIndex: 0, checkpointsCleared: 3, lives: 99, replay: true });
+    for (let frame = 0; frame < 600 && boss.mode !== "fight"; frame++) window.steps(1);
+    let tipsMade = 0;
+    const addText = boss.add.text.bind(boss.add);
+    boss.add.text = (...args: any[]) => {
+      if (String(args[2]).startsWith("OUCH")) tipsMade += 1;
+      return addText(...args);
+    };
+    const walkIntoBoss = () => {
+      const hits = boss.hits;
+      boss.player.setPosition(boss.boss.x - 70, boss.boss.y);
+      for (let frame = 0; frame < 300 && boss.hits === hits && boss.mode === "fight"; frame++) {
+        boss.player.setVelocityX(200);
+        window.steps(1);
+      }
+    };
+    walkIntoBoss();
+    const afterFirst = { hits: boss.hits, tipsMade };
+    window.hideOverlays(boss);
+    window.steps(100); // past the moment the player can't be hurt
+    walkIntoBoss();
+    return { afterFirst, afterSecond: { hits: boss.hits, tipsMade } };
+  }, LIBRARY);
+  await page.screenshot({ path: `${SHOTS}/5-boss-touch.png` });
+  expect(result.afterFirst).toEqual({ hits: 1, tipsMade: 1 });
+  expect(result.afterSecond.hits).toBeGreaterThanOrEqual(2);
+  expect(result.afterSecond.tipsMade).toBe(1);
+});
+
+test("every practice and boss question in every built-in paper fits its box", async ({ page }) => {
+  await openGame(page);
+  const problems = await page.evaluate(async (library) => {
+    const { LIBRARY } = await window.importGame(library);
+    const found: string[] = [];
+    for (const paper of LIBRARY) found.push(...(await window.boxProblems(paper)));
+    return found;
+  }, LIBRARY);
+  expect(problems).toEqual([]);
+
+  // Screenshots of the shortest and the tallest boss question.
+  for (const [name, prompt] of [
+    ["6-boss-short-question", "Which pair does the paper use"],
+    ["6-boss-long-question", "Why can't we have completely non-reversible"],
+  ]) {
+    await page.evaluate(
+      async ({ library, start }) => {
+        const { LIBRARY } = await window.importGame(library);
+        const { QuestionPanel } = await window.importGame("/src/ui.ts");
+        const { SKY } = await window.importGame("/src/scenes/BossScene.ts");
+        const paper = LIBRARY.find((p: any) => p.worlds.some((w: any) => w.boss.questions.some((q: any) => q.prompt.startsWith(start))));
+        const question = paper.worlds.flatMap((w: any) => w.boss.questions).find((q: any) => q.prompt.startsWith(start));
+        const scene = window.startScene("Boss", { paper, worldIndex: 0, checkpointsCleared: 3, lives: 99, replay: true });
+        for (let frame = 0; frame < 600 && scene.mode !== "fight"; frame++) window.steps(1);
+        scene.mode = "question";
+        scene.physics.pause();
+        window.hideOverlays(scene);
+        new QuestionPanel(scene, question, SKY.top, () => {}, { center: SKY });
+        window.steps(2);
+      },
+      { library: LIBRARY, start: prompt },
+    );
+    await page.screenshot({ path: `${SHOTS}/${name}.png` });
+  }
+});

@@ -22,6 +22,15 @@ npm run build
 
 `npm run build` type-checks the code and writes the playable site to `dist/`.
 
+### Play-through checks
+
+```bash
+npx playwright install chromium   # once per machine
+npm run check:game
+```
+
+These play parts of the real game in a hidden browser (`e2e/game.e2e.ts`): the title loads with no errors, clearing 1-1 shows what was saved to the Notebook, the jump lands on sky blocks and boss platforms, a missed boss question comes back tagged, touching the boss shows its tip once, and every built-in question fits its box. They start the dev server themselves and save a screenshot of each checked screen to `e2e/screenshots/`.
+
 ## Deploy
 
 The game is hosted for free on Cloudflare at https://super-scholar.super-scholar.workers.dev (it moved from Netlify on 2026-10-16, when Netlify's free credits ran out).
@@ -30,7 +39,7 @@ The game is hosted for free on Cloudflare at https://super-scholar.super-scholar
 npm run deploy
 ```
 
-This runs the tests, builds, and publishes `dist/` as static files plus the Worker in `worker/index.ts`, which handles `/api/` requests with the code in `server/` (`fetchPaper.ts` downloads free PDFs; `aiGame.ts` asks a free AI to write a paper's worlds). Settings are in `wrangler.jsonc`. During `npm run dev`, `/api` requests go to the live site.
+This runs the tests and the play-through checks, builds, and publishes `dist/` as static files plus the Worker in `worker/index.ts`, which handles `/api/` requests with the code in `server/` (`fetchPaper.ts` downloads free PDFs; `aiGame.ts` asks a free AI to write a paper's worlds). Settings are in `wrangler.jsonc`. During `npm run dev`, `/api` requests go to the live site.
 
 The first time on a new machine, run `npx wrangler login`. The AI keys are Cloudflare secrets, set from this folder with `npx wrangler secret put GEMINI_API_KEY` and `npx wrangler secret put GROQ_API_KEY` (paste the key when asked).
 
