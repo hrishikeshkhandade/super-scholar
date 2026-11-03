@@ -52,7 +52,6 @@ const HUD_HEIGHT = 60;
 // The open sky between the top bar and the grass, where question and answer
 // boxes are centered so they never cover either.
 export const SKY = { top: HUD_HEIGHT, bottom: FLOOR_Y };
-const PANEL_TOP = 200;
 const FEEDBACK_MIN_HEIGHT = 230;
 const BAR = { x: 480, y: 34, width: 300, height: 16 };
 const PAUSE_BUTTON_X = 337; // between the HARD label and the RAGE meter
@@ -428,10 +427,10 @@ export class BossScene extends Phaser.Scene {
       ...(result ? [{ label: "LEADERBOARD", onSelect: () => this.scene.start("Leaderboard", { paperId: paper.id }) }] : []),
       { label: "TITLE SCREEN", onSelect: () => this.scene.start("Title") },
     ];
-    // Each option past two makes the panel grow upward.
-    const extra = Math.max(items.length - 2, 0) * 36;
-    const top = PANEL_TOP - extra;
-    panel(this, 20, top, GAME_WIDTH - 40, 230 + extra);
+    // Each option past two makes the panel taller; it stays centered in the sky.
+    const height = 230 + Math.max(items.length - 2, 0) * 36;
+    const top = centeredTop(SKY, height);
+    panel(this, 20, top, GAME_WIDTH - 40, height);
     const heading = hasNextWorld ? "WORLD CLEAR!" : "PAPER COMPLETE!";
     this.add.text(GAME_WIDTH / 2, top + 32, heading, textStyle(32, NES.yellow)).setOrigin(0.5);
     showStars(this, GAME_WIDTH / 2, top + 72, stars);
@@ -447,9 +446,10 @@ export class BossScene extends Phaser.Scene {
   private lose(): void {
     this.endFight();
     audio.playSfx("gameover");
-    panel(this, 20, PANEL_TOP, GAME_WIDTH - 40, 230);
-    this.add.text(GAME_WIDTH / 2, PANEL_TOP + 50, "GAME OVER", textStyle(32, NES.red)).setOrigin(0.5);
-    new Menu(this, 280, PANEL_TOP + 110, [
+    const top = centeredTop(SKY, 230);
+    panel(this, 20, top, GAME_WIDTH - 40, 230);
+    this.add.text(GAME_WIDTH / 2, top + 50, "GAME OVER", textStyle(32, NES.red)).setOrigin(0.5);
+    new Menu(this, 280, top + 110, [
       { label: "RETRY BOSS", onSelect: () => this.scene.restart({ ...this.stage, lives: startLives() }) },
       { label: "TITLE SCREEN", onSelect: () => this.scene.start("Title") },
     ]);
