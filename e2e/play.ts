@@ -14,6 +14,7 @@ declare global {
     hideOverlays: (scene: any) => void;
     importGame: (path: string) => Promise<any>;
     boxProblems: (paper: any) => Promise<string[]>;
+    skyBoxProblems: (scene: any, show: () => void, where: string, options?: { remove?: boolean }) => Promise<string[]>;
   }
 }
 
@@ -107,6 +108,31 @@ function installHelpers(): void {
 
   window.importGame = (path) => import(/* @vite-ignore */ path);
 
+  // Runs show, which draws a box on the boss arena (like WRONG! or WORLD
+  // CLEAR!), and lists problems with that box: covering the top bar or the
+  // grass, not centered in the sky, or anything it drew sticking out of it.
+  window.skyBoxProblems = async (scene, show, where, { remove = false } = {}) => {
+    const { SKY } = await window.importGame("/src/scenes/BossScene.ts");
+    const before = new Set(scene.children.list);
+    show();
+    const added = scene.children.list.filter((object: any) => !before.has(object));
+    const box = added.filter((object: any) => object.type === "Rectangle").sort((a: any, b: any) => b.width * b.height - a.width * a.height)[0];
+    const found: string[] = [];
+    const above = box.y - SKY.top;
+    const below = SKY.bottom - (box.y + box.height);
+    if (above < 4 || below < 4) found.push(`${where}: covers the top bar or the grass`);
+    if (Math.abs(above - below) > 1) found.push(`${where}: not centered in the sky (${above} above, ${below} below)`);
+    for (const object of added) {
+      if (object === box || (object.type !== "Text" && object.type !== "Image")) continue;
+      const edges = object.getBounds();
+      if (edges.left < box.x + 4 || edges.right > box.x + box.width - 4 || edges.top < box.y || edges.bottom > box.y + box.height) {
+        found.push(`${where}: "${object.text?.slice(0, 30) ?? object.texture.key}" outside its box`);
+      }
+    }
+    if (remove) added.forEach((object: any) => object.destroy());
+    return found;
+  };
+
   // Lists every question or answer box in a paper that doesn't fit: text
   // outside its box, the hint touching the choices, or (in boss fights) a box
   // covering the top bar or the grass instead of centered in the sky.
@@ -138,18 +164,11 @@ function installHelpers(): void {
       return panel;
     };
     // The WRONG! or HIT! box the boss shows after an answer.
-    const checkAnswerBox = (question: any, correct: boolean, where: string) => {
-      const before = new Set(scene.children.list);
-      scene.showFeedback(correct, question.choices[question.answerIndex], question.explanation);
-      const added = scene.children.list.filter((object: any) => !before.has(object));
-      const box = added.find((object: any) => object.type === "Rectangle");
-      inSky(box, where);
-      for (const text of added.filter((object: any) => object.type === "Text")) {
-        if (outside(text, box)) found.push(`${where}: "${text.text.slice(0, 30)}" outside its box`);
-      }
-      added.forEach((object: any) => object.destroy());
+    const checkAnswerBox = async (question: any, correct: boolean, where: string) => {
+      const show = () => scene.showFeedback(correct, question.choices[question.answerIndex], question.explanation);
+      found.push(...(await window.skyBoxProblems(scene, show, where, { remove: true })));
     };
-    paper.worlds.forEach((world: any, w: number) => {
+    for (const [w, world] of paper.worlds.entries()) {
       world.cutscenes.forEach((cutscene: any, c: number) => {
         if (!cutscene.practice) return;
         const where = `${paper.id} world ${w + 1} practice ${c + 1}`;
@@ -157,7 +176,7 @@ function installHelpers(): void {
         if (panel.box.y < PRACTICE_MIN_TOP) found.push(`${where}: box above its limit`);
         panel.destroy();
       });
-      world.boss.questions.forEach((question: any, q: number) => {
+      for (const [q, question] of world.boss.questions.entries()) {
         const where = `${paper.id} world ${w + 1} boss ${q + 1}`;
         // With the "missed earlier" tag, which sits on the box's top edge.
         const panel = checkQuestion(question, SKY.top, { center: SKY, tag: "MISSED EARLIER, TRY AGAIN" }, where);
@@ -167,10 +186,10 @@ function installHelpers(): void {
         if (tag.top < SKY.top) found.push(`${where}: the tag covers the top bar`);
         if (tag.bottom > prompt.top && tag.left < prompt.right) found.push(`${where}: the tag covers the question`);
         panel.destroy();
-        checkAnswerBox(question, false, `${where} wrong answer`);
-        checkAnswerBox(question, true, `${where} right answer`);
-      });
-    });
+        await checkAnswerBox(question, false, `${where} wrong answer`);
+        await checkAnswerBox(question, true, `${where} right answer`);
+      }
+    }
     return found;
   };
 }

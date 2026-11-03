@@ -42,10 +42,13 @@ const POINTER_GRACE_MS = 250;
 
 export class PointerGuard {
   private moved = false;
-  private readonly readyAt: number;
+  private readyAt = Infinity;
 
   constructor(private readonly scene: Phaser.Scene) {
-    this.readyAt = scene.time.now + POINTER_GRACE_MS;
+    // Counted from the screen's first frame: while a scene is being created
+    // its clock still reads the time it was last on screen, which would make
+    // the moment already over for a screen you come back to.
+    scene.events.once(Phaser.Scenes.Events.UPDATE, (time: number) => (this.readyAt = time + POINTER_GRACE_MS));
     scene.input.once("pointermove", () => (this.moved = true));
   }
 

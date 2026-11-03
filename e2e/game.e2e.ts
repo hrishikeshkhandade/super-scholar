@@ -161,6 +161,93 @@ test("touching the boss shows the don't-touch tip once per fight", async ({ page
   expect(result.afterSecond.tipsMade).toBe(1);
 });
 
+test("the boss's win and game-over boxes sit centered in the sky", async ({ page }) => {
+  await openGame(page);
+  const cases = [
+    { name: "9-world-clear", worldIndex: 0, replay: true, miss: true, buttons: ["REVIEW MISSES (1)", "NEXT WORLD", "TITLE SCREEN"] },
+    { name: "9-world-clear-no-misses", worldIndex: 0, replay: true, miss: false, buttons: ["NEXT WORLD", "TITLE SCREEN"] },
+    { name: "9-paper-complete", worldIndex: 4, replay: false, miss: true, buttons: ["REVIEW MISSES (1)", "LEADERBOARD", "TITLE SCREEN"] },
+    { name: "9-game-over", worldIndex: 0, replay: true, miss: false, buttons: ["RETRY BOSS", "TITLE SCREEN"] },
+  ];
+  for (const fightCase of cases) {
+    const result = await page.evaluate(
+      async ({ library, fightCase }) => {
+        const { LIBRARY } = await window.importGame(library);
+        const { startRun } = await window.importGame("/src/run.ts");
+        const paper = LIBRARY[0];
+        // A full playthrough, so finishing the last world shows its score.
+        if (!fightCase.replay) startRun(paper.id);
+        const boss = window.startScene("Boss", { paper, worldIndex: fightCase.worldIndex, checkpointsCleared: 3, lives: 5, replay: fightCase.replay });
+        for (let frame = 0; frame < 600 && boss.mode !== "fight"; frame++) window.steps(1);
+        window.hideOverlays(boss);
+        if (fightCase.miss) boss.fight.answer((boss.fight.current.answerIndex + 1) % 4);
+        const show = () => (fightCase.name === "9-game-over" ? boss.lose() : boss.win());
+        const problems = await window.skyBoxProblems(boss, show, fightCase.name);
+        window.steps(60); // let the boss's defeat animation finish
+        const labels = boss.children.list.filter((object: any) => object.type === "Text" && object.input?.enabled).map((text: any) => text.text);
+        return { problems, labels };
+      },
+      { library: LIBRARY, fightCase },
+    );
+    await page.screenshot({ path: `${SHOTS}/${fightCase.name}.png` });
+    expect(result.problems).toEqual([]);
+    for (const button of fightCase.buttons) expect(result.labels).toContain(button);
+  }
+});
+
+test("double-clicking BACK on the credits screen stays on the title screen", async ({ page }) => {
+  await openGame(page);
+  const back = await page.evaluate(() => {
+    const credits = window.startScene("Credits", { from: "Title" });
+    window.steps(60);
+    const button = credits.children.list.find((object: any) => object.type === "Text" && object.text === "BACK").getBounds();
+    return { x: button.centerX, y: button.centerY };
+  });
+  // Two quick clicks, the way a player double-clicks, with the real mouse.
+  await page.mouse.click(back.x, back.y);
+  await page.evaluate(() => window.steps(7)); // about 120 ms
+  await page.mouse.click(back.x, back.y);
+  const scenes = await page.evaluate(() => {
+    window.steps(30);
+    return window.game.scene.getScenes(true).map((scene: any) => scene.scene.key);
+  });
+  expect(scenes).toEqual(["Title"]);
+});
+
+test("a click right after the title screen opens doesn't pick an option", async ({ page }) => {
+  await openGame(page);
+  // A while on the credits screen first: the title screen's clock must still
+  // count its short ignore-clicks moment from when it opens again.
+  const spots = await page.evaluate(() => {
+    const credits = window.startScene("Credits", { from: "Title" });
+    window.steps(600);
+    const back = credits.children.list.find((object: any) => object.type === "Text" && object.text === "BACK").getBounds();
+    return { back: { x: back.centerX, y: back.centerY } };
+  });
+  await page.mouse.click(spots.back.x, spots.back.y);
+  const notebook = await page.evaluate(() => {
+    window.steps(2);
+    const title = window.game.scene.getScene("Title");
+    const option = title.children.list.find((object: any) => object.type === "Text" && object.text === "NOTEBOOK").getBounds();
+    return { x: option.centerX, y: option.centerY };
+  });
+  await page.evaluate(() => window.steps(5)); // about 120 ms after BACK
+  await page.mouse.click(notebook.x, notebook.y);
+  const scenes = await page.evaluate(() => {
+    window.steps(30);
+    return window.game.scene.getScenes(true).map((scene: any) => scene.scene.key);
+  });
+  expect(scenes).toEqual(["Title"]);
+
+  // Once that moment is over, a deliberate click works.
+  await page.mouse.click(notebook.x, notebook.y);
+  const after = await page.evaluate(() => {
+    window.steps(30);
+    return window.game.scene.getScenes(true).map((scene: any) => scene.scene.key);
+  });
+  expect(after).toEqual(["Notebook"]);
+});
+
 test("every practice and boss question in every built-in paper fits its box", async ({ page }) => {
   await openGame(page);
   const problems = await page.evaluate(async (library) => {

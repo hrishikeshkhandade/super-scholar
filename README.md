@@ -29,7 +29,7 @@ npx playwright install chromium   # once per machine
 npm run check:game
 ```
 
-These play parts of the real game in a hidden browser (`e2e/game.e2e.ts`): the title loads with no errors, clearing 1-1 shows what was saved to the Notebook, the jump lands on sky blocks and boss platforms, a missed boss question comes back tagged, touching the boss shows its tip once, and every built-in question fits its box. They start the dev server themselves and save a screenshot of each checked screen to `e2e/screenshots/`.
+These play parts of the real game in a hidden browser (`e2e/game.e2e.ts`): the title loads with no errors, clearing 1-1 shows what was saved to the Notebook, the jump lands on sky blocks and boss platforms, a missed boss question comes back tagged, touching the boss shows its tip once, the boss's win and game-over boxes are centered in the sky, a quick double-click on Credits BACK (or a click just after the title opens) doesn't pick a title option, and every built-in question and answer box fits. They start the dev server themselves and save a screenshot of each checked screen to `e2e/screenshots/`.
 
 ## Deploy
 
