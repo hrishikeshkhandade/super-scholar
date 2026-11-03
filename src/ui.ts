@@ -345,37 +345,61 @@ export function panel(scene: Phaser.Scene, x: number, y: number, width: number, 
 }
 
 const CHOICE_LETTERS = ["A", "B", "C", "D", "E", "F"];
-// Room under the last choice for the "SPACE / TAP: WHY" hint.
-const HINT_ROW = 32;
+// A box centered in an area keeps at least this gap above and below it.
+export const CENTER_MARGIN = 4;
+// The widest a box's text may get when a long question or explanation
+// wouldn't fit its area at the normal reading width.
+export const WIDEST_READING = GAME_WIDTH - 120;
+
+// Where a box of this height sits so the gaps above and below it are equal.
+export const centeredTop = (area: { top: number; bottom: number }, height: number) =>
+  Math.round(area.top + (area.bottom - area.top - height) / 2);
+
+// How a question's text is spaced: gaps under the prompt and between choices,
+// and the room under the last choice for the "SPACE / TAP: WHY" hint.
+interface QuestionLayout {
+  width: number;
+  promptGap: number;
+  choiceGap: number;
+  hintRow: number;
+}
+const NORMAL_SPACING = { promptGap: 20, choiceGap: 8, hintRow: 32 };
+// Layouts to try, roomiest first, until a question fits its area: wider and
+// wider, then tighter spacing at the widest (the same text size throughout).
+const QUESTION_LAYOUTS: QuestionLayout[] = [
+  ...Array.from({ length: (WIDEST_READING - READING.width) / 40 + 1 }, (_, i) => ({ width: READING.width + 40 * i, ...NORMAL_SPACING })),
+  { width: WIDEST_READING, promptGap: 12, choiceGap: 6, hintRow: 22 },
+];
 
 // A multiple-choice question: the prompt on top, choices as a Menu below.
 // After a pick, the choices stay up with the right one green (and a wrong
 // pick red) until the next press, so the player sees what they missed.
 export class QuestionPanel {
   private readonly objects: Phaser.GameObjects.GameObject[] = [];
-  private readonly menu: Menu;
+  readonly box: Phaser.GameObjects.Rectangle;
+  private prompt!: Phaser.GameObjects.Text;
+  private menu!: Menu;
+  private layout = QUESTION_LAYOUTS[0];
 
   // onAnswer runs on the press after the answer is shown.
-  // minTop: how far up the panel may grow for a long question.
+  // top: where the panel starts; it reaches to the bottom of the screen and
+  // grows upward, as far as minTop, for a long question.
   // tag: a short yellow label on the panel's top edge, such as why a question is back.
+  // center: instead, fit the panel to its text and center it between these heights.
+  // Either way, a question too long for its room gets a wider, tighter layout.
   constructor(
     private readonly scene: Phaser.Scene,
     private readonly question: Question,
     top: number,
     onAnswer: (choiceIndex: number) => void,
-    { minTop = 20, tag }: { minTop?: number; tag?: string } = {},
+    { minTop = 20, tag, center }: { minTop?: number; tag?: string; center?: { top: number; bottom: number } } = {},
   ) {
-    this.objects.push(panel(scene, READING_BOX.x, top, READING_BOX.width, GAME_HEIGHT - top - 20));
+    this.box = panel(scene, READING_BOX.x, top, READING_BOX.width, GAME_HEIGHT - top - 20);
+    this.objects.push(this.box);
     const tagText = tag
-      ? scene.add
-          .text(READING_BOX.x + READING_BOX.width - 20, top, tag, textStyle(8, NES.yellow))
-          .setOrigin(1, 0.5)
-          .setPadding(6, 4, 6, 4)
-          .setBackgroundColor(css(NES.black))
+      ? scene.add.text(0, 0, tag, textStyle(8, NES.yellow)).setOrigin(1, 0.5).setPadding(6, 4, 6, 4).setBackgroundColor(css(NES.black))
       : undefined;
     if (tagText) this.objects.push(tagText);
-    const prompt = scene.add.text(READING.x, top + 20, question.prompt, textStyle(16, NES.white, READING.width));
-    this.objects.push(prompt);
     let answered = false;
     const items = question.choices.map((choice, index) => ({
       label: `${CHOICE_LETTERS[index]}) ${choice}`,
@@ -385,23 +409,57 @@ export class QuestionPanel {
         this.showAnswer(index, onAnswer);
       },
     }));
-    this.menu = new Menu(scene, READING.x + 32, prompt.y + prompt.height + 20, items, {
-      size: 16,
-      spacing: 8,
-      wrapWidth: READING.width - 32,
-    });
 
-    // A long question grows the panel upward so every choice stays on screen,
-    // with a row left under them for the hint shown after answering.
-    const overflow = this.menu.bottom + HINT_ROW - (GAME_HEIGHT - 20);
-    if (overflow > 0) {
-      const newTop = Math.max(top - overflow, minTop);
-      const shift = newTop - top;
-      prompt.setY(prompt.y + shift);
-      this.menu.shiftY(shift);
-      tagText?.setY(newTop);
-      (this.objects[0] as Phaser.GameObjects.Rectangle).setPosition(READING_BOX.x, newTop).setSize(READING_BOX.width, GAME_HEIGHT - newTop - 20);
+    // Lay out from y 0 to measure, trying each layout until one fits.
+    const bottom = GAME_HEIGHT - 20;
+    const room = center ? center.bottom - center.top - 2 * CENTER_MARGIN : bottom - minTop;
+    for (const layout of QUESTION_LAYOUTS) {
+      if (layout !== QUESTION_LAYOUTS[0]) {
+        this.prompt.destroy();
+        this.menu.destroy();
+      }
+      this.layout = layout;
+      this.layOut(items);
+      if (this.contentHeight <= room) break;
     }
+    const height = this.contentHeight;
+    const x = (GAME_WIDTH - this.layout.width) / 2 - 40;
+    if (center) {
+      const boxTop = centeredTop(center, height);
+      this.shiftText(boxTop);
+      this.box.setPosition(x, boxTop).setSize(this.layout.width + 80, height);
+    } else {
+      const boxTop = Math.max(Math.min(top, bottom - height), minTop);
+      this.shiftText(boxTop);
+      this.box.setPosition(x, boxTop).setSize(this.layout.width + 80, bottom - boxTop);
+    }
+    if (tagText) {
+      // On the top edge, unless that would poke into whatever is just above a
+      // centered box (like the boss fight's top bar): then just inside it.
+      const onEdge = !center || this.box.y - tagText.height / 2 >= center.top;
+      tagText.setPosition(this.box.x + this.box.width - 20, onEdge ? this.box.y : this.box.y + tagText.height / 2 + 2);
+    }
+  }
+
+  // How tall the panel must be: down to the last choice plus the hint row.
+  private get contentHeight(): number {
+    return this.menu.bottom + this.layout.hintRow;
+  }
+
+  private layOut(items: MenuItem[]): void {
+    const { width, promptGap, choiceGap } = this.layout;
+    const x = (GAME_WIDTH - width) / 2;
+    this.prompt = this.scene.add.text(x, 20, this.question.prompt, textStyle(16, NES.white, width));
+    this.menu = new Menu(this.scene, x + 32, this.prompt.y + this.prompt.height + promptGap, items, {
+      size: 16,
+      spacing: choiceGap,
+      wrapWidth: width - 32,
+    });
+  }
+
+  private shiftText(dy: number): void {
+    this.prompt.setY(this.prompt.y + dy);
+    this.menu.shiftY(dy);
   }
 
   private showAnswer(choiceIndex: number, onAnswer: (choiceIndex: number) => void): void {
@@ -411,7 +469,7 @@ export class QuestionPanel {
     if (!correct) colors.set(choiceIndex, NES.red);
     this.menu.lock(colors);
     const hint = this.scene.add
-      .text(READING_BOX.x + READING_BOX.width - 20, GAME_HEIGHT - 30, "SPACE / TAP: WHY", textStyle(8, NES.yellow))
+      .text(this.box.x + this.box.width - 20, this.box.y + this.box.height - 10, "SPACE / TAP: WHY", textStyle(8, NES.yellow))
       .setOrigin(1, 1);
     this.objects.push(hint);
     onceAdvance(this.scene, () => onAnswer(choiceIndex));
@@ -419,6 +477,7 @@ export class QuestionPanel {
 
   destroy(): void {
     this.menu.destroy();
+    this.prompt.destroy();
     this.objects.forEach((object) => object.destroy());
   }
 }

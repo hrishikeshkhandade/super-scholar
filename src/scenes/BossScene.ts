@@ -28,8 +28,10 @@ import {
   HeartBar,
   Menu,
   QuestionPanel,
+  CENTER_MARGIN,
   READING,
-  READING_BOX,
+  WIDEST_READING,
+  centeredTop,
   onceAdvance,
   TITLE_CARD_MS,
   panel,
@@ -46,6 +48,10 @@ type Mode = "intro" | "fight" | "question" | "over";
 type StaticSprite = Phaser.Types.Physics.Arcade.SpriteWithStaticBody;
 
 const FLOOR_Y = 12 * TILE;
+const HUD_HEIGHT = 60;
+// The open sky between the top bar and the grass, where question and answer
+// boxes are centered so they never cover either.
+export const SKY = { top: HUD_HEIGHT, bottom: FLOOR_Y };
 const PANEL_TOP = 200;
 const FEEDBACK_MIN_HEIGHT = 230;
 const BAR = { x: 480, y: 34, width: 300, height: 16 };
@@ -180,7 +186,7 @@ export class BossScene extends Phaser.Scene {
     this.cameras.main.setBackgroundColor(NES.black);
     // The boss always fights in the neon night city.
     this.add.tileSprite(0, GAME_HEIGHT - 250, GAME_WIDTH, 200, farKey(THEMES[2])).setOrigin(0, 0).setAlpha(0.6);
-    this.add.rectangle(0, 0, GAME_WIDTH, 60, NES.navy, 1).setOrigin(0, 0);
+    this.add.rectangle(0, 0, GAME_WIDTH, HUD_HEIGHT, NES.navy, 1).setOrigin(0, 0);
   }
 
   private drawHud(bossName: string): void {
@@ -287,14 +293,14 @@ export class BossScene extends Phaser.Scene {
     unlockNote(this.stage.paper.id, this.stage.worldIndex, "boss", questionIndex);
     // A question missed earlier says so, so its return doesn't look like a glitch.
     const tag = this.fight.currentIsRetry ? "MISSED EARLIER, TRY AGAIN" : undefined;
-    const questionPanel = new QuestionPanel(this, question, PANEL_TOP, (choiceIndex) => {
+    const questionPanel = new QuestionPanel(this, question, SKY.top, (choiceIndex) => {
       questionPanel.destroy();
       const correct = this.fight.answer(choiceIndex);
       if (!this.stage.replay) recordAnswer(this.stage.paper.id, bossQuestionKey(this.stage.worldIndex, questionIndex), correct);
       // Tagged in the Notebook so the player can find it to study.
       if (!correct) unlockNote(this.stage.paper.id, this.stage.worldIndex, "missed", questionIndex);
       this.showFeedback(correct, question.choices[question.answerIndex], question.explanation);
-    }, { tag });
+    }, { tag, center: SKY });
   }
 
   private showFeedback(correct: boolean, answer: string, explanation: string): void {
@@ -313,20 +319,28 @@ export class BossScene extends Phaser.Scene {
 
     const heading = correct ? "HIT! BOSS TAKES DAMAGE" : "WRONG! THE BOSS GETS ANGRIER";
     const detail = correct ? explanation : `Answer: ${answer}\n\n${explanation}`;
-    // The box grows upward to fit the explanation in the reading column.
-    const detailText = this.add.text(READING.x, 0, detail, textStyle(16, NES.white, READING.width)).setDepth(1);
+    // Centered in the sky like the question: a long explanation widens the
+    // box rather than covering the top bar or the grass.
+    let width = READING.width;
+    const detailText = this.add.text(0, 0, detail, textStyle(16, NES.white, width)).setDepth(1);
     // A wrong answer has an extra line under the heading, so its text starts lower.
     const detailOffset = correct ? 60 : 78;
-    const height = Math.max(FEEDBACK_MIN_HEIGHT, detailText.height + detailOffset + 40);
-    const top = Math.min(PANEL_TOP, GAME_HEIGHT - 20 - height);
-    detailText.setY(top + detailOffset);
+    const boxHeight = () => Math.max(FEEDBACK_MIN_HEIGHT, detailText.height + detailOffset + 40);
+    while (boxHeight() > SKY.bottom - SKY.top - 2 * CENTER_MARGIN && width < WIDEST_READING) {
+      width = Math.min(width + 40, WIDEST_READING);
+      detailText.setWordWrapWidth(width);
+    }
+    const height = boxHeight();
+    const top = centeredTop(SKY, height);
+    const x = (GAME_WIDTH - width) / 2;
+    detailText.setPosition(x, top + detailOffset);
     const feedback = [
-      panel(this, READING_BOX.x, top, READING_BOX.width, height),
-      this.add.text(READING.x, top + 20, heading, textStyle(16, correct ? NES.lime : NES.salmon)).setDepth(1),
+      panel(this, x - 40, top, width + 80, height),
+      this.add.text(x, top + 20, heading, textStyle(16, correct ? NES.lime : NES.salmon)).setDepth(1),
       // Warns that a missed question returns, so the repeat is expected.
-      ...(correct ? [] : [this.add.text(READING.x, top + 48, "THIS QUESTION COMES BACK LATER", textStyle(8, NES.yellow)).setDepth(1)]),
+      ...(correct ? [] : [this.add.text(x, top + 48, "THIS QUESTION COMES BACK LATER", textStyle(8, NES.yellow)).setDepth(1)]),
       detailText,
-      this.add.text(READING_BOX.x + READING_BOX.width - 20, top + height - 16, "SPACE / CLICK", textStyle(8, NES.yellow)).setOrigin(1, 1).setDepth(1),
+      this.add.text(x + width + 20, top + height - 16, "SPACE / CLICK", textStyle(8, NES.yellow)).setOrigin(1, 1).setDepth(1),
     ];
     onceAdvance(this, () => {
       feedback.forEach((object) => object.destroy());
