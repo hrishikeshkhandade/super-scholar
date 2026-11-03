@@ -13,21 +13,70 @@ test("the game loads to the title screen with no errors", async ({ page }) => {
   expect(errors).toEqual([]);
 });
 
-test("clearing 1-1 says what was saved to the Notebook", async ({ page }) => {
+test("clearing 1-1 shows a centered LEVEL CLEAR box that waits for the player", async ({ page }) => {
   await openGame(page);
-  const texts = await page.evaluate(async (library) => {
-    const { LIBRARY } = await window.importGame(library);
-    const level = window.startScene("Level", { paper: LIBRARY[0], worldIndex: 0, checkpointsCleared: 0, lives: 5, replay: true });
-    window.steps(30);
-    level.reachGoal();
-    window.steps(30);
-    window.hideOverlays(level);
-    return level.children.list.filter((object: { type: string }) => object.type === "Text").map((text: { text: string }) => text.text);
-  }, LIBRARY);
-  await page.screenshot({ path: `${SHOTS}/2-level-clear.png` });
-  expect(texts).toContain("LEVEL CLEAR!");
-  expect(texts).toContainEqual(expect.stringMatching(/SAVED TO YOUR NOTEBOOK$/));
-  expect(texts).toContain("OPEN NOTEBOOK ON THE TITLE MENU TO REVIEW");
+  for (const [name, factsFound, savedLine] of [
+    ["2-level-clear", [], "LESSON & FLASHCARD SAVED TO YOUR NOTEBOOK"],
+    ["2-level-clear-with-facts", [0, 1], "LESSON, FLASHCARD & 2 FACTS SAVED TO YOUR NOTEBOOK"],
+  ] as const) {
+    const result = await page.evaluate(
+      async ({ library, name, factsFound }) => {
+        const { LIBRARY } = await window.importGame(library);
+        const { LEVEL_SKY } = await window.importGame("/src/scenes/LevelScene.ts");
+        const level = window.startScene("Level", { paper: LIBRARY[0], worldIndex: 0, checkpointsCleared: 0, lives: 5, replay: true });
+        // Wait out the level's title card, as a player must before moving.
+        for (let frame = 0; frame < 300 && level.cardShowing(); frame++) window.steps(1);
+        window.steps(20);
+        level.factsFound = [...factsFound];
+        // Menus and questions use 16px text; the box must not use anything smaller.
+        const problems = await window.skyBoxProblems(level, () => level.reachGoal(), name, { area: LEVEL_SKY, minFontSize: 16 });
+        const texts = () => level.children.list.filter((object: any) => object.type === "Text").map((text: any) => text.text.replace(/\n/g, " "));
+        const space = () => level.input.keyboard.emit("keydown", { key: " ", repeat: false, preventDefault() {} });
+        window.steps(12);
+        space(); // 0.2 s in: still holding the jump from the flag, so ignored
+        window.steps(300); // 5 more seconds untouched
+        window.hideOverlays(level);
+        const box = level.children.list.find((object: any) => object.type === "Rectangle" && object.depth === 19);
+        const waiting = { texts: texts(), scenes: window.game.scene.getScenes(true).map((scene: any) => scene.scene.key) };
+        return { problems, waiting, clearBox: [box.x, box.y, box.width, box.height] };
+      },
+      { library: LIBRARY, name, factsFound },
+    );
+    await page.screenshot({ path: `${SHOTS}/${name}.png` });
+    expect(result.problems).toEqual([]);
+    expect(result.waiting.scenes).toEqual(["Level"]);
+    expect(result.waiting.texts).toContain("LEVEL CLEAR!");
+    expect(result.waiting.texts).toContain(savedLine);
+    expect(result.waiting.texts).toContain("OPEN NOTEBOOK ON THE TITLE MENU TO REVIEW");
+    expect(result.waiting.texts.some((text: string) => text.startsWith("FACTS FOUND"))).toBe(false);
+
+    // Space moves on: LEVEL CLEAR is gone, then the lesson, or the facts card
+    // in exactly the same place, as if the same box turned the page.
+    const after = await page.evaluate(async ({ name, hasFacts }) => {
+      const level = window.game.scene.getScene("Level");
+      const space = () => {
+        level.input.keyboard.emit("keydown", { key: " ", repeat: false, preventDefault() {} });
+        window.steps(10);
+      };
+      // With facts, the card's contents must stay inside it; without, it's straight to the lesson.
+      const problems = hasFacts ? await window.skyBoxProblems(level, space, `${name} facts card`, { area: { top: 0, bottom: 450 } }) : (space(), []);
+      const scenes = window.game.scene.getScenes(true).map((scene: any) => scene.scene.key);
+      if (!scenes.includes("Level")) return { scenes, texts: [], factsBox: undefined, problems: [] };
+      const texts = level.children.list.filter((object: any) => object.type === "Text").map((text: any) => text.text);
+      const box = level.children.list.find((object: any) => object.type === "Rectangle" && object.depth === 30 && object.strokeColor !== undefined && object.width < 800);
+      return { scenes, texts, factsBox: box && [box.x, box.y, box.width, box.height], problems };
+    }, { name, hasFacts: factsFound.length > 0 });
+    await page.screenshot({ path: `${SHOTS}/${name}-next.png` });
+    expect(after.texts).not.toContain("LEVEL CLEAR!");
+    if (factsFound.length > 0) {
+      expect(after.texts).toContain(`FACTS FOUND  1/${factsFound.length}`);
+      expect(after.factsBox).toEqual(result.clearBox);
+      // Only the centering rule is relaxed here (the box is LEVEL CLEAR's, already checked).
+      expect(after.problems.filter((problem: string) => !problem.includes("centered") && !problem.includes("top bar"))).toEqual([]);
+    } else {
+      expect(after.scenes).toEqual(["Cutscene"]);
+    }
+  }
 });
 
 test("a normal jump lands on the sky blocks and the boss arena's platforms", async ({ page }) => {

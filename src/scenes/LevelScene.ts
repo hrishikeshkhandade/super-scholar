@@ -5,6 +5,7 @@ import { hashString, seededRandom } from "../generator/questions";
 import { layoutFor } from "../levels/chooseLayout";
 import { farKey, groundKey, groundTopKey, hillsKey } from "../levels/themeTextures";
 import { themeFor, type Theme } from "../levels/themes";
+import { GROUND_ROW } from "../levels/validateLayout";
 import { TILE, isSolidTile, parseLevel, type BlockContents } from "../levels/parseLevel";
 import { NES, css } from "../palette";
 import { GRAVITY, JUMP_VELOCITY } from "../jump";
@@ -18,7 +19,7 @@ import { COIN_GOAL, levelStars } from "../stars";
 import type { StageData } from "../stage";
 import { enablePause } from "./PauseScene";
 import { isTouchDevice } from "../touchControls";
-import { GAME_HEIGHT, GAME_WIDTH, HeartBar, MAX_LIVES, Menu, TITLE_CARD_MS, fitTextToHeight, onceAdvance, panel, showStars, showTitleCard, textStyle, READING_BOX } from "../ui";
+import { GAME_HEIGHT, GAME_WIDTH, HeartBar, MAX_LIVES, Menu, TITLE_CARD_MS, centeredTop, fitTextToHeight, onceAdvance, panel, showStars, showTitleCard, textStyle, READING_BOX } from "../ui";
 
 type StaticSprite = Phaser.Types.Physics.Arcade.SpriteWithStaticBody;
 
@@ -29,6 +30,12 @@ const MOVING_PLATFORM_RANGE = TILE * 3;
 const INVULNERABLE_MS = 1200;
 const STOMP_TIP_MS = 2000;
 const HUD_HEIGHT = 48;
+// The open sky between the HUD and the ground, where the LEVEL CLEAR box is
+// centered (like the boss fight's boxes).
+export const LEVEL_SKY = { top: HUD_HEIGHT, bottom: GROUND_ROW * TILE };
+const CLEAR_BOX_WIDTH = GAME_WIDTH - 60;
+// LEVEL CLEAR ignores presses this long, so the jump held at the flag can't skip it.
+const CLEAR_BOX_IGNORE_MS = 500;
 const PAUSE_BUTTON_X = 384; // between the coin count and the level name
 const TICKER_TOP = HUD_HEIGHT + 6; // a small gap under the HUD
 // The fun-fact card: fades in just under the HUD, in the reading column,
@@ -500,7 +507,48 @@ export class LevelScene extends Phaser.Scene {
   }
 
   // After LEVEL CLEAR: the facts found in this level, one page each, then onDone.
-  private showFoundFacts(onDone: () => void): void {
+  // A box like the boss's WORLD CLEAR, centered in the sky, in the same text
+  // sizes as menus and questions: the stars, this level's stats, and what it
+  // saved to the Notebook (which tells new players it exists). Returns
+  // everything it drew, so it can be removed before the next screen.
+  private showClearBox(stars: number, hasFlashcard: boolean): Phaser.GameObjects.GameObject[] {
+    const fixed = <T extends Phaser.GameObjects.Components.ScrollFactor & Phaser.GameObjects.Components.Depth>(object: T) =>
+      object.setScrollFactor(0).setDepth(20);
+    const line = (text: string, size: number, color: number) =>
+      fixed(this.add.text(GAME_WIDTH / 2, 0, text, { ...textStyle(size, color, CLEAR_BOX_WIDTH - 40), align: "center" }).setOrigin(0.5, 0));
+    const coinGoal = Math.ceil(this.coinsInLevel * COIN_GOAL);
+    const title = line("LEVEL CLEAR!", 32, NES.yellow);
+    const starImages = showStars(this, GAME_WIDTH / 2, 0, stars).map(fixed);
+    const starHeight = starImages[0].displayHeight;
+    const stats = line(`COINS ${this.coins}/${this.coinsInLevel}   STAR AT ${coinGoal}   HITS ${this.hits}`, 16, NES.white);
+    // Broken before "SAVED", so the two lines read as what, then where.
+    const saved = line(savedNotesLine(this.factsFound.length, hasFlashcard).replace(" SAVED", "\nSAVED"), 16, NES.lime);
+    const review = line("OPEN NOTEBOOK ON THE TITLE MENU TO REVIEW", 16, NES.lightGray);
+    // The same small key hint as the facts card and the boss's boxes.
+    const hint = line(`${isTouchDevice() ? "TAP" : "SPACE"}: CONTINUE`, 8, NES.yellow);
+
+    // Rows from the top, with the gap before each one.
+    const rows: [number, (y: number) => void, number][] = [
+      [20, (y) => title.setY(y), title.height],
+      [14, (y) => starImages.forEach((star) => star.setY(y + starHeight / 2)), starHeight],
+      [14, (y) => stats.setY(y), stats.height],
+      [18, (y) => saved.setY(y), saved.height],
+      [12, (y) => review.setY(y), review.height],
+      [16, (y) => hint.setY(y), hint.height],
+    ];
+    const height = rows.reduce((total, [gap, , rowHeight]) => total + gap + rowHeight, 0) + 16;
+    const top = centeredTop(LEVEL_SKY, height);
+    const box = fixed(panel(this, (GAME_WIDTH - CLEAR_BOX_WIDTH) / 2, top, CLEAR_BOX_WIDTH, height)).setDepth(19);
+    let y = top;
+    for (const [gap, place, rowHeight] of rows) {
+      y += gap;
+      place(y);
+      y += rowHeight;
+    }
+    return [box, title, ...starImages, stats, saved, review, hint];
+  }
+
+  private showFoundFacts(onDone: () => void, box: { x: number; y: number; width: number; height: number }): void {
     const facts = this.stage.paper.worlds[this.stage.worldIndex].facts;
     if (this.factsFound.length === 0) {
       onDone();
@@ -508,8 +556,6 @@ export class LevelScene extends Phaser.Scene {
     }
     const fixed = <T extends Phaser.GameObjects.Components.ScrollFactor & Phaser.GameObjects.Components.Depth>(object: T) =>
       object.setScrollFactor(0).setDepth(30);
-    const box = { x: 60, y: 110, width: GAME_WIDTH - 120, height: 230 };
-    fixed(this.add.rectangle(0, 0, GAME_WIDTH, GAME_HEIGHT, NES.black, 0.6).setOrigin(0, 0));
     fixed(panel(this, box.x, box.y, box.width, box.height).setStrokeStyle(4, NES.yellow));
     const heading = fixed(this.add.text(GAME_WIDTH / 2, box.y + 26, "", textStyle(16, NES.yellow)).setOrigin(0.5));
     const body = fixed(this.add.text(box.x + 24, box.y + 56, "", textStyle(16, NES.white, box.width - 48)));
@@ -572,11 +618,6 @@ export class LevelScene extends Phaser.Scene {
     this.hideFactTicker(); // so it can't sit over "LEVEL CLEAR!"
     audio.playSfx("clear");
     this.controls.showFrame("player-jump");
-    this.add
-      .text(GAME_WIDTH / 2, 160, "LEVEL CLEAR!", textStyle(32, NES.yellow))
-      .setOrigin(0.5)
-      .setScrollFactor(0)
-      .setDepth(20);
 
     const world = this.stage.paper.worlds[this.stage.worldIndex];
     const cleared = this.stage.checkpointsCleared + 1;
@@ -588,42 +629,31 @@ export class LevelScene extends Phaser.Scene {
     const stars = levelStars({ coinsCollected: this.coins, coinsInLevel: this.coinsInLevel, hits: this.hits });
     saveBestStars(this.stage.paper.id, this.stage.worldIndex, this.stage.checkpointsCleared, stars);
     if (!this.stage.replay) recordStars(this.stage.paper.id, this.stage.worldIndex, this.stage.checkpointsCleared, stars);
-    // A dark band so the stars and the Notebook line stand out from the level.
-    this.add.rectangle(GAME_WIDTH / 2, 246, 440, 100, NES.black, 0.85).setScrollFactor(0).setDepth(19);
-    for (const star of showStars(this, GAME_WIDTH / 2, 214, stars)) star.setScrollFactor(0).setDepth(20);
-    const coinGoal = Math.ceil(this.coinsInLevel * COIN_GOAL);
-    this.add
-      .text(GAME_WIDTH / 2, 248, `COINS ${this.coins}/${this.coinsInLevel}   STAR AT ${coinGoal}   HITS ${this.hits}`, textStyle(8, NES.white))
-      .setOrigin(0.5)
-      .setScrollFactor(0)
-      .setDepth(20);
-    // Tells new players the Notebook exists and where to find it.
-    const hasFlashcard = world.cutscenes[this.stage.checkpointsCleared].practice !== undefined;
-    this.add
-      .text(GAME_WIDTH / 2, 272, savedNotesLine(this.factsFound.length, hasFlashcard), textStyle(8, NES.lime))
-      .setOrigin(0.5)
-      .setScrollFactor(0)
-      .setDepth(20);
-    this.add
-      .text(GAME_WIDTH / 2, 286, "OPEN NOTEBOOK ON THE TITLE MENU TO REVIEW", textStyle(8, NES.lightGray))
-      .setOrigin(0.5)
-      .setScrollFactor(0)
-      .setDepth(20);
+    const clearBox = this.showClearBox(stars, world.cutscenes[this.stage.checkpointsCleared].practice !== undefined);
     const nextScene = cleared >= world.cutscenes.length ? "Boss" : "Level";
 
-    // Long enough to see the stars before the facts card and the lesson.
-    this.time.delayedCall(2200, () =>
-      this.showFoundFacts(() =>
-        this.scene.start("Cutscene", {
-          cutscene: world.cutscenes[this.stage.checkpointsCleared],
-          lives: this.stage.lives,
-          askAbout: this.stage.paper.title,
-          runQuestion: this.stage.replay
-            ? undefined
-            : { paperId: this.stage.paper.id, key: practiceKey(this.stage.worldIndex, this.stage.checkpointsCleared) },
-          next: { scene: nextScene, data: nextStage },
-        }),
-      ),
+    // LEVEL CLEAR stays until the player moves on, then gives way to the
+    // facts card (or the lesson) rather than sitting under it.
+    const startLesson = () =>
+      this.scene.start("Cutscene", {
+        cutscene: world.cutscenes[this.stage.checkpointsCleared],
+        lives: this.stage.lives,
+        askAbout: this.stage.paper.title,
+        runQuestion: this.stage.replay
+          ? undefined
+          : { paperId: this.stage.paper.id, key: practiceKey(this.stage.worldIndex, this.stage.checkpointsCleared) },
+        next: { scene: nextScene, data: nextStage },
+      });
+    this.time.delayedCall(CLEAR_BOX_IGNORE_MS, () =>
+      onceAdvance(this, () => {
+        audio.playSfx("select");
+        // The facts card takes the LEVEL CLEAR box's place and size, so it
+        // reads as the same box turning to its next page.
+        const [box] = clearBox as [Phaser.GameObjects.Rectangle];
+        const frame = { x: box.x, y: box.y, width: box.width, height: box.height };
+        clearBox.forEach((object) => object.destroy());
+        this.showFoundFacts(startLesson, frame);
+      }),
     );
   }
 

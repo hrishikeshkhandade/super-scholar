@@ -14,8 +14,17 @@ declare global {
     hideOverlays: (scene: any) => void;
     importGame: (path: string) => Promise<any>;
     boxProblems: (paper: any) => Promise<string[]>;
-    skyBoxProblems: (scene: any, show: () => void, where: string, options?: { remove?: boolean }) => Promise<string[]>;
+    skyBoxProblems: (scene: any, show: () => void, where: string, options?: SkyBoxOptions) => Promise<string[]>;
   }
+}
+
+// area: where the box should be centered (the boss fight's sky by default).
+// minFontSize: fail on any text in the box smaller than this, except the
+// small "SPACE: ..." key hints every box uses.
+export interface SkyBoxOptions {
+  remove?: boolean;
+  area?: { top: number; bottom: number };
+  minFontSize?: number;
 }
 
 export interface JumpResult {
@@ -99,20 +108,21 @@ function installHelpers(): void {
 
   // Title cards and the boss intro hint fade on real time, which runs slower
   // than the stepped game time, so screenshots hide them as a player's
-  // screen would by then.
+  // screen would by then. Then it draws a frame, since only steps redraw.
   window.hideOverlays = (scene) => {
     for (const object of scene.children.list) {
       if (object.type === "Container" || (object.type === "Text" && object.text.startsWith("STOMP THE BOSS"))) object.setVisible(false);
     }
+    window.steps(1);
   };
 
   window.importGame = (path) => import(/* @vite-ignore */ path);
 
-  // Runs show, which draws a box on the boss arena (like WRONG! or WORLD
+  // Runs show, which draws a box over the game (like WRONG! or LEVEL
   // CLEAR!), and lists problems with that box: covering the top bar or the
-  // grass, not centered in the sky, or anything it drew sticking out of it.
-  window.skyBoxProblems = async (scene, show, where, { remove = false } = {}) => {
-    const { SKY } = await window.importGame("/src/scenes/BossScene.ts");
+  // ground, not centered in the sky, or anything it drew sticking out of it.
+  window.skyBoxProblems = async (scene, show, where, { remove = false, area, minFontSize = 0 } = {}) => {
+    const SKY = area ?? (await window.importGame("/src/scenes/BossScene.ts")).SKY;
     const before = new Set(scene.children.list);
     show();
     const added = scene.children.list.filter((object: any) => !before.has(object));
@@ -127,6 +137,10 @@ function installHelpers(): void {
       const edges = object.getBounds();
       if (edges.left < box.x + 4 || edges.right > box.x + box.width - 4 || edges.top < box.y || edges.bottom > box.y + box.height) {
         found.push(`${where}: "${object.text?.slice(0, 30) ?? object.texture.key}" outside its box`);
+      }
+      const keyHint = object.type === "Text" && /^(SPACE|TAP)\b/.test(object.text);
+      if (object.type === "Text" && !keyHint && parseInt(object.style.fontSize, 10) < minFontSize) {
+        found.push(`${where}: "${object.text.slice(0, 30)}" is ${object.style.fontSize}, smaller than ${minFontSize}px`);
       }
     }
     if (remove) added.forEach((object: any) => object.destroy());
