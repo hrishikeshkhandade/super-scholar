@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { LIBRARY } from "../src/content/library";
-import { needsRereading, reviewStage } from "../src/review";
+import { worldSections } from "../src/notebook";
+import { loadNotebook } from "../src/save";
+import { needsRereading, reviewStage, unlockForRereading } from "../src/review";
 
 describe("review mode", () => {
   it("marks a section to re-read below 4 of 5 right on the first try", () => {
@@ -17,5 +19,20 @@ describe("review mode", () => {
     expect(stage.checkpointsCleared).toBe(paper.worlds[2].cutscenes.length);
     expect(stage.replay).toBe(true);
     expect(stage.review).toHaveLength(1);
+  });
+
+  it("unlocks a section's lessons for re-reading, so the Notebook has them to show", () => {
+    const data = new Map<string, string>();
+    const storage = {
+      getItem: (key: string) => data.get(key) ?? null,
+      setItem: (key: string, value: string) => void data.set(key, value),
+      removeItem: (key: string) => void data.delete(key),
+    } as Storage;
+    const paper = LIBRARY[0];
+    unlockForRereading(paper, 1, storage);
+    const [lessons] = worldSections(paper, 1, loadNotebook(storage));
+    expect(lessons.unlocked).toBe(paper.worlds[1].cutscenes.length);
+    expect(lessons.stillLocked).toBeUndefined();
+    expect(worldSections(paper, 0, loadNotebook(storage))[0].unlocked).toBe(0); // only that world
   });
 });

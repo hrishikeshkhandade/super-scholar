@@ -365,6 +365,25 @@ test("REVIEW goes straight to the boss fights, then scores each section", async 
   // A review doesn't count as playing: no CONTINUE, nothing lit on the level map.
   expect(results.progress).toBeNull();
   expect(results.cleared).toBe(0);
+
+  // RE-READ opens World 1's lessons, readable even though its levels were skipped.
+  await choose("ReviewResults", "RE-READ");
+  expect(await scenes()).toEqual(["Notebook"]);
+  const notebook = await page.evaluate(() =>
+    window.game.scene.getScene("Notebook").children.list.filter((object: any) => object.type === "Text").map((text: any) => text.text),
+  );
+  await page.screenshot({ path: `${SHOTS}/10-review-reread.png` });
+  expect(notebook).toContain("World 1: Pairs Trading");
+  expect(notebook).toContain("1 LESSONS 3/3");
+  expect(notebook.some((text: string) => text.startsWith("LESSON 1:"))).toBe(true);
+
+  // BACK returns to the same results, and REVIEW AGAIN starts over.
+  await choose("Notebook", "BACK");
+  expect(await scenes()).toEqual(["ReviewResults"]);
+  expect(await page.evaluate(() => window.game.scene.getScene("ReviewResults").children.list.some((object: any) => object.text === "3/5"))).toBe(true);
+  await choose("ReviewResults", "REVIEW AGAIN");
+  expect(await scenes()).toEqual(["Boss"]);
+  expect(await page.evaluate(() => window.game.scene.getScene("Boss").stage.worldIndex)).toBe(0);
 });
 
 test("the Notebook reaches a world in two clicks and only pages through what's unlocked", async ({ page }) => {

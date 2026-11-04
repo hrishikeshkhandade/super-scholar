@@ -1,5 +1,5 @@
 import type { Paper } from "./content/types";
-import { startLives } from "./save";
+import { startLives, unlockNote } from "./save";
 import type { StageData } from "./stage";
 
 // Review mode, for players who've already read a paper: its boss fights back
@@ -28,4 +28,10 @@ export function reviewStage(paper: Paper, worldIndex: number, scores: ReviewScor
     replay: true,
     review: scores,
   };
+}
+
+// RE-READ on the results opens a section's lessons in the Notebook. A
+// reviewer skipped the levels that unlock them, so it unlocks them first.
+export function unlockForRereading(paper: Paper, worldIndex: number, storage?: Storage): void {
+  paper.worlds[worldIndex].cutscenes.forEach((_, i) => unlockNote(paper.id, worldIndex, "lesson", i, storage));
 }

@@ -14,10 +14,13 @@ import { drawMenuBackdrop } from "./backdrop";
 // unlocked so far. Two views in one scene: the papers, then one paper's
 // pages, a world at a time (the world list was a screen too many).
 
-interface NotebookData {
+export interface NotebookData {
   paperId?: string;
   worldIndex?: number;
   sectionIndex?: number; // kept when switching worlds
+  // Where BACK goes when another screen opened the Notebook (like REVIEW
+  // RESULTS' RE-READ); otherwise it's the Notebook's paper list.
+  back?: { scene: string; data: object };
 }
 
 // The top rows say where you are: the paper, the world (with arrows to
@@ -63,7 +66,7 @@ export class NotebookScene extends Phaser.Scene {
     drawMenuBackdrop(this);
     this.notebook = loadNotebook();
     const paper = data.paperId ? findPaper(data.paperId) : undefined;
-    if (paper) this.showWorld(paper, data.worldIndex ?? firstWorldWithNotes(paper, this.notebook), data.sectionIndex ?? 0);
+    if (paper) this.showWorld(paper, data.worldIndex ?? firstWorldWithNotes(paper, this.notebook), data.sectionIndex ?? 0, data.back);
     else this.showPapers();
   }
 
@@ -98,13 +101,13 @@ export class NotebookScene extends Phaser.Scene {
     this.onEsc(() => this.scene.start("Title"));
   }
 
-  private showWorld(paper: Paper, worldIndex: number, sectionIndex: number): void {
-    const back = () => this.scene.restart({});
+  private showWorld(paper: Paper, worldIndex: number, sectionIndex: number, backTo?: NotebookData["back"]): void {
+    const back = () => (backTo ? this.scene.start(backTo.scene, backTo.data) : this.scene.restart({}));
     const switchWorld = (step: number) => {
       const next = worldIndex + step;
       if (!paper.worlds[next]) return;
       audio.playSfx("move");
-      this.scene.restart({ paperId: paper.id, worldIndex: next, sectionIndex: this.sectionIndex });
+      this.scene.restart({ paperId: paper.id, worldIndex: next, sectionIndex: this.sectionIndex, back: backTo });
     };
     this.sections = worldSections(paper, worldIndex, this.notebook);
     this.pageIndex = 0;
