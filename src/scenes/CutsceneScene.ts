@@ -139,7 +139,9 @@ export class CutsceneScene extends Phaser.Scene {
       return;
     }
     this.body.setText("");
-    this.prompt.setText(isTouchDevice() ? "TAP: SKIP" : "SPACE / D: SKIP");
+    // "SKIP" read like it skipped the whole page or lesson; it only finishes
+    // the typing, and the next press turns the page.
+    this.prompt.setText(isTouchDevice() ? "TAP: SHOW ALL" : "SPACE / D: SHOW ALL");
     let shown = 0;
     this.typing = this.time.addEvent({
       delay: TEXT_SPEED_MS[loadSettings().textSpeed],

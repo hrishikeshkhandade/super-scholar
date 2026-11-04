@@ -3,7 +3,7 @@ import { NES } from "../palette";
 import { GAME_WIDTH, Menu, textStyle } from "../ui";
 import { drawMenuBackdrop } from "./backdrop";
 
-const ABOUT_TEXT = "Super Scholar turns research papers into a retro platformer you learn from.";
+const ABOUT_TEXT = "Learn research papers by playing them.";
 
 // Key on the left, what it does on the right.
 const CONTROLS: [string, string][] = [
@@ -14,7 +14,10 @@ const CONTROLS: [string, string][] = [
   ["A / D IN LESSONS", "BACK / NEXT PAGE"],
 ];
 
-const GOAL_TEXT = "Stomp bears for facts, beat each world's boss quiz, and ask the Scholar after lessons!";
+// What playing doesn't show you (stomping bears, bosses, and Ask the Scholar
+// are each explained on screen when they happen). Broken by hand so each
+// line ends at a natural place.
+const GOAL_TEXT = ["Read the paper already? REVIEW tests you,", "and the NOTEBOOK keeps what you've learned."].join("\n");
 
 const LINKEDIN_URL = "https://www.linkedin.com/in/hrishikeshkhandade";
 const GITHUB_URL = "https://github.com/hrishikeshkhandade";
@@ -35,13 +38,13 @@ export class AboutScene extends Phaser.Scene {
     this.add.text(GAME_WIDTH / 2, 40, "ABOUT", textStyle(24, NES.yellow)).setOrigin(0.5);
     this.add.text(40, 68, ABOUT_TEXT, textStyle(16, NES.white, GAME_WIDTH - 80));
 
-    this.add.text(40, 124, "HOW TO PLAY", textStyle(16, NES.yellow));
+    this.add.text(40, 104, "HOW TO PLAY", textStyle(16, NES.yellow));
     CONTROLS.forEach(([key, action], i) => {
-      const y = 152 + i * 24;
+      const y = 130 + i * 24;
       this.add.text(60, y, key, textStyle(16, NES.sky));
       this.add.text(360, y, action, textStyle(16, NES.white));
     });
-    this.add.text(40, 284, GOAL_TEXT, textStyle(16, NES.white, GAME_WIDTH - 80));
+    this.add.text(40, 266, GOAL_TEXT, textStyle(16, NES.white, GAME_WIDTH - 80));
 
     new Menu(this, 330, 352, [
       { label: "CREDITS", onSelect: () => this.scene.start("Credits", { from: "About" }) },
