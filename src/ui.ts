@@ -70,6 +70,9 @@ export interface MenuItem {
 }
 
 // A vertical list of options. Arrow keys + Enter/Space, or hover + click/tap.
+// How far left of an option its ">" cursor sits.
+const CURSOR_GAP = 28;
+
 export class Menu {
   private texts: Phaser.GameObjects.Text[] = [];
   private items: MenuItem[];
@@ -100,7 +103,7 @@ export class Menu {
   ) {
     this.items = items;
     this.pointer = new PointerGuard(scene);
-    this.cursor = scene.add.text(x - 28, y, ">", textStyle(this.size, NES.yellow));
+    this.cursor = scene.add.text(x - CURSOR_GAP, y, ">", textStyle(this.size, NES.yellow));
     this.setItems(items);
     scene.input.keyboard?.on("keydown", this.onKey);
     scene.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.destroy());
@@ -119,7 +122,7 @@ export class Menu {
       if (this.options.align === "center") text.setOrigin(0.5, 0);
       y += text.height + (this.options.spacing ?? 20);
       text.setDepth(this.depth);
-      text.setInteractive({ useHandCursor: item.enabled !== false });
+      text.setInteractive({ useHandCursor: item.enabled !== false, hitArea: this.rowArea(text), hitAreaCallback: Phaser.Geom.Rectangle.Contains });
       text.on("pointerover", () => this.pointer.canHover && this.select(index));
       text.on("pointerdown", () => this.pointer.canClick && this.choose(index));
       return text;
@@ -168,7 +171,19 @@ export class Menu {
   }
 
   setLabel(index: number, label: string): void {
-    this.texts[index]?.setText(label);
+    const text = this.texts[index];
+    if (!text) return;
+    text.setText(label);
+    if (text.input) text.input.hitArea = this.rowArea(text);
+  }
+
+  // The area that responds to a tap or click: the option's whole row, from
+  // the cursor's spot to the end of the text and half the gap above and
+  // below, so rows touch with no dead space between them. Just the text was
+  // a strip about 13px tall on a phone.
+  private rowArea(text: Phaser.GameObjects.Text): Phaser.Geom.Rectangle {
+    const gap = this.options.spacing ?? 20;
+    return new Phaser.Geom.Rectangle(-CURSOR_GAP, -gap / 2, text.width + CURSOR_GAP, text.height + gap);
   }
 
   private select(index: number): void {
@@ -180,7 +195,7 @@ export class Menu {
     });
     const target = this.texts[index];
     this.cursor.setVisible(target !== undefined && this.active);
-    if (target) this.cursor.setPosition(target.getBounds().left - 28, target.y);
+    if (target) this.cursor.setPosition(target.getBounds().left - CURSOR_GAP, target.y);
   }
 
   private move(step: -1 | 1): void {

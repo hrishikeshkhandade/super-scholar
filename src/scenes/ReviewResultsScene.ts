@@ -58,10 +58,16 @@ export class ReviewResultsScene extends Phaser.Scene {
         this.add.text(verdictX, y, "KNOWN", textStyle(16, NES.lime));
         return;
       }
-      // A button: it opens this section's lessons.
-      const button = this.add
-        .text(verdictX, y, "RE-READ", textStyle(16, NES.salmon))
-        .setInteractive({ useHandCursor: true })
+      // A button: it opens this section's lessons. It responds across its
+      // whole row's height (and a little to each side), so it's easy to tap.
+      const button = this.add.text(verdictX, y, "RE-READ", textStyle(16, NES.salmon));
+      const rowGap = ROW_HEIGHT - button.height;
+      button
+        .setInteractive({
+          useHandCursor: true,
+          hitArea: new Phaser.Geom.Rectangle(-8, -rowGap / 2, button.width + 16, ROW_HEIGHT),
+          hitAreaCallback: Phaser.Geom.Rectangle.Contains,
+        })
         .on("pointerdown", () => reread([score.worldIndex]));
       button.on("pointerover", () => button.setColor(css(NES.yellow)));
       button.on("pointerout", () => button.setColor(css(NES.salmon)));

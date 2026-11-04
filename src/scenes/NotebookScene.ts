@@ -130,7 +130,14 @@ export class NotebookScene extends Phaser.Scene {
       const x = PAGE_BOX.x + i * (tabWidth + TABS.gap);
       const box = this.add.rectangle(x, TABS.y, tabWidth, TABS.height, NES.black).setOrigin(0, 0).setStrokeStyle(2, NES.white);
       const label = this.add.text(x + tabWidth / 2, TABS.y + TABS.height / 2, `${i + 1} ${section.name} ${fraction(section)}`, textStyle(16, NES.white)).setOrigin(0.5);
-      for (const part of [box, label]) part.setInteractive({ useHandCursor: true }).on("pointerdown", () => this.showSection(i));
+      box.setInteractive({ useHandCursor: true });
+      // The label answers taps over the whole tab, the same as its box.
+      label.setInteractive({
+        useHandCursor: true,
+        hitArea: new Phaser.Geom.Rectangle((label.width - tabWidth) / 2, (label.height - TABS.height) / 2, tabWidth, TABS.height),
+        hitAreaCallback: Phaser.Geom.Rectangle.Contains,
+      });
+      for (const part of [box, label]) part.on("pointerdown", () => this.showSection(i));
       return { box, label };
     });
 
