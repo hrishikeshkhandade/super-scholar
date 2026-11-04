@@ -4,7 +4,7 @@ import { findPaper, playablePapers } from "../content/library";
 import type { Paper } from "../content/types";
 import { levelMap, mapProgress, type MapStop } from "../levelMap";
 import { NES, css } from "../palette";
-import { reviewStage } from "../review";
+import { startReview } from "../review";
 import { loadCleared, loadProgress, loadStars, stageKey, startLives } from "../save";
 import { isTouchDevice } from "../touchControls";
 import { GAME_WIDTH, Menu, PointerGuard, showStars, textStyle } from "../ui";
@@ -12,8 +12,9 @@ import { listTop, paperLabel, shorten, tableLabels } from "./listLayout";
 import { drawMenuBackdrop } from "./backdrop";
 
 // Level select: pick a paper, then a map of its worlds where every cleared
-// level (and the next one to beat) can be played again. In review mode, the
-// paper list instead starts that paper's boss fights (see review.ts).
+// level (and the next one to beat) can be played again. In review mode, a
+// paper leads instead to its sections: all of them, or one, to test yourself
+// on (see review.ts).
 
 interface LevelSelectData {
   paperId?: string;
@@ -57,9 +58,9 @@ export class LevelSelectScene extends Phaser.Scene {
   create(data: LevelSelectData): void {
     drawMenuBackdrop(this);
     const paper = data.paperId ? findPaper(data.paperId) : undefined;
-    if (paper) this.showMap(paper);
-    else if (data.review) this.showPapers(true);
-    else this.showPapers(false);
+    if (paper && data.review) this.showReviewSections(paper);
+    else if (paper) this.showMap(paper);
+    else this.showPapers(data.review === true);
   }
 
   private showPapers(review: boolean): void {
@@ -78,10 +79,29 @@ export class LevelSelectScene extends Phaser.Scene {
     );
     const items = papers.map((paper, i) => ({
       label: labels[i],
-      onSelect: () => (review ? this.scene.start("Boss", reviewStage(paper, 0, [])) : this.scene.restart({ paperId: paper.id })),
+      onSelect: () => this.scene.restart({ paperId: paper.id, review }),
     }));
     new Menu(this, x, listTop(items.length + 1), [...items, { label: "BACK", onSelect: () => this.scene.start("Title") }]);
     this.input.keyboard?.on("keydown-ESC", () => this.scene.start("Title"));
+  }
+
+  // A quick check of one section is one boss fight; ALL SECTIONS plays them all.
+  private showReviewSections(paper: Paper): void {
+    this.add.text(GAME_WIDTH / 2, 40, "REVIEW", textStyle(24, NES.yellow)).setOrigin(0.5);
+    this.add.text(GAME_WIDTH / 2, 80, shorten(paper.title, 44), textStyle(16, NES.sky)).setOrigin(0.5);
+    const questions = (count: number) => `${count} ${count === 1 ? "QUESTION" : "QUESTIONS"}`;
+    const allQuestions = paper.worlds.reduce((sum, world) => sum + world.boss.questions.length, 0);
+    const { labels, x } = tableLabels([
+      ["ALL SECTIONS", questions(allQuestions)],
+      ...paper.worlds.map((world): [string, string] => [shorten(world.name, 28), questions(world.boss.questions.length)]),
+    ]);
+    const items = [
+      { label: labels[0], onSelect: () => this.scene.start("Boss", startReview(paper)) },
+      ...paper.worlds.map((_, i) => ({ label: labels[i + 1], onSelect: () => this.scene.start("Boss", startReview(paper, i)) })),
+    ];
+    const back = () => this.scene.restart({ review: true });
+    new Menu(this, x, listTop(items.length + 1), [...items, { label: "BACK", onSelect: back }]);
+    this.input.keyboard?.on("keydown-ESC", back);
   }
 
   private showMap(paper: Paper): void {

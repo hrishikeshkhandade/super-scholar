@@ -1,7 +1,7 @@
 import Phaser from "phaser";
 import type { Paper } from "../content/types";
 import { NES, css } from "../palette";
-import { needsRereading, reviewStage, unlockForRereading, type ReviewScore } from "../review";
+import { needsRereading, reviewAgain, unlockForRereading, type ReviewScore } from "../review";
 import { GAME_WIDTH, Menu, textStyle } from "../ui";
 import { drawMenuBackdrop } from "./backdrop";
 import { noLigatures, shorten } from "./listLayout";
@@ -71,17 +71,18 @@ export class ReviewResultsScene extends Phaser.Scene {
     const total = scores.reduce((sum, score) => sum + score.total, 0);
     const weak = scores.filter(needsRereading).map((score) => score.worldIndex);
     const summaryY = ROWS_TOP + scores.length * ROW_HEIGHT + 16;
-    const summary =
+    // Two lines on purpose: the score, then what to do about it.
+    const advice =
       weak.length === 0
-        ? `${right}/${total} right on the first try. You know this paper!`
-        : `${right}/${total} right on the first try. Re-read the ${weak.length === 1 ? "section" : "sections"} marked RE-READ, then try again.`;
+        ? `You know this ${scores.length === 1 ? "section" : "paper"}!`
+        : `Re-read the RE-READ ${weak.length === 1 ? "section" : "sections"}, then try again.`;
     const summaryText = this.add
-      .text(GAME_WIDTH / 2, summaryY, summary, { ...textStyle(16, NES.yellow, GAME_WIDTH - 120), align: "center" })
+      .text(GAME_WIDTH / 2, summaryY, `${right}/${total} right on the first try.\n${advice}`, { ...textStyle(16, NES.yellow, GAME_WIDTH - 60), align: "center" })
       .setOrigin(0.5, 0);
 
     new Menu(this, 260, summaryText.y + summaryText.height + 20, [
       ...(weak.length > 0 ? [{ label: "RE-READ WEAK SECTIONS", onSelect: () => reread(weak) }] : []),
-      { label: "REVIEW AGAIN", onSelect: () => this.scene.start("Boss", reviewStage(paper, 0, [])) },
+      { label: "REVIEW AGAIN", onSelect: () => this.scene.start("Boss", reviewAgain(paper, scores)) },
       { label: "TITLE SCREEN", onSelect: () => this.scene.start("Title") },
     ]);
   }

@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { LIBRARY } from "../src/content/library";
 import { worldSections } from "../src/notebook";
 import { loadNotebook } from "../src/save";
-import { needsRereading, reviewStage, unlockForRereading } from "../src/review";
+import { needsRereading, reviewAgain, reviewStage, startReview, unlockForRereading } from "../src/review";
 
 describe("review mode", () => {
   it("marks a section to re-read below 4 of 5 right on the first try", () => {
@@ -14,11 +14,23 @@ describe("review mode", () => {
 
   it("goes straight to a world's boss and never counts toward progress", () => {
     const paper = LIBRARY[0];
-    const stage = reviewStage(paper, 2, [{ worldIndex: 0, rightFirstTry: 5, total: 5 }]);
+    const stage = reviewStage(paper, 2, { scores: [{ worldIndex: 0, rightFirstTry: 5, total: 5 }], lastWorld: 4 });
     expect(stage.worldIndex).toBe(2);
     expect(stage.checkpointsCleared).toBe(paper.worlds[2].cutscenes.length);
     expect(stage.replay).toBe(true);
-    expect(stage.review).toHaveLength(1);
+    expect(stage.review?.scores).toHaveLength(1);
+  });
+
+  // Reviewing meant beating every boss before seeing a score; one section
+  // can now be checked on its own.
+  it("reviews all sections, or just one, and REVIEW AGAIN repeats the same ones", () => {
+    const paper = LIBRARY[0];
+    expect(startReview(paper)).toMatchObject({ worldIndex: 0, review: { scores: [], lastWorld: paper.worlds.length - 1 } });
+    expect(startReview(paper, 2)).toMatchObject({ worldIndex: 2, review: { scores: [], lastWorld: 2 } });
+    const one = [{ worldIndex: 2, rightFirstTry: 3, total: 5 }];
+    expect(reviewAgain(paper, one)).toMatchObject({ worldIndex: 2, review: { scores: [], lastWorld: 2 } });
+    const all = paper.worlds.map((_, i) => ({ worldIndex: i, rightFirstTry: 5, total: 5 }));
+    expect(reviewAgain(paper, all)).toMatchObject({ worldIndex: 0, review: { lastWorld: paper.worlds.length - 1 } });
   });
 
   it("unlocks a section's lessons for re-reading, so the Notebook has them to show", () => {

@@ -14,7 +14,7 @@ import type { Tuning } from "../difficulty";
 import { addPlayTime, bossQuestionKey, finishRun, recordAnswer, recordStars, runResult, loadRun } from "../run";
 import { formatTime } from "../leaderboard";
 import { bossStars } from "../stars";
-import { reviewStage, type ReviewScore } from "../review";
+import { reviewStage, type Review, type ReviewScore } from "../review";
 import type { StageData } from "../stage";
 import { enablePause } from "./PauseScene";
 import type { BossArena, BossBehavior } from "./bosses/arena";
@@ -413,7 +413,9 @@ export class BossScene extends Phaser.Scene {
     const missed = this.fight.missed;
     const total = paper.worlds[worldIndex].boss.questions.length;
     const score: ReviewScore = { worldIndex, rightFirstTry: total - missed.length, total };
-    const items = review ? this.reviewItems([...review, score], hasNextWorld) : [
+    // A review goes on to the next world's boss until its last section.
+    const reviewGoesOn = review !== undefined && worldIndex < review.lastWorld;
+    const items = review ? this.reviewItems({ ...review, scores: [...review.scores, score] }, reviewGoesOn) : [
       ...(missed.length > 0
         ? [
             {
@@ -439,11 +441,11 @@ export class BossScene extends Phaser.Scene {
     const height = 230 + Math.max(items.length - 2, 0) * 36;
     const top = centeredTop(SKY, height);
     panel(this, 20, top, GAME_WIDTH - 40, height);
-    const heading = review ? (hasNextWorld ? "BOSS BEATEN!" : "REVIEW COMPLETE!") : hasNextWorld ? "WORLD CLEAR!" : "PAPER COMPLETE!";
+    const heading = review ? (reviewGoesOn ? "BOSS BEATEN!" : "REVIEW COMPLETE!") : hasNextWorld ? "WORLD CLEAR!" : "PAPER COMPLETE!";
     this.add.text(GAME_WIDTH / 2, top + 32, heading, textStyle(32, NES.yellow)).setOrigin(0.5);
     showStars(this, GAME_WIDTH / 2, top + 72, stars);
     const message = review
-      ? `${score.rightFirstTry}/${score.total} right on the first try. ${hasNextWorld ? "On to the next section's boss!" : "See how you did in each section."}`
+      ? `${score.rightFirstTry}/${score.total} right on the first try. ${reviewGoesOn ? "On to the next section's boss!" : "See how you did."}`
       : hasNextWorld
         ? "You beat the boss. On to the next section of the paper!"
         : result
@@ -453,13 +455,13 @@ export class BossScene extends Phaser.Scene {
     new Menu(this, 280, top + 160, items);
   }
 
-  // In a review the way on is the next world's boss, or the results after the last.
-  private reviewItems(scores: ReviewScore[], hasNextWorld: boolean): MenuItem[] {
+  // In a review the way on is the next world's boss, or the results after its last.
+  private reviewItems(review: Review, goesOn: boolean): MenuItem[] {
     const { paper, worldIndex } = this.stage;
     return [
-      hasNextWorld
-        ? { label: "NEXT BOSS", onSelect: () => this.scene.start("Boss", reviewStage(paper, worldIndex + 1, scores)) }
-        : { label: "SEE RESULTS", onSelect: () => this.scene.start("ReviewResults", { paper, scores }) },
+      goesOn
+        ? { label: "NEXT BOSS", onSelect: () => this.scene.start("Boss", reviewStage(paper, worldIndex + 1, review)) }
+        : { label: "SEE RESULTS", onSelect: () => this.scene.start("ReviewResults", { paper, scores: review.scores }) },
       { label: "TITLE SCREEN", onSelect: () => this.scene.start("Title") },
     ];
   }

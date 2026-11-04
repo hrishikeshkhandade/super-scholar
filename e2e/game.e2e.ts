@@ -319,6 +319,9 @@ test("REVIEW goes straight to the boss fights, then scores each section", async 
   await page.evaluate(() => window.steps(5));
   await page.screenshot({ path: `${SHOTS}/10-review-papers.png` });
   await choose("LevelSelect", "Statistical Arbitrage");
+  await page.evaluate(() => window.steps(5));
+  await page.screenshot({ path: `${SHOTS}/10-review-sections.png` });
+  await choose("LevelSelect", "ALL SECTIONS");
   expect(await scenes()).toEqual(["Boss"]);
 
   // World 1: miss two questions, answer the rest right.
@@ -384,6 +387,62 @@ test("REVIEW goes straight to the boss fights, then scores each section", async 
   await choose("ReviewResults", "REVIEW AGAIN");
   expect(await scenes()).toEqual(["Boss"]);
   expect(await page.evaluate(() => window.game.scene.getScene("Boss").stage.worldIndex)).toBe(0);
+});
+
+test("REVIEW can test one section: one boss fight, then its results", async ({ page }) => {
+  await openGame(page);
+  const scenes = () => page.evaluate(() => window.game.scene.getScenes(true).map((scene: any) => scene.scene.key));
+  const texts = (sceneKey: string) =>
+    page.evaluate((key) => window.game.scene.getScene(key).children.list.filter((object: any) => object.type === "Text").map((text: any) => text.text), sceneKey);
+  const choose = (sceneKey: string, label: string) =>
+    page.evaluate(
+      ({ sceneKey, label }) => {
+        window.steps(20);
+        const scene = window.game.scene.getScene(sceneKey);
+        scene.children.list.find((object: any) => object.type === "Text" && object.text.startsWith(label) && object.input?.enabled).emit("pointerdown", {});
+        window.steps(10);
+      },
+      { sceneKey, label },
+    );
+  const beatBoss = (misses: number) =>
+    page.evaluate((misses) => {
+      const boss = window.game.scene.getScene("Boss");
+      for (let frame = 0; frame < 600 && boss.mode !== "fight"; frame++) window.steps(1);
+      let missed = 0;
+      while (!boss.fight.defeated) {
+        const question = boss.fight.current;
+        boss.fight.answer(missed < misses ? (question.answerIndex + 1) % 4 : question.answerIndex);
+        missed += 1;
+      }
+      boss.win();
+      window.steps(30);
+      window.hideOverlays(boss);
+    }, misses);
+
+  await choose("Title", "REVIEW");
+  await choose("LevelSelect", "Statistical Arbitrage");
+  await choose("LevelSelect", "World 2");
+  expect(await scenes()).toEqual(["Boss"]);
+  expect(await page.evaluate(() => window.game.scene.getScene("Boss").stage.worldIndex)).toBe(1);
+
+  await beatBoss(1);
+  const beaten = await texts("Boss");
+  expect(beaten).toContain("REVIEW COMPLETE!");
+  expect(beaten).toContain("SEE RESULTS");
+  expect(beaten).not.toContain("NEXT BOSS");
+
+  await choose("Boss", "SEE RESULTS");
+  const results = await texts("ReviewResults");
+  await page.screenshot({ path: `${SHOTS}/10-review-one-section.png` });
+  expect(results).toContain("World 2: Hunting Factors");
+  expect(results).not.toContain("World 1: Pairs Trading");
+  expect(results).toContain("4/5");
+  expect(results).toContain("KNOWN");
+  // Only one section was tested, so the summary mustn't claim the whole paper.
+  expect(results).toContain("4/5 right on the first try.\nYou know this section!");
+
+  await choose("ReviewResults", "REVIEW AGAIN");
+  expect(await page.evaluate(() => window.game.scene.getScene("Boss").stage.worldIndex)).toBe(1);
 });
 
 test("the Notebook reaches a world in two clicks and only pages through what's unlocked", async ({ page }) => {
