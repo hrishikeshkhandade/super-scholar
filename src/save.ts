@@ -182,6 +182,13 @@ function addToList(key: string, pattern: RegExp, paperId: string, entry: string,
   writeJson(storage, key, lists);
 }
 
+function removeFromList(key: string, pattern: RegExp, paperId: string, entry: string, storage: Storage | null): void {
+  const lists = loadLists(key, pattern, storage);
+  if (!lists[paperId]?.includes(entry)) return;
+  lists[paperId] = lists[paperId].filter((existing) => existing !== entry);
+  writeJson(storage, key, lists);
+}
+
 // The Scholar's Notebook: what the player has unlocked in each paper, kept
 // as entries like "0:lesson:2" (world 0, lesson 2). It is separate from
 // progress, so resetting progress keeps everything already learned.
@@ -206,6 +213,18 @@ export function unlockNote(
   storage: Storage | null = browserStorage(),
 ): void {
   addToList(NOTEBOOK_KEY, NOTE_PATTERN, paperId, noteKey(worldIndex, kind, index), storage);
+}
+
+// Takes an entry back out, e.g. the MISSED tag once a question is answered
+// right in a missed-questions review.
+export function forgetNote(
+  paperId: string,
+  worldIndex: number,
+  kind: NoteKind,
+  index: number,
+  storage: Storage | null = browserStorage(),
+): void {
+  removeFromList(NOTEBOOK_KEY, NOTE_PATTERN, paperId, noteKey(worldIndex, kind, index), storage);
 }
 
 // Levels and bosses the player has beaten, per paper: "0:1" is level 1-2,

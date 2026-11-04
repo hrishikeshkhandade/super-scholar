@@ -445,6 +445,82 @@ test("REVIEW can test one section: one boss fight, then its results", async ({ p
   expect(await page.evaluate(() => window.game.scene.getScene("Boss").stage.worldIndex)).toBe(1);
 });
 
+test("MISSED QUESTIONS retests only what you got wrong, and right answers drop off", async ({ page }) => {
+  await openGame(page);
+  const scenes = () => page.evaluate(() => window.game.scene.getScenes(true).map((scene: any) => scene.scene.key));
+  const texts = (sceneKey: string) =>
+    page.evaluate((key) => window.game.scene.getScene(key).children.list.filter((object: any) => object.type === "Text").map((text: any) => text.text), sceneKey);
+  const choose = (sceneKey: string, label: string) =>
+    page.evaluate(
+      ({ sceneKey, label }) => {
+        window.steps(20);
+        const scene = window.game.scene.getScene(sceneKey);
+        scene.children.list.find((object: any) => object.type === "Text" && object.text.startsWith(label) && object.input?.enabled).emit("pointerdown", {});
+        window.steps(10);
+      },
+      { sceneKey, label },
+    );
+  // Asks the boss's next question the way a stomp does, picks an answer, and
+  // closes the explanation, freezing the arena again in between.
+  const answer = (right: boolean) =>
+    page.evaluate((pickRight) => {
+      const boss = window.game.scene.getScene("Boss");
+      const space = () => boss.input.keyboard.emit("keydown", { key: " ", repeat: false, preventDefault() {} });
+      boss.invulnerableUntil = Infinity;
+      boss.mode = "question";
+      boss.physics.pause();
+      boss.askQuestion();
+      window.steps(50);
+      const question = boss.fight.current;
+      const letter = "ABCD"[pickRight ? question.answerIndex : (question.answerIndex + 1) % 4];
+      boss.children.list.find((object: any) => object.type === "Text" && object.text.startsWith(`${letter})`)).emit("pointerdown", {});
+      window.steps(10);
+      space();
+      window.steps(10);
+      space();
+      boss.mode = "question";
+      boss.physics.pause();
+      window.steps(5);
+      return question.prompt as string;
+    }, right);
+
+  // A normal World 1 boss fight: miss the first two questions, then leave.
+  await page.evaluate(async () => {
+    const { LIBRARY } = await window.importGame("/src/content/library.ts");
+    const boss = window.startScene("Boss", { paper: LIBRARY[0], worldIndex: 0, checkpointsCleared: 3, lives: 99 });
+    for (let frame = 0; frame < 600 && boss.mode !== "fight"; frame++) window.steps(1);
+  });
+  const missedPrompts = [await answer(false), await answer(false)];
+  await page.evaluate(() => window.startScene("Title", {}));
+
+  await choose("Title", "REVIEW");
+  await choose("LevelSelect", "Statistical Arbitrage");
+  await page.evaluate(() => window.steps(5));
+  await page.screenshot({ path: `${SHOTS}/12-missed-in-list.png` });
+  await choose("LevelSelect", "MISSED QUESTIONS (2)");
+  expect(await scenes()).toEqual(["Boss"]);
+  expect(await page.evaluate(() => window.game.scene.getScene("Boss").fight.maxHealth)).toBe(2);
+
+  // The first right on the first try, the second wrong and then right.
+  const asked = [await answer(true), await answer(false), await answer(true)];
+  expect(new Set(asked)).toEqual(new Set(missedPrompts));
+  await page.evaluate(() => {
+    window.game.scene.getScene("Boss").win();
+    window.steps(30);
+  });
+  await choose("Boss", "SEE RESULTS");
+  const results = await texts("ReviewResults");
+  await page.screenshot({ path: `${SHOTS}/12-missed-results.png` });
+  expect(results).toContain("World 1: Pairs Trading");
+  expect(results).toContain("1/2");
+
+  // The one answered right first time has dropped off the list.
+  await choose("ReviewResults", "TITLE SCREEN");
+  await choose("Title", "REVIEW");
+  await choose("LevelSelect", "Statistical Arbitrage");
+  expect((await texts("LevelSelect")).some((text: string) => text.startsWith("MISSED QUESTIONS (1)"))).toBe(true);
+});
+
 test("the Notebook reaches a world in two clicks and only pages through what's unlocked", async ({ page }) => {
   await openGame(page);
   // Some of World 1 and World 2 unlocked, as if played a little.

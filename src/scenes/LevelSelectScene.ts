@@ -4,8 +4,8 @@ import { findPaper, playablePapers } from "../content/library";
 import type { Paper } from "../content/types";
 import { levelMap, mapProgress, type MapStop } from "../levelMap";
 import { NES, css } from "../palette";
-import { startReview } from "../review";
-import { loadCleared, loadProgress, loadStars, stageKey, startLives } from "../save";
+import { missedQuestions, startMissedReview, startReview } from "../review";
+import { loadCleared, loadNotebook, loadProgress, loadStars, stageKey, startLives } from "../save";
 import { isTouchDevice } from "../touchControls";
 import { GAME_WIDTH, Menu, PointerGuard, showStars, textStyle } from "../ui";
 import { listTop, paperLabel, shorten, tableLabels } from "./listLayout";
@@ -85,20 +85,24 @@ export class LevelSelectScene extends Phaser.Scene {
     this.input.keyboard?.on("keydown-ESC", () => this.scene.start("Title"));
   }
 
-  // A quick check of one section is one boss fight; ALL SECTIONS plays them all.
+  // A quick check of one section is one boss fight; ALL SECTIONS plays them
+  // all; MISSED QUESTIONS retests only the boss questions you got wrong.
   private showReviewSections(paper: Paper): void {
     this.add.text(GAME_WIDTH / 2, 40, "REVIEW", textStyle(24, NES.yellow)).setOrigin(0.5);
     this.add.text(GAME_WIDTH / 2, 80, shorten(paper.title, 44), textStyle(16, NES.sky)).setOrigin(0.5);
     const questions = (count: number) => `${count} ${count === 1 ? "QUESTION" : "QUESTIONS"}`;
     const allQuestions = paper.worlds.reduce((sum, world) => sum + world.boss.questions.length, 0);
-    const { labels, x } = tableLabels([
-      ["ALL SECTIONS", questions(allQuestions)],
-      ...paper.worlds.map((world): [string, string] => [shorten(world.name, 28), questions(world.boss.questions.length)]),
-    ]);
-    const items = [
-      { label: labels[0], onSelect: () => this.scene.start("Boss", startReview(paper)) },
-      ...paper.worlds.map((_, i) => ({ label: labels[i + 1], onSelect: () => this.scene.start("Boss", startReview(paper, i)) })),
+    // Each row: its name, its question count, and what choosing it starts.
+    type Row = [string, string, () => void];
+    const missed = missedQuestions(paper, loadNotebook());
+    const missedRow: Row = [`MISSED QUESTIONS (${missed.length})`, "", () => this.scene.start("Boss", startMissedReview(paper, missed))];
+    const rows: Row[] = [
+      ...(missed.length > 0 ? [missedRow] : []),
+      ["ALL SECTIONS", questions(allQuestions), () => this.scene.start("Boss", startReview(paper))],
+      ...paper.worlds.map((world, i): Row => [shorten(world.name, 28), questions(world.boss.questions.length), () => this.scene.start("Boss", startReview(paper, i))]),
     ];
+    const { labels, x } = tableLabels(rows.map(([name, count]) => [name, count]));
+    const items = rows.map(([, , start], i) => ({ label: labels[i], onSelect: start }));
     const back = () => this.scene.restart({ review: true });
     new Menu(this, x, listTop(items.length + 1), [...items, { label: "BACK", onSelect: back }]);
     this.input.keyboard?.on("keydown-ESC", back);

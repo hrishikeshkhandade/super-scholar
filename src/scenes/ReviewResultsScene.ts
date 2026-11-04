@@ -1,7 +1,8 @@
 import Phaser from "phaser";
 import type { Paper } from "../content/types";
 import { NES, css } from "../palette";
-import { needsRereading, reviewAgain, unlockForRereading, type ReviewScore } from "../review";
+import { missedQuestions, needsRereading, reviewAgain, startMissedReview, unlockForRereading, type ReviewScore } from "../review";
+import { loadNotebook } from "../save";
 import { GAME_WIDTH, Menu, textStyle } from "../ui";
 import { drawMenuBackdrop } from "./backdrop";
 import { noLigatures, shorten } from "./listLayout";
@@ -14,6 +15,7 @@ import { noLigatures, shorten } from "./listLayout";
 export interface ReviewResultsData {
   paper: Paper;
   scores: ReviewScore[];
+  missed?: boolean; // the results of a MISSED QUESTIONS review
 }
 
 const CHAR_WIDTH = 16; // the pixel font is monospace
@@ -26,7 +28,7 @@ export class ReviewResultsScene extends Phaser.Scene {
     super("ReviewResults");
   }
 
-  create({ paper, scores }: ReviewResultsData): void {
+  create({ paper, scores, missed }: ReviewResultsData): void {
     // Opens the first of these sections' lessons; the Notebook's world arrows
     // reach the others, so all of them are unlocked.
     const reread = (worldIndexes: number[]) => {
@@ -35,7 +37,7 @@ export class ReviewResultsScene extends Phaser.Scene {
         paperId: paper.id,
         worldIndex: worldIndexes[0],
         sectionIndex: 0,
-        back: { scene: "ReviewResults", data: { paper, scores } },
+        back: { scene: "ReviewResults", data: { paper, scores, missed } },
       });
     };
     drawMenuBackdrop(this);
@@ -88,8 +90,20 @@ export class ReviewResultsScene extends Phaser.Scene {
 
     new Menu(this, 260, summaryText.y + summaryText.height + 20, [
       ...(weak.length > 0 ? [{ label: "RE-READ WEAK SECTIONS", onSelect: () => reread(weak) }] : []),
-      { label: "REVIEW AGAIN", onSelect: () => this.scene.start("Boss", reviewAgain(paper, scores)) },
+      { label: "REVIEW AGAIN", onSelect: () => this.reviewAgain(paper, scores, missed === true) },
       { label: "TITLE SCREEN", onSelect: () => this.scene.start("Title") },
     ]);
+  }
+
+  // The same sections again; after MISSED QUESTIONS, whatever is still
+  // missed (or the section list, once nothing is).
+  private reviewAgain(paper: Paper, scores: ReviewScore[], missed: boolean): void {
+    if (!missed) {
+      this.scene.start("Boss", reviewAgain(paper, scores));
+      return;
+    }
+    const stillMissed = missedQuestions(paper, loadNotebook());
+    if (stillMissed.length > 0) this.scene.start("Boss", startMissedReview(paper, stillMissed));
+    else this.scene.start("LevelSelect", { review: true, paperId: paper.id });
   }
 }

@@ -9,12 +9,13 @@ import { THEMES } from "../levels/themes";
 import { NES, css } from "../palette";
 import { GRAVITY, JUMP_VELOCITY } from "../jump";
 import { PlayerController, makeOneWay, type Sprite } from "../player";
-import { advanceProgress, currentTuning, markCleared, saveBestStars, startLives, unlockNote } from "../save";
+import { advanceProgress, currentTuning, forgetNote, markCleared, saveBestStars, startLives, unlockNote } from "../save";
 import type { Tuning } from "../difficulty";
 import { addPlayTime, bossQuestionKey, finishRun, recordAnswer, recordStars, runResult, loadRun } from "../run";
 import { formatTime } from "../leaderboard";
 import { bossStars } from "../stars";
-import { reviewStage, type Review, type ReviewScore } from "../review";
+import type { Question } from "../content/types";
+import { missedScores, questionAt, reviewStage, type MissedQuestion, type Review, type ReviewScore } from "../review";
 import type { StageData } from "../stage";
 import { enablePause } from "./PauseScene";
 import type { BossArena, BossBehavior } from "./bosses/arena";
@@ -106,7 +107,10 @@ export class BossScene extends Phaser.Scene {
   create(data: StageData): void {
     this.stage = { ...data };
     const world = data.paper.worlds[data.worldIndex];
-    this.fight = new BossFight(world.boss.questions);
+    // A MISSED QUESTIONS review asks only those, from any section (the list
+    // only ever holds questions that exist, see missedQuestions).
+    const missedList = data.review?.missed;
+    this.fight = new BossFight(missedList ? missedList.map((missed) => questionAt(data.paper, missed)!) : world.boss.questions);
     this.mode = "intro";
     this.hits = 0;
     // The title card freezes the arena first, so the intro waits for it.
@@ -289,19 +293,30 @@ export class BossScene extends Phaser.Scene {
   private askQuestion(): void {
     const question = this.fight.current;
     if (!question) return;
-    const world = this.stage.paper.worlds[this.stage.worldIndex];
-    const questionIndex = world.boss.questions.indexOf(question);
-    unlockNote(this.stage.paper.id, this.stage.worldIndex, "boss", questionIndex);
+    const { paper } = this.stage;
+    const { worldIndex, questionIndex } = this.whereFrom(question);
+    unlockNote(paper.id, worldIndex, "boss", questionIndex);
     // A question missed earlier says so, so its return doesn't look like a glitch.
     const tag = this.fight.currentIsRetry ? "MISSED EARLIER, TRY AGAIN" : undefined;
     const questionPanel = new QuestionPanel(this, question, SKY.top, (choiceIndex) => {
       questionPanel.destroy();
+      const firstTry = !this.fight.missed.includes(question);
       const correct = this.fight.answer(choiceIndex);
-      if (!this.stage.replay) recordAnswer(this.stage.paper.id, bossQuestionKey(this.stage.worldIndex, questionIndex), correct);
-      // Tagged in the Notebook so the player can find it to study.
-      if (!correct) unlockNote(this.stage.paper.id, this.stage.worldIndex, "missed", questionIndex);
+      if (!this.stage.replay) recordAnswer(paper.id, bossQuestionKey(worldIndex, questionIndex), correct);
+      // Tagged in the Notebook so the player can find it to study, and
+      // untagged once a missed-questions review gets it right first time.
+      if (!correct) unlockNote(paper.id, worldIndex, "missed", questionIndex);
+      else if (firstTry && this.stage.review?.missed) forgetNote(paper.id, worldIndex, "missed", questionIndex);
       this.showFeedback(correct, question.choices[question.answerIndex], question.explanation);
     }, { tag, center: SKY });
+  }
+
+  // Where a question lives in the paper: its own world in a normal fight, or
+  // wherever it was missed in a MISSED QUESTIONS review.
+  private whereFrom(question: Question): MissedQuestion {
+    const { paper, worldIndex, review } = this.stage;
+    const missed = review?.missed?.find((entry) => questionAt(paper, entry) === question);
+    return missed ?? { worldIndex, questionIndex: paper.worlds[worldIndex].boss.questions.indexOf(question) };
   }
 
   private showFeedback(correct: boolean, answer: string, explanation: string): void {
@@ -411,11 +426,15 @@ export class BossScene extends Phaser.Scene {
     const result = run && runResult(paper, run);
 
     const missed = this.fight.missed;
-    const total = paper.worlds[worldIndex].boss.questions.length;
+    const total = this.fight.maxHealth; // the questions this fight asked
     const score: ReviewScore = { worldIndex, rightFirstTry: total - missed.length, total };
     // A review goes on to the next world's boss until its last section.
     const reviewGoesOn = review !== undefined && worldIndex < review.lastWorld;
-    const items = review ? this.reviewItems({ ...review, scores: [...review.scores, score] }, reviewGoesOn) : [
+    // A missed-questions review's results show each section it drew from.
+    const reviewScores = review?.missed
+      ? missedScores(review.missed, (entry) => missed.includes(questionAt(paper, entry)!))
+      : [...(review?.scores ?? []), score];
+    const items = review ? this.reviewItems({ ...review, scores: reviewScores }, reviewGoesOn) : [
       ...(missed.length > 0
         ? [
             {
@@ -461,7 +480,7 @@ export class BossScene extends Phaser.Scene {
     return [
       goesOn
         ? { label: "NEXT BOSS", onSelect: () => this.scene.start("Boss", reviewStage(paper, worldIndex + 1, review)) }
-        : { label: "SEE RESULTS", onSelect: () => this.scene.start("ReviewResults", { paper, scores: review.scores }) },
+        : { label: "SEE RESULTS", onSelect: () => this.scene.start("ReviewResults", { paper, scores: review.scores, missed: review.missed !== undefined }) },
       { label: "TITLE SCREEN", onSelect: () => this.scene.start("Title") },
     ];
   }
