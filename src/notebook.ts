@@ -2,13 +2,12 @@ import type { Paper, Question } from "./content/types";
 import { noteKey, type Notebook, type NoteKind } from "./save";
 
 // Turns the saved notebook entries into pages the Notebook screen shows.
-// Locked items stay in the list as "???" with a hint, so the player can see
-// how much is left to find.
+// Only unlocked items become pages (paging past "???" pages made the Notebook
+// hard to get around); each section says in one line what's left to find.
 
 export interface NotePage {
   heading: string;
-  text: string; // the hint, for a locked page
-  locked: boolean;
+  text: string;
   question?: Question; // flashcards only
 }
 
@@ -17,66 +16,72 @@ export interface NoteSection {
   pages: NotePage[];
   unlocked: number;
   total: number;
+  stillLocked?: string; // how to find the rest, if any is left
 }
 
-const locked = (heading: string, hint: string): NotePage => ({ heading: `${heading}: ???`, text: hint, locked: true });
+// "1 more fact", "3 more facts".
+const more = (count: number, one: string, many: string) => `${count} more ${count === 1 ? one : many}`;
 
 export function worldSections(paper: Paper, worldIndex: number, notebook: Notebook): NoteSection[] {
   const world = paper.worlds[worldIndex];
+  const worldName = `World ${worldIndex + 1}`;
   const entries = new Set(notebook[paper.id] ?? []);
   const has = (kind: NoteKind, index: number) => entries.has(noteKey(worldIndex, kind, index));
-  const levelName = (index: number) => `${worldIndex + 1}-${index + 1}`;
 
   const lessons: NotePage[] = [];
   const cards: NotePage[] = [];
   world.cutscenes.forEach((cutscene, i) => {
-    const unlocked = has("lesson", i);
-    if (unlocked) {
-      cutscene.pages.forEach((text, page) =>
-        lessons.push({
-          heading: `LESSON ${i + 1}: ${cutscene.title} (${page + 1}/${cutscene.pages.length})`,
-          text,
-          locked: false,
-        }),
-      );
-    } else {
-      lessons.push(locked(`LESSON ${i + 1}`, `Reach the flag in level ${levelName(i)} to unlock this lesson.`));
-    }
-    if (!cutscene.practice) return;
-    cards.push(
-      unlocked
-        ? { heading: `PRACTICE ${i + 1}`, text: "", locked: false, question: cutscene.practice }
-        : locked(`PRACTICE ${i + 1}`, `Clear level ${levelName(i)} to unlock this card.`),
+    if (!has("lesson", i)) return;
+    cutscene.pages.forEach((text, page) =>
+      lessons.push({ heading: `LESSON ${i + 1}: ${cutscene.title} (${page + 1}/${cutscene.pages.length})`, text }),
     );
+    if (cutscene.practice) cards.push({ heading: `PRACTICE ${i + 1}`, text: "", question: cutscene.practice });
   });
-  world.boss.questions.forEach((question, i) =>
-    cards.push(
-      has("boss", i)
-        ? { heading: `BOSS QUESTION ${i + 1}${has("missed", i) ? " (MISSED)" : ""}`, text: "", locked: false, question }
-        : locked(`BOSS QUESTION ${i + 1}`, `Face ${world.boss.name} to unlock this card.`),
-    ),
-  );
-  const facts = world.facts.map((fact, i) =>
-    has("fact", i)
-      ? { heading: `FUN FACT ${i + 1}`, text: fact, locked: false }
-      : locked(`FUN FACT ${i + 1}`, "Stomp bears in this world to find this fact."),
-  );
+  world.boss.questions.forEach((question, i) => {
+    if (has("boss", i)) cards.push({ heading: `BOSS QUESTION ${i + 1}${has("missed", i) ? " (MISSED)" : ""}`, text: "", question });
+  });
+  const facts = world.facts.flatMap((fact, i) => (has("fact", i) ? [{ heading: `FUN FACT ${i + 1}`, text: fact }] : []));
 
   const count = (kind: NoteKind, total: number) => {
     let unlocked = 0;
     for (let i = 0; i < total; i++) if (has(kind, i)) unlocked += 1;
     return unlocked;
   };
-  const practiceCount = world.cutscenes.filter((c, i) => c.practice && has("lesson", i)).length;
+  const lessonsFound = count("lesson", world.cutscenes.length);
+  const factsFound = count("fact", world.facts.length);
   const practiceTotal = world.cutscenes.filter((c) => c.practice).length;
+  const practiceFound = world.cutscenes.filter((c, i) => c.practice && has("lesson", i)).length;
+  const bossFound = count("boss", world.boss.questions.length);
+
+  const lessonsLeft = world.cutscenes.length - lessonsFound;
+  const factsLeft = world.facts.length - factsFound;
+  const practiceLeft = practiceTotal - practiceFound;
+  const bossLeft = world.boss.questions.length - bossFound;
+  const cardSources = [
+    ...(practiceLeft > 0 ? [`clear ${worldName}'s levels`] : []),
+    ...(bossLeft > 0 ? [`face ${world.boss.name}`] : []),
+  ].join(" and ");
   return [
-    { name: "LESSONS", pages: lessons, unlocked: count("lesson", world.cutscenes.length), total: world.cutscenes.length },
-    { name: "FACTS", pages: facts, unlocked: count("fact", world.facts.length), total: world.facts.length },
+    {
+      name: "LESSONS",
+      pages: lessons,
+      unlocked: lessonsFound,
+      total: world.cutscenes.length,
+      stillLocked: lessonsLeft > 0 ? `${more(lessonsLeft, "lesson unlocks", "lessons unlock")} as you reach the flags in ${worldName}.` : undefined,
+    },
+    {
+      name: "FACTS",
+      pages: facts,
+      unlocked: factsFound,
+      total: world.facts.length,
+      stillLocked: factsLeft > 0 ? `${more(factsLeft, "fact", "facts")}: stomp bears in ${worldName} to find ${factsLeft === 1 ? "it" : "them"}.` : undefined,
+    },
     {
       name: "CARDS",
       pages: cards,
-      unlocked: practiceCount + count("boss", world.boss.questions.length),
+      unlocked: practiceFound + bossFound,
       total: practiceTotal + world.boss.questions.length,
+      stillLocked: cardSources ? `${more(practiceLeft + bossLeft, "card unlocks", "cards unlock")} as you ${cardSources}.` : undefined,
     },
   ];
 }

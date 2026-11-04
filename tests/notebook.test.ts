@@ -16,13 +16,20 @@ const paper = LIBRARY[0];
 const world = paper.worlds[0];
 
 describe("Scholar's Notebook", () => {
-  it("starts with everything locked", () => {
+  // Paging past "???" pages made the Notebook hard to get around, so only
+  // unlocked pages are listed, and one line says what's left to find.
+  it("starts with nothing to page through, and says how to unlock each section", () => {
     const sections = worldSections(paper, 0, {});
     expect(sections.map((s) => s.name)).toEqual(["LESSONS", "FACTS", "CARDS"]);
     for (const section of sections) {
       expect(section.unlocked).toBe(0);
-      expect(section.pages.every((page) => page.locked && page.heading.endsWith("???"))).toBe(true);
+      expect(section.pages).toEqual([]);
     }
+    expect(sections.map((s) => s.stillLocked)).toEqual([
+      "3 more lessons unlock as you reach the flags in World 1.",
+      "8 more facts: stomp bears in World 1 to find them.",
+      `8 more cards unlock as you clear World 1's levels and face ${world.boss.name}.`,
+    ]);
     expect(paperProgress(paper, {}).unlocked).toBe(0);
   });
 
@@ -34,11 +41,11 @@ describe("Scholar's Notebook", () => {
     const [lessons, facts, cards] = worldSections(paper, 0, loadNotebook(storage));
 
     expect(lessons.unlocked).toBe(1);
-    const lessonPages = lessons.pages.filter((page) => !page.locked);
-    expect(lessonPages.map((page) => page.text)).toEqual(world.cutscenes[0].pages);
+    expect(lessons.pages.map((page) => page.text)).toEqual(world.cutscenes[0].pages);
+    expect(lessons.stillLocked).toBe("2 more lessons unlock as you reach the flags in World 1.");
     expect(facts.unlocked).toBe(1);
-    expect(facts.pages[0]).toMatchObject({ locked: false, text: world.facts[0] });
-    expect(cards.pages[0]).toMatchObject({ locked: false, question: world.cutscenes[0].practice });
+    expect(facts.pages).toEqual([{ heading: "FUN FACT 1", text: world.facts[0] }]);
+    expect(cards.pages[0]).toMatchObject({ question: world.cutscenes[0].practice });
     expect(cards.unlocked).toBe(1);
   });
 
@@ -46,10 +53,14 @@ describe("Scholar's Notebook", () => {
     const storage = memoryStorage();
     unlockNote(paper.id, 0, "boss", 2, storage);
     const cards = worldSections(paper, 0, loadNotebook(storage))[2];
-    const bossCards = cards.pages.filter((page) => page.heading.startsWith("BOSS"));
-    expect(bossCards).toHaveLength(world.boss.questions.length);
-    expect(bossCards[2]).toMatchObject({ locked: false, question: world.boss.questions[2] });
-    expect(bossCards[0].locked).toBe(true);
+    expect(cards.pages).toEqual([{ heading: "BOSS QUESTION 3", text: "", question: world.boss.questions[2] }]);
+    expect(cards.stillLocked).toBe(`7 more cards unlock as you clear World 1's levels and face ${world.boss.name}.`);
+  });
+
+  it("says nothing is left once a section is complete", () => {
+    const storage = memoryStorage();
+    world.facts.forEach((_, i) => unlockNote(paper.id, 0, "fact", i, storage));
+    expect(worldSections(paper, 0, loadNotebook(storage))[1].stillLocked).toBeUndefined();
   });
 
   it("survives a reload and is kept when progress is reset", () => {

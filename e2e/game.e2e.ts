@@ -367,6 +367,82 @@ test("REVIEW goes straight to the boss fights, then scores each section", async 
   expect(results.cleared).toBe(0);
 });
 
+test("the Notebook reaches a world in two clicks and only pages through what's unlocked", async ({ page }) => {
+  await openGame(page);
+  // Some of World 1 and World 2 unlocked, as if played a little.
+  await page.evaluate(async () => {
+    const { unlockNote } = await window.importGame("/src/save.ts");
+    const { LIBRARY } = await window.importGame("/src/content/library.ts");
+    const id = LIBRARY[0].id;
+    unlockNote(id, 0, "lesson", 0);
+    unlockNote(id, 0, "fact", 0);
+    unlockNote(id, 0, "fact", 3);
+    unlockNote(id, 1, "boss", 0);
+    unlockNote(id, 1, "boss", 2);
+  });
+  const texts = () =>
+    page.evaluate(() => window.game.scene.getScene("Notebook").children.list.filter((object: any) => object.type === "Text" && object.visible).map((text: any) => text.text));
+  const click = (sceneKey: string, label: string) =>
+    page.evaluate(
+      ({ sceneKey, label }) => {
+        window.steps(20);
+        const scene = window.game.scene.getScene(sceneKey);
+        scene.children.list.find((object: any) => object.type === "Text" && object.text.startsWith(label) && object.input?.enabled).emit("pointerdown", {});
+        window.steps(10);
+      },
+      { sceneKey, label },
+    );
+  const press = (key: string) =>
+    page.evaluate((key) => {
+      window.game.scene.getScene("Notebook").input.keyboard.emit("keydown", { key, repeat: false, preventDefault() {} });
+      window.steps(2);
+    }, key);
+
+  // Two clicks from the title: NOTEBOOK, then the paper.
+  await click("Title", "NOTEBOOK");
+  await click("Notebook", "Statistical Arbitrage");
+  let shown = await texts();
+  await page.screenshot({ path: `${SHOTS}/11-notebook-world-1.png` });
+  expect(shown).toContain("Statistical Arbitrage in the U.S. Equities...");
+  expect(shown).toContain("World 1: Pairs Trading");
+  expect(shown).toContain("1 LESSONS 1/3");
+  expect(shown).toContain("2 more lessons unlock as you reach the flags in World 1.");
+
+  // Every lesson page is a real page, never "???".
+  const lessonPages = Number(shown.find((text: string) => text.startsWith("PAGE "))!.split(" OF ")[1]);
+  for (let i = 1; i < lessonPages; i++) await press("d");
+  shown = await texts();
+  expect(shown).toContain(`PAGE ${lessonPages} OF ${lessonPages}`);
+  expect(shown.some((text: string) => text.includes("???"))).toBe(false);
+
+  // Clicking a tab opens that section.
+  await click("Notebook", "2 FACTS");
+  shown = await texts();
+  expect(shown).toContain("FUN FACT 1");
+  await press("d");
+  expect(await texts()).toContain("FUN FACT 4");
+
+  // The world arrow goes to World 2 and keeps the open section; CARDS there
+  // has only the two boss questions faced.
+  await page.evaluate(() => {
+    window.steps(20);
+    const notebook = window.game.scene.getScene("Notebook");
+    notebook.children.list.filter((object: any) => object.type === "Text" && object.text === ">" && object.input?.enabled && object.y < 60)[0].emit("pointerdown", {});
+    window.steps(10);
+  });
+  shown = await texts();
+  expect(shown).toContain("World 2: Hunting Factors");
+  expect(shown).toContain("NO PAGES YET");
+  expect(shown).toContain("Nothing here yet.");
+  await press("3");
+  shown = await texts();
+  await page.screenshot({ path: `${SHOTS}/11-notebook-world-2-cards.png` });
+  expect(shown).toContain("PAGE 1 OF 2");
+  expect(shown).toContain("BOSS QUESTION 1");
+  await press("d");
+  expect(await texts()).toContain("BOSS QUESTION 3");
+});
+
 test("every practice and boss question in every built-in paper fits its box", async ({ page }) => {
   await openGame(page);
   const problems = await page.evaluate(async (library) => {

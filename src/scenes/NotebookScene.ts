@@ -11,15 +11,22 @@ import { listTop, paperLabel, shorten, tableLabels } from "./listLayout";
 import { drawMenuBackdrop } from "./backdrop";
 
 // The Scholar's Notebook: review every lesson, fun fact, and question
-// unlocked so far. Three views in one scene: papers, then a paper's worlds,
-// then one world's LESSONS / FACTS / CARDS.
+// unlocked so far. Two views in one scene: the papers, then one paper's
+// pages, a world at a time (the world list was a screen too many).
 
 interface NotebookData {
   paperId?: string;
   worldIndex?: number;
+  sectionIndex?: number; // kept when switching worlds
 }
 
-const PAGE_BOX = { x: 24, y: 66, width: GAME_WIDTH - 48, height: 324 };
+// The top rows say where you are: the paper, the world (with arrows to
+// switch), and the section tabs, all inside the backdrop's frame.
+const PAPER_Y = 32;
+const WORLD_Y = 56;
+const TABS = { y: 74, height: 28, gap: 12 };
+const PAGE_BOX = { x: 24, y: 112, width: GAME_WIDTH - 48, height: 276 };
+const BOTTOM_ROW_Y = 405;
 // What each section holds, on the first screen, so new players know what the
 // Notebook is for (a classmate found it unclear).
 const SECTION_KEY: [string, string][] = [
@@ -32,13 +39,18 @@ const LIST_TOP = KEY.top + SECTION_KEY.length * KEY.lineHeight + 20;
 
 const fraction = ({ unlocked, total }: { unlocked: number; total: number }) => `${unlocked}/${total}`;
 
+interface Tab {
+  box: Phaser.GameObjects.Rectangle;
+  label: Phaser.GameObjects.Text;
+}
+
 export class NotebookScene extends Phaser.Scene {
   private notebook: Notebook = {};
   private sections: NoteSection[] = [];
   private sectionIndex = 0;
   private pageIndex = 0;
   private flipped = false;
-  private tabs: Phaser.GameObjects.Text[] = [];
+  private tabs: Tab[] = [];
   private pageObjects: Phaser.GameObjects.GameObject[] = [];
   private counter!: Phaser.GameObjects.Text;
   private flipHint!: Phaser.GameObjects.Text;
@@ -51,13 +63,8 @@ export class NotebookScene extends Phaser.Scene {
     drawMenuBackdrop(this);
     this.notebook = loadNotebook();
     const paper = data.paperId ? findPaper(data.paperId) : undefined;
-    if (paper && data.worldIndex !== undefined && paper.worlds[data.worldIndex]) {
-      this.showWorld(paper, data.worldIndex);
-    } else if (paper) {
-      this.showWorlds(paper);
-    } else {
-      this.showPapers();
-    }
+    if (paper) this.showWorld(paper, data.worldIndex ?? firstWorldWithNotes(paper, this.notebook), data.sectionIndex ?? 0);
+    else this.showPapers();
   }
 
   private heading(text: string, subtitle: string): void {
@@ -91,64 +98,67 @@ export class NotebookScene extends Phaser.Scene {
     this.onEsc(() => this.scene.start("Title"));
   }
 
-  private showWorlds(paper: Paper): void {
-    this.heading("SCHOLAR'S NOTEBOOK", shorten(paper.title, 44));
-    const { labels, x } = tableLabels(
-      paper.worlds.map((world, i) => [
-        shorten(world.name, 32),
-        fraction(progressOf(worldSections(paper, i, this.notebook))),
-      ]),
-    );
-    const items = paper.worlds.map((_, i) => ({
-      label: labels[i],
-      onSelect: () => this.scene.restart({ paperId: paper.id, worldIndex: i }),
-    }));
-    new Menu(this, x, listTop(items.length + 1), [...items, { label: "BACK", onSelect: () => this.scene.restart({}) }]);
-    this.onEsc(() => this.scene.restart({}));
-  }
-
-  private showWorld(paper: Paper, worldIndex: number): void {
-    const back = () => this.scene.restart({ paperId: paper.id });
+  private showWorld(paper: Paper, worldIndex: number, sectionIndex: number): void {
+    const back = () => this.scene.restart({});
+    const switchWorld = (step: number) => {
+      const next = worldIndex + step;
+      if (!paper.worlds[next]) return;
+      audio.playSfx("move");
+      this.scene.restart({ paperId: paper.id, worldIndex: next, sectionIndex: this.sectionIndex });
+    };
     this.sections = worldSections(paper, worldIndex, this.notebook);
-    this.sectionIndex = 0;
     this.pageIndex = 0;
     this.flipped = false;
 
-    const title = paper.worlds[worldIndex].name;
-    this.add.text(GAME_WIDTH / 2, 30, shorten(title, 44), textStyle(16, NES.yellow)).setOrigin(0.5);
-    this.tabs = this.sections.map((section, i) =>
-      this.add
-        .text(40 + i * 250, 46, `${section.name} ${fraction(section)}`, textStyle(16, NES.white))
-        .setInteractive({ useHandCursor: true })
-        .on("pointerdown", () => this.showSection(i)),
-    );
+    // Where you are: the paper, then the world, with arrows to the others.
+    this.add.text(GAME_WIDTH / 2, PAPER_Y, shorten(paper.title, 46), textStyle(16, NES.sky)).setOrigin(0.5);
+    this.add.text(GAME_WIDTH / 2, WORLD_Y, shorten(paper.worlds[worldIndex].name, 36), textStyle(16, NES.yellow)).setOrigin(0.5);
+    const worldArrow = (x: number, label: string, step: number) => {
+      const exists = paper.worlds[worldIndex + step] !== undefined;
+      const arrow = this.add.text(x, WORLD_Y, label, textStyle(16, exists ? NES.yellow : NES.gray)).setOrigin(0.5).setPadding(10, 6, 10, 6);
+      if (exists) arrow.setInteractive({ useHandCursor: true }).on("pointerdown", () => switchWorld(step));
+    };
+    worldArrow(PAGE_BOX.x + 12, "<", -1);
+    worldArrow(PAGE_BOX.x + PAGE_BOX.width - 12, ">", 1);
+
+    // The sections as tabs: boxes you can click, the open one filled in.
+    const tabWidth = (PAGE_BOX.width - TABS.gap * 2) / 3;
+    this.tabs = this.sections.map((section, i) => {
+      const x = PAGE_BOX.x + i * (tabWidth + TABS.gap);
+      const box = this.add.rectangle(x, TABS.y, tabWidth, TABS.height, NES.black).setOrigin(0, 0).setStrokeStyle(2, NES.white);
+      const label = this.add.text(x + tabWidth / 2, TABS.y + TABS.height / 2, `${i + 1} ${section.name} ${fraction(section)}`, textStyle(16, NES.white)).setOrigin(0.5);
+      for (const part of [box, label]) part.setInteractive({ useHandCursor: true }).on("pointerdown", () => this.showSection(i));
+      return { box, label };
+    });
+
     panel(this, PAGE_BOX.x, PAGE_BOX.y, PAGE_BOX.width, PAGE_BOX.height)
       .setInteractive({ useHandCursor: true })
       .on("pointerdown", () => this.flip());
 
-    const arrow = (x: number, label: string, step: number) =>
+    const pageArrow = (x: number, label: string, step: number) =>
       this.add
-        .text(x, 405, label, textStyle(16, NES.yellow))
+        .text(x, BOTTOM_ROW_Y, label, textStyle(16, NES.yellow))
         .setOrigin(0.5)
+        .setPadding(10, 6, 10, 6)
         .setInteractive({ useHandCursor: true })
         .on("pointerdown", () => this.turnPage(step));
-    arrow(GAME_WIDTH / 2 - 80, "<", -1);
-    arrow(GAME_WIDTH / 2 + 80, ">", 1);
-    this.counter = this.add.text(GAME_WIDTH / 2, 405, "", textStyle(16, NES.white)).setOrigin(0.5);
-    this.flipHint = this.add.text(PAGE_BOX.x + PAGE_BOX.width, 405, "", textStyle(8, NES.yellow)).setOrigin(1, 0.5);
+    pageArrow(GAME_WIDTH / 2 - 130, "<", -1);
+    pageArrow(GAME_WIDTH / 2 + 130, ">", 1);
+    this.counter = this.add.text(GAME_WIDTH / 2, BOTTOM_ROW_Y, "", textStyle(16, NES.white)).setOrigin(0.5);
+    this.flipHint = this.add.text(PAGE_BOX.x + PAGE_BOX.width, BOTTOM_ROW_Y, "", textStyle(8, NES.yellow)).setOrigin(1, 0.5);
     this.add
       .text(
         GAME_WIDTH / 2,
-        425,
+        428,
         isTouchDevice()
-          ? "TAP < > FOR PAGES, A TAB FOR A SECTION, A CARD TO FLIP IT"
-          : "A/D: PAGE   W/S: SECTION   SPACE: FLIP CARD   ESC: BACK",
+          ? "TAP < > FOR PAGES AND WORLDS, A TAB FOR A SECTION, A CARD TO FLIP IT"
+          : "A/D: PAGE   W/S OR 1-3: SECTION   Q/E: WORLD   SPACE: FLIP CARD   ESC: BACK",
         textStyle(8, NES.lightGray),
       )
       .setOrigin(0.5);
     // A visible way out, since phones have no Esc key.
     this.add
-      .text(PAGE_BOX.x + 8, 405, "BACK", textStyle(16, NES.white))
+      .text(PAGE_BOX.x + 8, BOTTOM_ROW_Y, "BACK", textStyle(16, NES.white))
       .setOrigin(0, 0.5)
       .setPadding(8, 8, 8, 8)
       .setInteractive({ useHandCursor: true })
@@ -161,28 +171,35 @@ export class NotebookScene extends Phaser.Scene {
       else if (key === "d" || key === "arrowright") this.turnPage(1);
       else if (key === "w" || key === "arrowup") this.showSection(this.sectionIndex - 1);
       else if (key === "s" || key === "arrowdown") this.showSection(this.sectionIndex + 1);
+      else if (key === "1" || key === "2" || key === "3") this.showSection(Number(key) - 1);
+      else if (key === "q") switchWorld(-1);
+      else if (key === "e") switchWorld(1);
       else if (key === " " || key === "enter") this.flip();
       else if (key === "escape") back();
       else return;
       event.preventDefault();
     });
-    this.showSection(0);
+    this.sectionIndex = -1; // so the first showSection doesn't play the move sound
+    this.showSection(sectionIndex);
   }
 
   private showSection(index: number): void {
     const count = this.sections.length;
     const next = (index + count) % count;
-    if (next !== this.sectionIndex) audio.playSfx("move");
+    if (this.sectionIndex >= 0 && next !== this.sectionIndex) audio.playSfx("move");
     this.sectionIndex = next;
     this.pageIndex = 0;
-    this.tabs.forEach((tab, i) => tab.setColor(css(i === next ? NES.yellow : NES.white)));
+    this.tabs.forEach(({ box, label }, i) => {
+      box.setFillStyle(i === next ? NES.yellow : NES.black);
+      label.setColor(css(i === next ? NES.black : NES.white));
+    });
     this.renderPage();
   }
 
   private turnPage(step: number): void {
     const pages = this.sections[this.sectionIndex].pages;
     const next = Phaser.Math.Clamp(this.pageIndex + step, 0, pages.length - 1);
-    if (next === this.pageIndex) return;
+    if (next === this.pageIndex || pages.length === 0) return;
     audio.playSfx("move");
     this.pageIndex = next;
     this.renderPage();
@@ -196,26 +213,35 @@ export class NotebookScene extends Phaser.Scene {
     this.renderPage(true);
   }
 
-  // Draws the current page. A new page always shows a card's front side.
+  // Draws the current page, with the line saying what's still to find at the
+  // bottom of the box. A new page always shows a card's front side.
   private renderPage(keepFlip = false): void {
     if (!keepFlip) this.flipped = false;
     this.pageObjects.forEach((object) => object.destroy());
-    const pages = this.sections[this.sectionIndex].pages;
-    this.counter.setText(pages.length > 0 ? `${this.pageIndex + 1}/${pages.length}` : "0/0");
-    const page = pages[this.pageIndex];
+    const section = this.sections[this.sectionIndex];
+    const pages = section.pages;
+    this.counter.setText(pages.length > 0 ? `PAGE ${this.pageIndex + 1} OF ${pages.length}` : "NO PAGES YET");
     const left = PAGE_BOX.x + 20;
     const wrap = READING.width; // short reading lines, like the rest of the game
+    const stillLocked = section.stillLocked
+      ? this.add
+          .text(left, PAGE_BOX.y + PAGE_BOX.height - 14, section.stillLocked, textStyle(16, NES.lightGray, PAGE_BOX.width - 40))
+          .setOrigin(0, 1)
+      : undefined;
+    const bottom = (stillLocked ? stillLocked.y - stillLocked.height : PAGE_BOX.y + PAGE_BOX.height) - 16;
+    const page = pages[this.pageIndex];
     if (!page) {
       this.flipHint.setText("");
-      this.pageObjects = [this.add.text(left, PAGE_BOX.y + 20, "Nothing in this section.", textStyle(16, NES.lightGray, wrap))];
+      const empty = this.add.text(left, PAGE_BOX.y + 20, "Nothing here yet.", textStyle(16, NES.white, wrap));
+      this.pageObjects = [empty, ...(stillLocked ? [stillLocked] : [])];
       return;
     }
 
-    const heading = this.add.text(left, PAGE_BOX.y + 20, page.heading, textStyle(16, page.locked ? NES.gray : NES.sky, wrap));
+    const heading = this.add.text(left, PAGE_BOX.y + 20, page.heading, textStyle(16, NES.sky, wrap));
     const bodyTop = heading.y + heading.height + 20;
-    const body = this.add.text(left, bodyTop, this.bodyText(page), textStyle(16, this.bodyColor(page), wrap));
-    fitTextToHeight(body, PAGE_BOX.y + PAGE_BOX.height - 16 - bodyTop);
-    this.pageObjects = [heading, body];
+    const body = this.add.text(left, bodyTop, this.bodyText(page), textStyle(16, page.question && this.flipped ? NES.lime : NES.white, wrap));
+    fitTextToHeight(body, bottom - bodyTop);
+    this.pageObjects = [heading, body, ...(stillLocked ? [stillLocked] : [])];
     this.flipHint.setText(page.question ? (this.flipped ? "SPACE: SHOW QUESTION" : "SPACE: FLIP FOR ANSWER") : "");
   }
 
@@ -227,9 +253,10 @@ export class NotebookScene extends Phaser.Scene {
     if (!this.flipped) return question.prompt;
     return `Answer: ${question.choices[question.answerIndex]}\n\n${question.explanation}`;
   }
+}
 
-  private bodyColor(page: NotePage): number {
-    if (page.locked) return NES.lightGray;
-    return page.question && this.flipped ? NES.lime : NES.white;
-  }
+// Opening a paper starts on its first world with anything in it (or World 1).
+function firstWorldWithNotes(paper: Paper, notebook: Notebook): number {
+  const index = paper.worlds.findIndex((_, i) => progressOf(worldSections(paper, i, notebook)).unlocked > 0);
+  return Math.max(index, 0);
 }
