@@ -1,5 +1,16 @@
 import { expect, test } from "@playwright/test";
-import { SHOTS, openGame } from "./play";
+import {
+  SHOTS,
+  activeScenes,
+  answerBossQuestion,
+  askBossQuestion,
+  beatBoss,
+  chooseOption,
+  closeExplanation,
+  openGame,
+  pickAnswer,
+  sceneTexts,
+} from "./play";
 
 // Each check plays part of the real game the way a player would and saves a
 // screenshot of the screen it checked.
@@ -119,57 +130,23 @@ test("a missed boss question warns it comes back, then returns tagged", async ({
     for (let frame = 0; frame < 600 && boss.mode !== "fight"; frame++) window.steps(1);
     window.hideOverlays(boss);
   }, LIBRARY);
-  const texts = () =>
-    page.evaluate(() => window.game.scene.getScene("Boss").children.list.filter((object: any) => object.type === "Text").map((text: any) => text.text));
-  // Stomping is skipped: the check asks the question the way a stomp does.
-  const ask = () =>
-    page.evaluate(() => {
-      const boss = window.game.scene.getScene("Boss");
-      boss.invulnerableUntil = Infinity;
-      boss.mode = "question";
-      boss.physics.pause();
-      boss.askQuestion();
-      window.steps(50);
-    });
-  // Picks an answer, then presses Space to see why.
-  const pick = (right: boolean) =>
-    page.evaluate((pickRight) => {
-      const boss = window.game.scene.getScene("Boss");
-      const question = boss.fight.current;
-      const letter = "ABCD"[pickRight ? question.answerIndex : (question.answerIndex + 1) % 4];
-      boss.children.list.find((object: any) => object.type === "Text" && object.text.startsWith(`${letter})`)).emit("pointerdown", {});
-      window.steps(10);
-      boss.input.keyboard.emit("keydown", { key: " ", repeat: false, preventDefault() {} });
-      window.steps(10);
-    }, right);
-  // Presses Space again to close the explanation, then freezes the arena
-  // again so the idle player can't land on the boss and start a second
-  // question on top of the one this check asks next.
-  const dismiss = () =>
-    page.evaluate(() => {
-      const boss = window.game.scene.getScene("Boss");
-      boss.input.keyboard.emit("keydown", { key: " ", repeat: false, preventDefault() {} });
-      boss.mode = "question";
-      boss.physics.pause();
-      window.steps(5);
-      return boss.fight.currentIsRetry as boolean;
-    });
+  const texts = () => sceneTexts(page, "Boss");
 
-  await ask();
+  await askBossQuestion(page);
   expect(await texts()).not.toContain("MISSED EARLIER, TRY AGAIN");
-  await pick(false);
+  await pickAnswer(page, false);
   await page.screenshot({ path: `${SHOTS}/4-boss-miss.png` });
   expect(await texts()).toContain("THIS QUESTION COMES BACK LATER");
-  let retryNext = await dismiss();
+  let retryNext = await closeExplanation(page);
 
   // Answer the rest right until the missed one is next.
   for (let i = 0; i < 10 && !retryNext; i++) {
-    await ask();
-    await pick(true);
-    retryNext = await dismiss();
+    await askBossQuestion(page);
+    await pickAnswer(page, true);
+    retryNext = await closeExplanation(page);
   }
   expect(retryNext).toBe(true);
-  await ask();
+  await askBossQuestion(page);
   await page.screenshot({ path: `${SHOTS}/4-boss-retry.png` });
   const shown = await texts();
   expect(shown).toContain("MISSED EARLIER, TRY AGAIN");
@@ -299,19 +276,8 @@ test("a click right after the title screen opens doesn't pick an option", async 
 
 test("REVIEW goes straight to the boss fights, then scores each section", async ({ page }) => {
   await openGame(page);
-  const scenes = () => page.evaluate(() => window.game.scene.getScenes(true).map((scene: any) => scene.scene.key));
-  // Clicks an option by its text in the active scene, like a player would.
-  const choose = (sceneKey: string, label: string) =>
-    page.evaluate(
-      ({ sceneKey, label }) => {
-        window.steps(20);
-        const scene = window.game.scene.getScene(sceneKey);
-        const option = scene.children.list.find((object: any) => object.type === "Text" && object.text.startsWith(label) && object.input?.enabled);
-        option.emit("pointerdown", {});
-        window.steps(10);
-      },
-      { sceneKey, label },
-    );
+  const scenes = () => activeScenes(page);
+  const choose = (sceneKey: string, label: string) => chooseOption(page, sceneKey, label);
 
   await page.evaluate(() => window.steps(30));
   await page.screenshot({ path: `${SHOTS}/10-title-with-review.png` });
@@ -325,20 +291,7 @@ test("REVIEW goes straight to the boss fights, then scores each section", async 
   expect(await scenes()).toEqual(["Boss"]);
 
   // World 1: miss two questions, answer the rest right.
-  await page.evaluate(() => {
-    const boss = window.game.scene.getScene("Boss");
-    for (let frame = 0; frame < 600 && boss.mode !== "fight"; frame++) window.steps(1);
-    boss.invulnerableUntil = Infinity;
-    let misses = 0;
-    while (!boss.fight.defeated) {
-      const question = boss.fight.current;
-      boss.fight.answer(misses < 2 ? (question.answerIndex + 1) % 4 : question.answerIndex);
-      misses += 1;
-    }
-    boss.win();
-    window.steps(30);
-    window.hideOverlays(boss);
-  });
+  await beatBoss(page, 2);
   await page.screenshot({ path: `${SHOTS}/10-review-boss-beaten.png` });
   await choose("Boss", "NEXT BOSS");
   expect(await scenes()).toEqual(["Boss"]);
@@ -346,13 +299,7 @@ test("REVIEW goes straight to the boss fights, then scores each section", async 
 
   // The other worlds, all right, through to the results.
   for (let world = 1; world < 5; world++) {
-    await page.evaluate(() => {
-      const boss = window.game.scene.getScene("Boss");
-      for (let frame = 0; frame < 600 && boss.mode !== "fight"; frame++) window.steps(1);
-      while (!boss.fight.defeated) boss.fight.answer(boss.fight.current.answerIndex);
-      boss.win();
-      window.steps(30);
-    });
+    await beatBoss(page);
     await choose("Boss", world < 4 ? "NEXT BOSS" : "SEE RESULTS");
   }
   expect(await scenes()).toEqual(["ReviewResults"]);
@@ -372,9 +319,7 @@ test("REVIEW goes straight to the boss fights, then scores each section", async 
   // RE-READ opens World 1's lessons, readable even though its levels were skipped.
   await choose("ReviewResults", "RE-READ");
   expect(await scenes()).toEqual(["Notebook"]);
-  const notebook = await page.evaluate(() =>
-    window.game.scene.getScene("Notebook").children.list.filter((object: any) => object.type === "Text").map((text: any) => text.text),
-  );
+  const notebook = await sceneTexts(page, "Notebook");
   await page.screenshot({ path: `${SHOTS}/10-review-reread.png` });
   expect(notebook).toContain("World 1: Pairs Trading");
   expect(notebook).toContain("1 LESSONS 3/3");
@@ -383,7 +328,7 @@ test("REVIEW goes straight to the boss fights, then scores each section", async 
   // BACK returns to the same results, and REVIEW AGAIN starts over.
   await choose("Notebook", "BACK");
   expect(await scenes()).toEqual(["ReviewResults"]);
-  expect(await page.evaluate(() => window.game.scene.getScene("ReviewResults").children.list.some((object: any) => object.text === "3/5"))).toBe(true);
+  expect(await sceneTexts(page, "ReviewResults")).toContain("3/5");
   await choose("ReviewResults", "REVIEW AGAIN");
   expect(await scenes()).toEqual(["Boss"]);
   expect(await page.evaluate(() => window.game.scene.getScene("Boss").stage.worldIndex)).toBe(0);
@@ -391,33 +336,9 @@ test("REVIEW goes straight to the boss fights, then scores each section", async 
 
 test("REVIEW can test one section: one boss fight, then its results", async ({ page }) => {
   await openGame(page);
-  const scenes = () => page.evaluate(() => window.game.scene.getScenes(true).map((scene: any) => scene.scene.key));
-  const texts = (sceneKey: string) =>
-    page.evaluate((key) => window.game.scene.getScene(key).children.list.filter((object: any) => object.type === "Text").map((text: any) => text.text), sceneKey);
-  const choose = (sceneKey: string, label: string) =>
-    page.evaluate(
-      ({ sceneKey, label }) => {
-        window.steps(20);
-        const scene = window.game.scene.getScene(sceneKey);
-        scene.children.list.find((object: any) => object.type === "Text" && object.text.startsWith(label) && object.input?.enabled).emit("pointerdown", {});
-        window.steps(10);
-      },
-      { sceneKey, label },
-    );
-  const beatBoss = (misses: number) =>
-    page.evaluate((misses) => {
-      const boss = window.game.scene.getScene("Boss");
-      for (let frame = 0; frame < 600 && boss.mode !== "fight"; frame++) window.steps(1);
-      let missed = 0;
-      while (!boss.fight.defeated) {
-        const question = boss.fight.current;
-        boss.fight.answer(missed < misses ? (question.answerIndex + 1) % 4 : question.answerIndex);
-        missed += 1;
-      }
-      boss.win();
-      window.steps(30);
-      window.hideOverlays(boss);
-    }, misses);
+  const scenes = () => activeScenes(page);
+  const texts = (sceneKey: string) => sceneTexts(page, sceneKey);
+  const choose = (sceneKey: string, label: string) => chooseOption(page, sceneKey, label);
 
   await choose("Title", "REVIEW");
   await choose("LevelSelect", "Statistical Arbitrage");
@@ -425,7 +346,7 @@ test("REVIEW can test one section: one boss fight, then its results", async ({ p
   expect(await scenes()).toEqual(["Boss"]);
   expect(await page.evaluate(() => window.game.scene.getScene("Boss").stage.worldIndex)).toBe(1);
 
-  await beatBoss(1);
+  await beatBoss(page, 1);
   const beaten = await texts("Boss");
   expect(beaten).toContain("REVIEW COMPLETE!");
   expect(beaten).toContain("SEE RESULTS");
@@ -447,42 +368,10 @@ test("REVIEW can test one section: one boss fight, then its results", async ({ p
 
 test("MISSED QUESTIONS retests only what you got wrong, and right answers drop off", async ({ page }) => {
   await openGame(page);
-  const scenes = () => page.evaluate(() => window.game.scene.getScenes(true).map((scene: any) => scene.scene.key));
-  const texts = (sceneKey: string) =>
-    page.evaluate((key) => window.game.scene.getScene(key).children.list.filter((object: any) => object.type === "Text").map((text: any) => text.text), sceneKey);
-  const choose = (sceneKey: string, label: string) =>
-    page.evaluate(
-      ({ sceneKey, label }) => {
-        window.steps(20);
-        const scene = window.game.scene.getScene(sceneKey);
-        scene.children.list.find((object: any) => object.type === "Text" && object.text.startsWith(label) && object.input?.enabled).emit("pointerdown", {});
-        window.steps(10);
-      },
-      { sceneKey, label },
-    );
-  // Asks the boss's next question the way a stomp does, picks an answer, and
-  // closes the explanation, freezing the arena again in between.
-  const answer = (right: boolean) =>
-    page.evaluate((pickRight) => {
-      const boss = window.game.scene.getScene("Boss");
-      const space = () => boss.input.keyboard.emit("keydown", { key: " ", repeat: false, preventDefault() {} });
-      boss.invulnerableUntil = Infinity;
-      boss.mode = "question";
-      boss.physics.pause();
-      boss.askQuestion();
-      window.steps(50);
-      const question = boss.fight.current;
-      const letter = "ABCD"[pickRight ? question.answerIndex : (question.answerIndex + 1) % 4];
-      boss.children.list.find((object: any) => object.type === "Text" && object.text.startsWith(`${letter})`)).emit("pointerdown", {});
-      window.steps(10);
-      space();
-      window.steps(10);
-      space();
-      boss.mode = "question";
-      boss.physics.pause();
-      window.steps(5);
-      return question.prompt as string;
-    }, right);
+  const scenes = () => activeScenes(page);
+  const texts = (sceneKey: string) => sceneTexts(page, sceneKey);
+  const choose = (sceneKey: string, label: string) => chooseOption(page, sceneKey, label);
+  const answer = (right: boolean) => answerBossQuestion(page, right);
 
   // A normal World 1 boss fight: miss the first two questions, then leave.
   await page.evaluate(async () => {
@@ -534,18 +423,8 @@ test("the Notebook reaches a world in two clicks and only pages through what's u
     unlockNote(id, 1, "boss", 0);
     unlockNote(id, 1, "boss", 2);
   });
-  const texts = () =>
-    page.evaluate(() => window.game.scene.getScene("Notebook").children.list.filter((object: any) => object.type === "Text" && object.visible).map((text: any) => text.text));
-  const click = (sceneKey: string, label: string) =>
-    page.evaluate(
-      ({ sceneKey, label }) => {
-        window.steps(20);
-        const scene = window.game.scene.getScene(sceneKey);
-        scene.children.list.find((object: any) => object.type === "Text" && object.text.startsWith(label) && object.input?.enabled).emit("pointerdown", {});
-        window.steps(10);
-      },
-      { sceneKey, label },
-    );
+  const texts = () => sceneTexts(page, "Notebook", { visibleOnly: true });
+  const click = (sceneKey: string, label: string) => chooseOption(page, sceneKey, label);
   const press = (key: string) =>
     page.evaluate((key) => {
       window.game.scene.getScene("Notebook").input.keyboard.emit("keydown", { key, repeat: false, preventDefault() {} });

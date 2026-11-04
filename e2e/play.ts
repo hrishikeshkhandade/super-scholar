@@ -207,3 +207,96 @@ function installHelpers(): void {
     return found;
   };
 }
+
+// Steps the checks share, run from the test side.
+
+// The keys of the scenes showing right now, e.g. ["Boss"].
+export const activeScenes = (page: Page): Promise<string[]> =>
+  page.evaluate(() => window.game.scene.getScenes(true).map((scene: any) => scene.scene.key));
+
+// Every text on a scene (only the visible ones, if asked).
+export const sceneTexts = (page: Page, sceneKey: string, { visibleOnly = false } = {}): Promise<string[]> =>
+  page.evaluate(
+    ({ sceneKey, visibleOnly }) =>
+      window.game.scene
+        .getScene(sceneKey)
+        .children.list.filter((object: any) => object.type === "Text" && (!visibleOnly || object.visible))
+        .map((text: any) => text.text),
+    { sceneKey, visibleOnly },
+  );
+
+// Clicks the option whose text starts with label, as a player would (after
+// the moment a new screen ignores clicks).
+export const chooseOption = (page: Page, sceneKey: string, label: string): Promise<void> =>
+  page.evaluate(
+    ({ sceneKey, label }) => {
+      window.steps(20);
+      const scene = window.game.scene.getScene(sceneKey);
+      scene.children.list.find((object: any) => object.type === "Text" && object.text.startsWith(label) && object.input?.enabled).emit("pointerdown", {});
+      window.steps(10);
+    },
+    { sceneKey, label },
+  );
+
+// A boss question, the way a stomp asks it (the stomp itself is skipped).
+export const askBossQuestion = (page: Page): Promise<void> =>
+  page.evaluate(() => {
+    const boss = window.game.scene.getScene("Boss");
+    boss.invulnerableUntil = Infinity;
+    boss.mode = "question";
+    boss.physics.pause();
+    boss.askQuestion();
+    window.steps(50);
+  });
+
+// Picks the right answer (or a wrong one), then presses Space to see why.
+// Returns the question's prompt.
+export const pickAnswer = (page: Page, right: boolean): Promise<string> =>
+  page.evaluate((pickRight) => {
+    const boss = window.game.scene.getScene("Boss");
+    const question = boss.fight.current;
+    const letter = "ABCD"[pickRight ? question.answerIndex : (question.answerIndex + 1) % 4];
+    boss.children.list.find((object: any) => object.type === "Text" && object.text.startsWith(`${letter})`)).emit("pointerdown", {});
+    window.steps(10);
+    boss.input.keyboard.emit("keydown", { key: " ", repeat: false, preventDefault() {} });
+    window.steps(10);
+    return question.prompt as string;
+  }, right);
+
+// Presses Space to close the explanation, then freezes the arena again so the
+// idle player can't land on the boss and start a second question on top of
+// the next one a check asks. Returns whether the next question is a retry.
+export const closeExplanation = (page: Page): Promise<boolean> =>
+  page.evaluate(() => {
+    const boss = window.game.scene.getScene("Boss");
+    boss.input.keyboard.emit("keydown", { key: " ", repeat: false, preventDefault() {} });
+    boss.mode = "question";
+    boss.physics.pause();
+    window.steps(5);
+    return boss.fight.currentIsRetry as boolean;
+  });
+
+// One whole question: asked, answered, explained, closed. Returns its prompt.
+export async function answerBossQuestion(page: Page, right: boolean): Promise<string> {
+  await askBossQuestion(page);
+  const prompt = await pickAnswer(page, right);
+  await closeExplanation(page);
+  return prompt;
+}
+
+// Beats the boss quickly once the fight starts, getting the first `misses`
+// answers wrong, and shows the win box.
+export const beatBoss = (page: Page, misses = 0): Promise<void> =>
+  page.evaluate((misses) => {
+    const boss = window.game.scene.getScene("Boss");
+    for (let frame = 0; frame < 600 && boss.mode !== "fight"; frame++) window.steps(1);
+    let answered = 0;
+    while (!boss.fight.defeated) {
+      const question = boss.fight.current;
+      boss.fight.answer(answered < misses ? (question.answerIndex + 1) % 4 : question.answerIndex);
+      answered += 1;
+    }
+    boss.win();
+    window.steps(30);
+    window.hideOverlays(boss);
+  }, misses);
