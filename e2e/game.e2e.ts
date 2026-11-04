@@ -297,6 +297,76 @@ test("a click right after the title screen opens doesn't pick an option", async 
   expect(after).toEqual(["Notebook"]);
 });
 
+test("REVIEW goes straight to the boss fights, then scores each section", async ({ page }) => {
+  await openGame(page);
+  const scenes = () => page.evaluate(() => window.game.scene.getScenes(true).map((scene: any) => scene.scene.key));
+  // Clicks an option by its text in the active scene, like a player would.
+  const choose = (sceneKey: string, label: string) =>
+    page.evaluate(
+      ({ sceneKey, label }) => {
+        window.steps(20);
+        const scene = window.game.scene.getScene(sceneKey);
+        const option = scene.children.list.find((object: any) => object.type === "Text" && object.text.startsWith(label) && object.input?.enabled);
+        option.emit("pointerdown", {});
+        window.steps(10);
+      },
+      { sceneKey, label },
+    );
+
+  await page.evaluate(() => window.steps(30));
+  await page.screenshot({ path: `${SHOTS}/10-title-with-review.png` });
+  await choose("Title", "REVIEW");
+  await page.evaluate(() => window.steps(5));
+  await page.screenshot({ path: `${SHOTS}/10-review-papers.png` });
+  await choose("LevelSelect", "Statistical Arbitrage");
+  expect(await scenes()).toEqual(["Boss"]);
+
+  // World 1: miss two questions, answer the rest right.
+  await page.evaluate(() => {
+    const boss = window.game.scene.getScene("Boss");
+    for (let frame = 0; frame < 600 && boss.mode !== "fight"; frame++) window.steps(1);
+    boss.invulnerableUntil = Infinity;
+    let misses = 0;
+    while (!boss.fight.defeated) {
+      const question = boss.fight.current;
+      boss.fight.answer(misses < 2 ? (question.answerIndex + 1) % 4 : question.answerIndex);
+      misses += 1;
+    }
+    boss.win();
+    window.steps(30);
+    window.hideOverlays(boss);
+  });
+  await page.screenshot({ path: `${SHOTS}/10-review-boss-beaten.png` });
+  await choose("Boss", "NEXT BOSS");
+  expect(await scenes()).toEqual(["Boss"]);
+  expect(await page.evaluate(() => window.game.scene.getScene("Boss").stage.worldIndex)).toBe(1);
+
+  // The other worlds, all right, through to the results.
+  for (let world = 1; world < 5; world++) {
+    await page.evaluate(() => {
+      const boss = window.game.scene.getScene("Boss");
+      for (let frame = 0; frame < 600 && boss.mode !== "fight"; frame++) window.steps(1);
+      while (!boss.fight.defeated) boss.fight.answer(boss.fight.current.answerIndex);
+      boss.win();
+      window.steps(30);
+    });
+    await choose("Boss", world < 4 ? "NEXT BOSS" : "SEE RESULTS");
+  }
+  expect(await scenes()).toEqual(["ReviewResults"]);
+  const results = await page.evaluate(async () => {
+    const { loadProgress, loadCleared } = await window.importGame("/src/save.ts");
+    const texts = window.game.scene.getScene("ReviewResults").children.list.filter((object: any) => object.type === "Text").map((text: any) => text.text);
+    return { texts, progress: loadProgress() ?? null, cleared: Object.keys(loadCleared()).length };
+  });
+  await page.screenshot({ path: `${SHOTS}/10-review-results.png` });
+  expect(results.texts.filter((text: string) => text === "RE-READ")).toHaveLength(1);
+  expect(results.texts.filter((text: string) => text === "KNOWN")).toHaveLength(4);
+  expect(results.texts).toContain("3/5");
+  // A review doesn't count as playing: no CONTINUE, nothing lit on the level map.
+  expect(results.progress).toBeNull();
+  expect(results.cleared).toBe(0);
+});
+
 test("every practice and boss question in every built-in paper fits its box", async ({ page }) => {
   await openGame(page);
   const problems = await page.evaluate(async (library) => {

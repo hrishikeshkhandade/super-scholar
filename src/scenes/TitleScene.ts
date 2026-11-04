@@ -14,7 +14,8 @@ import { LAST_QUERY_KEY } from "./PaperSelectScene";
 
 // The sign's top sits below where the sky's teal band ends (y=180), so it
 // stands in front of the mountains without cutting across the sky.
-const BOX = { width: 304, top: 196, padding: 18 };
+// The sign's bottom edge stays put; more options make it taller upward.
+const BOX = { width: 304, bottom: 368, padding: 18 };
 const POST = { width: 14, inset: 48 }; // the sign's two wooden posts
 const MENU_SPACING = 14;
 const STRIP_HEIGHT = 30; // the slim dark bar along the bottom
@@ -56,6 +57,8 @@ export class TitleScene extends Phaser.Scene {
           });
         },
       },
+      // For players who've already read a paper: its boss fights only.
+      { label: "REVIEW", onSelect: () => this.scene.start("LevelSelect", { review: true }) },
       { label: "LEVEL SELECT", onSelect: () => this.scene.start("LevelSelect") },
       // Opens on the paper played last; every paper's board is a flip away.
       { label: "LEADERBOARD", onSelect: () => this.scene.start("Leaderboard", {}) },
@@ -72,16 +75,17 @@ export class TitleScene extends Phaser.Scene {
     // it stands in front of the mountains instead of floating across them.
     const rowsHeight = mainItems.length * (16 + MENU_SPACING) - MENU_SPACING;
     const boxHeight = rowsHeight + BOX.padding * 2;
+    const boxTop = BOX.bottom - boxHeight;
     const boxLeft = (GAME_WIDTH - BOX.width) / 2;
     for (const postX of [boxLeft + POST.inset, boxLeft + BOX.width - POST.inset - POST.width]) {
       this.add
-        .rectangle(postX, BOX.top + boxHeight, POST.width, GROUND_TOP - (BOX.top + boxHeight) + 6, NES.brown)
+        .rectangle(postX, BOX.bottom, POST.width, GROUND_TOP - BOX.bottom + 6, NES.brown)
         .setOrigin(0, 0)
         .setStrokeStyle(2, NES.black);
     }
-    panel(this, boxLeft, BOX.top, BOX.width, boxHeight);
+    panel(this, boxLeft, boxTop, BOX.width, boxHeight);
     const row = new ExtraRow(this, extraItems);
-    const menu = new Menu(this, GAME_WIDTH / 2, BOX.top + BOX.padding, mainItems, {
+    const menu = new Menu(this, GAME_WIDTH / 2, boxTop + BOX.padding, mainItems, {
       align: "center",
       spacing: MENU_SPACING,
       // Down past the last choice moves to the bottom row; up from the row comes back.

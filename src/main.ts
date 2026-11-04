@@ -16,6 +16,7 @@ import { PaperDetailScene } from "./scenes/PaperDetailScene";
 import { PaperSelectScene } from "./scenes/PaperSelectScene";
 import { PauseScene } from "./scenes/PauseScene";
 import { QuizReviewScene } from "./scenes/QuizReviewScene";
+import { ReviewResultsScene } from "./scenes/ReviewResultsScene";
 import { SettingsScene } from "./scenes/SettingsScene";
 import { TitleScene } from "./scenes/TitleScene";
 import { GAME_HEIGHT, GAME_WIDTH } from "./ui";
@@ -65,6 +66,7 @@ waitForFont().then(() => {
       NotebookScene,
       LevelSelectScene,
       QuizReviewScene,
+      ReviewResultsScene,
       FeedbackScene,
     ],
   });

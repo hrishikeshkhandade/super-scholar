@@ -1,4 +1,5 @@
 import type { Paper } from "./content/types";
+import type { ReviewScore } from "./review";
 
 // Where the player is in a paper: passed between the level, cutscene, and boss scenes.
 export interface StageData {
@@ -14,4 +15,6 @@ export interface StageData {
   levelFacts?: number[];
   // Played from the level select: doesn't count toward the leaderboard run.
   replay?: boolean;
+  // In review mode (boss fights only), the scores of the worlds reviewed so far.
+  review?: ReviewScore[];
 }

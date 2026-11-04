@@ -14,6 +14,7 @@ import type { Tuning } from "../difficulty";
 import { addPlayTime, bossQuestionKey, finishRun, recordAnswer, recordStars, runResult, loadRun } from "../run";
 import { formatTime } from "../leaderboard";
 import { bossStars } from "../stars";
+import { reviewStage, type ReviewScore } from "../review";
 import type { StageData } from "../stage";
 import { enablePause } from "./PauseScene";
 import type { BossArena, BossBehavior } from "./bosses/arena";
@@ -33,6 +34,7 @@ import {
   WIDEST_READING,
   centeredTop,
   onceAdvance,
+  type MenuItem,
   TITLE_CARD_MS,
   panel,
   showStars,
@@ -387,14 +389,18 @@ export class BossScene extends Phaser.Scene {
     const nextWorld = worldIndex + 1;
     const hasNextWorld = nextWorld < paper.worlds.length;
     audio.playSfx("clear");
-    markCleared(paper.id, worldIndex, "boss");
-    // After the last world, progress points past the end: the paper is
-    // finished, so CONTINUE turns off but the level select stays fully lit.
-    advanceProgress({ paperId: paper.id, worldIndex: nextWorld, checkpointsCleared: 0 });
+    // A review (boss fights only) never touches progress or the level map.
+    const { review } = this.stage;
+    if (!review) {
+      markCleared(paper.id, worldIndex, "boss");
+      // After the last world, progress points past the end: the paper is
+      // finished, so CONTINUE turns off but the level select stays fully lit.
+      advanceProgress({ paperId: paper.id, worldIndex: nextWorld, checkpointsCleared: 0 });
+    }
 
     this.tweens.add({ targets: this.boss, alpha: 0, angle: 90, y: this.boss.y + 40, duration: 800 });
     const stars = bossStars({ wrongAnswers: this.fight.wrongAnswers, hits: this.hits });
-    saveBestStars(paper.id, worldIndex, "boss", stars);
+    if (!review) saveBestStars(paper.id, worldIndex, "boss", stars);
     const { replay } = this.stage;
     if (!replay) recordStars(paper.id, worldIndex, "boss", stars);
 
@@ -405,7 +411,9 @@ export class BossScene extends Phaser.Scene {
     const result = run && runResult(paper, run);
 
     const missed = this.fight.missed;
-    const items = [
+    const total = paper.worlds[worldIndex].boss.questions.length;
+    const score: ReviewScore = { worldIndex, rightFirstTry: total - missed.length, total };
+    const items = review ? this.reviewItems([...review, score], hasNextWorld) : [
       ...(missed.length > 0
         ? [
             {
@@ -431,16 +439,29 @@ export class BossScene extends Phaser.Scene {
     const height = 230 + Math.max(items.length - 2, 0) * 36;
     const top = centeredTop(SKY, height);
     panel(this, 20, top, GAME_WIDTH - 40, height);
-    const heading = hasNextWorld ? "WORLD CLEAR!" : "PAPER COMPLETE!";
+    const heading = review ? (hasNextWorld ? "BOSS BEATEN!" : "REVIEW COMPLETE!") : hasNextWorld ? "WORLD CLEAR!" : "PAPER COMPLETE!";
     this.add.text(GAME_WIDTH / 2, top + 32, heading, textStyle(32, NES.yellow)).setOrigin(0.5);
     showStars(this, GAME_WIDTH / 2, top + 72, stars);
-    const message = hasNextWorld
-      ? "You beat the boss. On to the next section of the paper!"
-      : result
-        ? `${result.score}/${result.total} right on the first try. Time: ${result.timeMs === null ? "- (3 stars everywhere sets one)" : formatTime(result.timeMs)}`
-        : "You beat every world in this paper. Scholar status: legendary!";
+    const message = review
+      ? `${score.rightFirstTry}/${score.total} right on the first try. ${hasNextWorld ? "On to the next section's boss!" : "See how you did in each section."}`
+      : hasNextWorld
+        ? "You beat the boss. On to the next section of the paper!"
+        : result
+          ? `${result.score}/${result.total} right on the first try. Time: ${result.timeMs === null ? "- (3 stars everywhere sets one)" : formatTime(result.timeMs)}`
+          : "You beat every world in this paper. Scholar status: legendary!";
     this.add.text(GAME_WIDTH / 2, top + 118, message, textStyle(16, NES.white, GAME_WIDTH - 100)).setOrigin(0.5).setAlign("center");
     new Menu(this, 280, top + 160, items);
+  }
+
+  // In a review the way on is the next world's boss, or the results after the last.
+  private reviewItems(scores: ReviewScore[], hasNextWorld: boolean): MenuItem[] {
+    const { paper, worldIndex } = this.stage;
+    return [
+      hasNextWorld
+        ? { label: "NEXT BOSS", onSelect: () => this.scene.start("Boss", reviewStage(paper, worldIndex + 1, scores)) }
+        : { label: "SEE RESULTS", onSelect: () => this.scene.start("ReviewResults", { paper, scores }) },
+      { label: "TITLE SCREEN", onSelect: () => this.scene.start("Title") },
+    ];
   }
 
   private lose(): void {

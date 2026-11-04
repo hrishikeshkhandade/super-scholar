@@ -4,6 +4,7 @@ import { findPaper, playablePapers } from "../content/library";
 import type { Paper } from "../content/types";
 import { levelMap, mapProgress, type MapStop } from "../levelMap";
 import { NES, css } from "../palette";
+import { reviewStage } from "../review";
 import { loadCleared, loadProgress, loadStars, stageKey, startLives } from "../save";
 import { isTouchDevice } from "../touchControls";
 import { GAME_WIDTH, Menu, PointerGuard, showStars, textStyle } from "../ui";
@@ -11,10 +12,12 @@ import { listTop, paperLabel, shorten, tableLabels } from "./listLayout";
 import { drawMenuBackdrop } from "./backdrop";
 
 // Level select: pick a paper, then a map of its worlds where every cleared
-// level (and the next one to beat) can be played again.
+// level (and the next one to beat) can be played again. In review mode, the
+// paper list instead starts that paper's boss fights (see review.ts).
 
 interface LevelSelectData {
   paperId?: string;
+  review?: boolean;
 }
 
 const MAP_TOP = 82;
@@ -55,22 +58,28 @@ export class LevelSelectScene extends Phaser.Scene {
     drawMenuBackdrop(this);
     const paper = data.paperId ? findPaper(data.paperId) : undefined;
     if (paper) this.showMap(paper);
-    else this.showPapers();
+    else if (data.review) this.showPapers(true);
+    else this.showPapers(false);
   }
 
-  private showPapers(): void {
-    this.add.text(GAME_WIDTH / 2, 40, "LEVEL SELECT", textStyle(24, NES.yellow)).setOrigin(0.5);
-    this.add.text(GAME_WIDTH / 2, 80, "Replay any level you've cleared", textStyle(16, NES.sky)).setOrigin(0.5);
+  private showPapers(review: boolean): void {
+    this.add.text(GAME_WIDTH / 2, 40, review ? "REVIEW" : "LEVEL SELECT", textStyle(24, NES.yellow)).setOrigin(0.5);
+    const subtitle = review ? "Already read it? Test yourself, boss by boss" : "Replay any level you've cleared";
+    this.add.text(GAME_WIDTH / 2, 80, subtitle, textStyle(16, NES.sky)).setOrigin(0.5);
     const papers = playablePapers();
     const cleared = loadCleared();
     const progress = loadProgress();
     const { labels, x } = tableLabels(
       papers.map((paper) => {
+        if (review) return [paperLabel(paper), `${paper.worlds.length} BOSSES`];
         const { cleared: done, total } = mapProgress(levelMap(paper, cleared, progress));
         return [paperLabel(paper), `${done}/${total}`];
       }),
     );
-    const items = papers.map((paper, i) => ({ label: labels[i], onSelect: () => this.scene.restart({ paperId: paper.id }) }));
+    const items = papers.map((paper, i) => ({
+      label: labels[i],
+      onSelect: () => (review ? this.scene.start("Boss", reviewStage(paper, 0, [])) : this.scene.restart({ paperId: paper.id })),
+    }));
     new Menu(this, x, listTop(items.length + 1), [...items, { label: "BACK", onSelect: () => this.scene.start("Title") }]);
     this.input.keyboard?.on("keydown-ESC", () => this.scene.start("Title"));
   }
