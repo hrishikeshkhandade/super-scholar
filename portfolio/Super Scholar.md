@@ -20,7 +20,7 @@ Super Scholar turns a dense research paper into an NES-style platformer. Each se
 - **Levels** you run and jump through with WASD (or on-screen controls on a phone): jump chains, running jumps over wide pits, bears to time, and walls to climb. Stomping bears unlocks fun facts from the paper.
 - **A lesson** from the professor at the end of every level, followed by a practice question. A wrong pick shows in red with the right answer in green, then an explanation.
 - **A boss fight** at the end of every world. Stomp the boss to make it ask a question: a right answer hurts it, a wrong one makes it angrier, and missed questions come back for a second try.
-- **Review mode:** already read the paper? Skip the levels and test yourself on one section or all of them, boss by boss. The results mark each section KNOWN or RE-READ, and RE-READ opens that section's lessons, so the loop is test, re-read, test again.
+- **Review mode:** already read the paper? Skip the levels and test yourself on one section or all of them, boss by boss. The results mark each section KNOWN or RE-READ, and RE-READ opens that section's lessons, so the loop is test, re-read, test again. MISSED QUESTIONS retests only the questions you got wrong, and drops each one once you answer it right.
 - **The Scholar's Notebook:** every lesson, fact, and question you've unlocked, saved as flashcards to study later.
 - **Ask the Scholar:** after a lesson, type any question about it and get a short, plain-language answer with an everyday example.
 
@@ -46,7 +46,7 @@ I wanted to actually read papers like Avellaneda & Lee's *Statistical Arbitrage 
 **Learning**
 - Lessons with back-and-forth paging and short reading lines, so text is easy to follow
 - Practice questions after every lesson and quiz questions in every boss fight, with the right answer and an explanation after every miss
-- Review mode with per-section scores and RE-READ links into the lessons
+- Review mode with per-section scores, RE-READ links into the lessons, and a MISSED QUESTIONS round of just the questions you got wrong
 - A Notebook with one screen per paper: switch worlds and LESSONS / FACTS / CARDS tabs in place, question-first flashcards, and a line saying how to unlock what's left
 
 **Polish**
@@ -61,7 +61,7 @@ I wanted to actually read papers like Avellaneda & Lee's *Statistical Arbitrage 
 - **Frontend:** TypeScript (strict), Phaser 4, Vite, pdf.js for reading uploaded PDFs in the browser
 - **Backend:** Cloudflare Workers (static game plus a small API) and Cloudflare KV for saved AI worlds, feedback, and the leaderboard
 - **AI:** Gemini 3.5 Flash-Lite, with Gemini 3.1 Flash-Lite and Groq (Llama 3.3 70B) as fallbacks; API keys kept server-side as secrets; AI output is checked for copying, length, and repeated facts before it's played
-- **Testing:** Vitest (175 tests) plus 12 Playwright play-through checks that play the real game in a hidden browser and screenshot each screen; every deploy runs both, so a broken jump or an overflowing text box stops the release
+- **Testing:** Vitest (179 tests) plus 14 Playwright play-through checks that play the real game in a hidden browser and screenshot each screen; every deploy runs both, so a broken jump or an overflowing text box stops the release
 - **Security:** Content Security Policy and security headers, rate limits on every API route, input validation, secret scanning, and a dependency audit
 - **Tools:** Built with AI assistance
 
