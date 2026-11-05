@@ -2,9 +2,11 @@ import { describe, expect, it } from "vitest";
 import { LIBRARY } from "../src/content/library";
 import {
   clearProgress,
+  hasSentFeedback,
   loadProgress,
   loadSettings,
   loadUploadedPapers,
+  markFeedbackSent,
   saveProgress,
   saveSettings,
   saveUploadedPaper,
@@ -70,6 +72,16 @@ describe("save data", () => {
     const storage = memoryStorage();
     storage.setItem("super-scholar.settings", JSON.stringify({ music: false, sfx: true }));
     expect(loadSettings(storage)).toMatchObject({ musicVolume: 0, sfxVolume: 100 });
+  });
+
+  it("remembers that feedback was sent, even after progress is erased", () => {
+    const storage = memoryStorage();
+    expect(hasSentFeedback(storage)).toBe(false);
+    markFeedbackSent(storage);
+    expect(hasSentFeedback(storage)).toBe(true);
+    clearProgress(storage);
+    expect(hasSentFeedback(storage)).toBe(true);
+    expect(hasSentFeedback(null)).toBe(false);
   });
 
   it("still works when storage is unavailable", () => {

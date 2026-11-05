@@ -190,9 +190,9 @@ test("touching the boss shows the don't-touch tip once per fight", async ({ page
 test("the boss's win and game-over boxes sit centered in the sky", async ({ page }) => {
   await openGame(page);
   const cases = [
-    { name: "9-world-clear", worldIndex: 0, replay: true, miss: true, buttons: ["REVIEW MISSES (1)", "NEXT WORLD", "TITLE SCREEN"] },
-    { name: "9-world-clear-no-misses", worldIndex: 0, replay: true, miss: false, buttons: ["NEXT WORLD", "TITLE SCREEN"] },
-    { name: "9-paper-complete", worldIndex: 4, replay: false, miss: true, buttons: ["REVIEW MISSES (1)", "LEADERBOARD", "TITLE SCREEN"] },
+    { name: "9-world-clear", worldIndex: 0, replay: true, miss: true, buttons: ["REVIEW MISSES (1)", "NEXT WORLD", "SEND FEEDBACK", "TITLE SCREEN"] },
+    { name: "9-world-clear-no-misses", worldIndex: 0, replay: true, miss: false, buttons: ["NEXT WORLD", "SEND FEEDBACK", "TITLE SCREEN"] },
+    { name: "9-paper-complete", worldIndex: 4, replay: false, miss: true, buttons: ["REVIEW MISSES (1)", "LEADERBOARD", "SEND FEEDBACK", "TITLE SCREEN"] },
     { name: "9-game-over", worldIndex: 0, replay: true, miss: false, buttons: ["RETRY BOSS", "TITLE SCREEN"] },
   ];
   for (const fightCase of cases) {
@@ -219,6 +219,32 @@ test("the boss's win and game-over boxes sit centered in the sky", async ({ page
     expect(result.problems).toEqual([]);
     for (const button of fightCase.buttons) expect(result.labels).toContain(button);
   }
+});
+
+test("beating a boss offers SEND FEEDBACK until this device has sent some", async ({ page }) => {
+  await openGame(page);
+  // Pretend the server took it, so the check never sends real feedback.
+  await page.route("**/api/feedback", (route) => route.fulfill({ status: 200, body: "{}" }));
+  const winLabels = () =>
+    page.evaluate(async (library) => {
+      const { LIBRARY } = await window.importGame(library);
+      const boss = window.startScene("Boss", { paper: LIBRARY[0], worldIndex: 0, checkpointsCleared: 3, lives: 5, replay: true });
+      for (let frame = 0; frame < 600 && boss.mode !== "fight"; frame++) window.steps(1);
+      window.hideOverlays(boss);
+      boss.win();
+      window.steps(10);
+      return boss.children.list.filter((object: any) => object.type === "Text" && object.input?.enabled).map((text: any) => text.text);
+    }, LIBRARY);
+
+  expect(await winLabels()).toContain("SEND FEEDBACK");
+  await chooseOption(page, "Boss", "SEND FEEDBACK");
+  expect(await activeScenes(page)).toContain("Feedback");
+  await page.locator('fieldset[data-rating="fun"] button', { hasText: "5" }).click();
+  await page.locator("#feedback-send").click();
+  await expect(page.locator("#feedback-status")).toHaveText("Thanks! Your feedback was sent.");
+  await page.locator("#feedback-back").click();
+
+  expect(await winLabels()).not.toContain("SEND FEEDBACK");
 });
 
 test("double-clicking BACK on the credits screen stays on the title screen", async ({ page }) => {

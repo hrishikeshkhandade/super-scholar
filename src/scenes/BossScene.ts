@@ -9,7 +9,7 @@ import { THEMES } from "../levels/themes";
 import { NES, css } from "../palette";
 import { GRAVITY, JUMP_VELOCITY } from "../jump";
 import { PlayerController, makeOneWay, type Sprite } from "../player";
-import { advanceProgress, currentTuning, forgetNote, markCleared, saveBestStars, startLives, unlockNote } from "../save";
+import { advanceProgress, currentTuning, forgetNote, hasSentFeedback, markCleared, saveBestStars, startLives, unlockNote } from "../save";
 import type { Tuning } from "../difficulty";
 import { addPlayTime, bossQuestionKey, finishRun, recordAnswer, recordStars, runResult, loadRun } from "../run";
 import { formatTime } from "../leaderboard";
@@ -454,6 +454,9 @@ export class BossScene extends Phaser.Scene {
           ]
         : []),
       ...(result ? [{ label: "LEADERBOARD", onSelect: () => this.scene.start("Leaderboard", { paperId: paper.id }) }] : []),
+      // Players rarely find FEEDBACK on the title screen; a boss win is a good
+      // moment to ask, until this browser has sent some.
+      ...(hasSentFeedback() ? [] : [{ label: "SEND FEEDBACK", onSelect: () => this.scene.start("Feedback") }]),
       { label: "TITLE SCREEN", onSelect: () => this.scene.start("Title") },
     ];
     // Each option past two makes the panel taller; it stays centered in the sky.

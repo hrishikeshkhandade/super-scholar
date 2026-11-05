@@ -3,6 +3,7 @@ import { audio } from "../audio/audio";
 import { RATING_QUESTIONS, TEXT_QUESTIONS } from "../feedbackQuestions";
 import { isTouchDevice } from "../touchControls";
 import { showOverGame } from "../htmlOverlay";
+import { markFeedbackSent } from "../save";
 import { GAME_HEIGHT, GAME_WIDTH } from "../ui";
 import { PANEL_INNER, drawMenuBackdrop } from "./backdrop";
 
@@ -119,6 +120,7 @@ export class FeedbackScene extends Phaser.Scene {
       if (!this.scene.isActive()) return;
       if (response.status === 429) throw new Error("Too many sends. Wait a minute and try again.");
       if (!response.ok) throw new Error("Couldn't send it. Try again in a moment.");
+      markFeedbackSent();
       audio.playSfx("powerup");
       this.setStatus("Thanks! Your feedback was sent.");
       this.sendButton.textContent = "SENT";

@@ -34,6 +34,7 @@ const UPLOADS_KEY = "super-scholar.uploads";
 const NOTEBOOK_KEY = "super-scholar.notebook";
 const CLEARED_KEY = "super-scholar.cleared";
 const STARS_KEY = "super-scholar.stars";
+const FEEDBACK_SENT_KEY = "super-scholar.feedbackSent";
 const MAX_SAVED_UPLOADS = 3;
 // 100% is the game's original loudness.
 export const VOLUME_LEVELS = [0, 25, 50, 75, 100];
@@ -138,6 +139,13 @@ export const startLives = (storage: Storage | null = browserStorage()) => curren
 
 export function saveSettings(settings: Settings, storage: Storage | null = browserStorage()): void {
   writeJson(storage, SETTINGS_KEY, settings);
+}
+
+// Whether feedback was ever sent from this browser, so the game stops asking.
+export const hasSentFeedback = (storage: Storage | null = browserStorage()) => readJson(storage, FEEDBACK_SENT_KEY) === true;
+
+export function markFeedbackSent(storage: Storage | null = browserStorage()): void {
+  writeJson(storage, FEEDBACK_SENT_KEY, true);
 }
 
 // Games made from uploaded PDFs, newest first, so they can be continued later.
