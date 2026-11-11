@@ -33,10 +33,10 @@ These play parts of the real game in a hidden browser (`e2e/game.e2e.ts`): the t
 
 ## The tutorial's voice
 
-The professor's tour (`src/tutorial.ts`) plays a recorded line per step from `public/tutorial/`. The recordings are made on this computer with Kokoro, an open voice model (the "bm_lewis" voice), so the game needs no voice service. After changing a line's words, record it again (setup steps are at the top of the script):
+The professor's tour (`src/tutorial.ts`) plays a recorded line per step from `public/tutorial/`. The lines are recorded once with ElevenLabs (the "Liam" voice, free plan, credited on the CREDITS screen) and shipped as MP3s, so the game never calls a voice service. After changing a line's words, record it again. This needs an ElevenLabs API key in `.env` (setup steps are at the top of the script):
 
 ```bash
-~/kokoro/bin/python scripts/recordTutorial.py <folder with the Kokoro model files>
+python3 scripts/recordTutorial.py
 ```
 
 Only changed lines are re-recorded. `npm test` fails while a line's words and its recording disagree.

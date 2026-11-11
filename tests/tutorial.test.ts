@@ -22,9 +22,8 @@ describe("the professor's tour", () => {
 
   it("speaks menu names as words, abbreviations and keys as letters", () => {
     expect(spokenText("NEW GAME lets you upload your own PDF.")).toBe("new game lets you upload your own PDF.");
-    expect(spokenText("Press A and D to run, and W or Space to jump.")).toBe("Press Eigh and D to run, and W or Space to jump.");
-    // A sentence starting with the word "A" keeps it.
-    expect(spokenText("A wrong answer. A bear!")).toBe("A wrong answer. A bear!");
+    // Single letters are keys, left as they are.
+    expect(spokenText("Press A and D to run, and W or Space to jump.")).toBe("Press A and D to run, and W or Space to jump.");
   });
 
   it("shows phones the touch wording where a step has one", () => {

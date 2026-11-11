@@ -94,7 +94,9 @@ export class CreditsScene extends Phaser.Scene {
     icon(menuY + 8, "linkedin", LINKEDIN_URL);
     icon(menuY + rowHeight + 8, "github", GITHUB_URL);
 
-    centered(408, "Made with Phaser, pdf.js & OpenAlex", 16, NES.sky);
+    centered(398, "Made with Phaser, pdf.js & OpenAlex", 16, NES.sky);
+    // ElevenLabs' free plan asks to be credited for the tutorial's voice.
+    centered(422, "Tutorial voice by ElevenLabs", 16, NES.sky);
     this.input.keyboard?.on("keydown-ESC", back);
   }
 }
