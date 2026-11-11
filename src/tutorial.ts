@@ -163,10 +163,14 @@ export const TUTORIAL_STEPS: TutorialStep[] = [
 
 // Menu names are written in capitals on screen, but a voice reads capitals
 // as letters ("N-E-W"), so they're spoken in lowercase. Real abbreviations
-// stay spelled out.
+// stay spelled out. The key A, mid-sentence, would be read as the word "a"
+// ("press uh and D", which the student heard as muffled), so it's spelled
+// the way the letter sounds.
 const SPELLED_OUT = new Set(["PDF"]);
 export const spokenText = (text: string): string =>
-  text.replace(/\b[A-Z]{2,}\b/g, (word) => (SPELLED_OUT.has(word) ? word : word.toLowerCase()));
+  text
+    .replace(/\b[A-Z]{2,}\b/g, (word) => (SPELLED_OUT.has(word) ? word : word.toLowerCase()))
+    .replace(/(?<![.!?]\s*|^)\bA\b/g, "Eigh");
 
 export const voiceFile = (id: string): string => `tutorial/${id}.mp3`;
 

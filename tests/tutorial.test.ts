@@ -20,9 +20,11 @@ describe("the professor's tour", () => {
     expect(new Set(ids).size).toBe(ids.length);
   });
 
-  it("speaks menu names as words but spells out abbreviations and single keys", () => {
+  it("speaks menu names as words, abbreviations and keys as letters", () => {
     expect(spokenText("NEW GAME lets you upload your own PDF.")).toBe("new game lets you upload your own PDF.");
-    expect(spokenText("Press A and D to run, and W or Space to jump.")).toBe("Press A and D to run, and W or Space to jump.");
+    expect(spokenText("Press A and D to run, and W or Space to jump.")).toBe("Press Eigh and D to run, and W or Space to jump.");
+    // A sentence starting with the word "A" keeps it.
+    expect(spokenText("A wrong answer. A bear!")).toBe("A wrong answer. A bear!");
   });
 
   it("shows phones the touch wording where a step has one", () => {
