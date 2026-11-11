@@ -44,8 +44,8 @@ describe("save data", () => {
 
   it("starts with default settings and remembers changes", () => {
     const storage = memoryStorage();
-    expect(loadSettings(storage)).toEqual({ textSpeed: "normal", musicVolume: 100, musicStyle: "upbeat", sfxVolume: 100, difficulty: "normal" });
-    const changed = { textSpeed: "fast", musicVolume: 25, musicStyle: "tradingFloor", sfxVolume: 0, difficulty: "hard" } as const;
+    expect(loadSettings(storage)).toEqual({ textSpeed: "normal", musicVolume: 100, musicStyle: "tradingFloor", sfxVolume: 100, difficulty: "normal" });
+    const changed = { textSpeed: "fast", musicVolume: 25, musicStyle: "upbeat", sfxVolume: 0, difficulty: "hard" } as const;
     saveSettings(changed, storage);
     expect(loadSettings(storage)).toEqual(changed);
   });
@@ -53,9 +53,9 @@ describe("save data", () => {
   it("keeps old saves working and ignores bad setting values", () => {
     const storage = memoryStorage();
     storage.setItem("super-scholar.settings", JSON.stringify({ textSpeed: "slow" }));
-    expect(loadSettings(storage)).toEqual({ textSpeed: "slow", musicVolume: 100, musicStyle: "upbeat", sfxVolume: 100, difficulty: "normal" });
+    expect(loadSettings(storage)).toEqual({ textSpeed: "slow", musicVolume: 100, musicStyle: "tradingFloor", sfxVolume: 100, difficulty: "normal" });
     storage.setItem("super-scholar.settings", JSON.stringify({ musicVolume: 33, sfxVolume: "loud", musicStyle: "jazz" }));
-    expect(loadSettings(storage)).toMatchObject({ musicVolume: 100, sfxVolume: 100, musicStyle: "upbeat" });
+    expect(loadSettings(storage)).toMatchObject({ musicVolume: 100, sfxVolume: 100, musicStyle: "tradingFloor" });
   });
 
   it("starts worlds with fewer hearts on HARD, and falls back to NORMAL for bad values", () => {

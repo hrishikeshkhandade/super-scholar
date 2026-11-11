@@ -39,7 +39,7 @@ const TUTORIAL_SEEN_KEY = "super-scholar.tutorialSeen";
 const MAX_SAVED_UPLOADS = 3;
 // 100% is the game's original loudness.
 export const VOLUME_LEVELS = [0, 25, 50, 75, 100];
-const DEFAULT_SETTINGS: Settings = { textSpeed: "normal", musicVolume: 100, musicStyle: "upbeat", sfxVolume: 100, difficulty: "normal" };
+const DEFAULT_SETTINGS: Settings = { textSpeed: "normal", musicVolume: 100, musicStyle: "tradingFloor", sfxVolume: 100, difficulty: "normal" };
 
 // A saved volume, or an on/off switch from saves made before volume levels.
 function volumeFrom(value: unknown, legacySwitch: unknown, fallback: number): number {
