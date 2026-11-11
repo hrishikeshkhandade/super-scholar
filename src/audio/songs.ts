@@ -2,7 +2,7 @@
 // "C5", "F#4" or "Bb2", or "." for a rest. Drums use k (kick), s (snare),
 // and h (hi-hat). Every voice in a song has the same number of steps.
 
-export type MusicStyle = "upbeat" | "tradingFloor";
+export type MusicStyle = "upbeat" | "tradingFloor" | "study";
 export type SongName = "title" | "level" | "boss";
 
 export interface Song {
@@ -119,6 +119,57 @@ export const SONGS: Record<MusicStyle, Record<SongName, Song>> = {
         "G1 G2 G1 G2 B1 B2 B1 B2",
       ].join(" "),
       drums: repeat("k h s h k k s h", 4),
+    },
+  },
+  // Slow and soft, for reading lessons: jazzy seventh chords played as
+  // gentle arpeggios over a sparse beat. The boss keeps a bit more motion.
+  study: {
+    title: {
+      bpm: 76,
+      lead: [
+        "A4 . C5 . E5 . . .",
+        "G4 . B4 . D5 . . .",
+        "F4 . A4 . C5 . . .",
+        "E4 . G4 . B4 . . .",
+      ].join(" "),
+      bass: [
+        "F2 . . . F2 . C3 .",
+        "E2 . . . E2 . B2 .",
+        "D2 . . . D2 . A2 .",
+        "C2 . . . C2 . G2 .",
+      ].join(" "),
+      drums: repeat("k . . h s . . h", 4),
+    },
+    level: {
+      bpm: 92,
+      lead: [
+        "F5 . E5 . D5 . . .",
+        "F5 . . . E5 D5 B4 .",
+        "E5 . . . G5 . . .",
+        "C5 . . . . . . .",
+        "A4 . C5 . F5 . E5 .",
+        "D5 . . . B4 . G4 .",
+        "E5 . D5 . C5 . B4 .",
+        "A4 . . . . . . .",
+      ].join(" "),
+      bass: repeat(["D2 . . . A2 . . .", "G2 . . . D3 . . .", "C2 . . . G2 . . .", "A1 . . . E2 . . ."].join(" "), 2),
+      drums: repeat("k . h . s . h .", 8),
+    },
+    boss: {
+      bpm: 116,
+      lead: [
+        "A4 . C5 . E5 . C5 .",
+        "F4 . A4 . C5 . A4 .",
+        "G4 . B4 . D5 . B4 .",
+        "G#4 . B4 . E5 . . .",
+      ].join(" "),
+      bass: [
+        "A1 . A2 . A1 . A2 .",
+        "F1 . F2 . F1 . F2 .",
+        "G1 . G2 . G1 . G2 .",
+        "E1 . E2 . E1 . E2 .",
+      ].join(" "),
+      drums: repeat("k . h . s . h h", 4),
     },
   },
 };

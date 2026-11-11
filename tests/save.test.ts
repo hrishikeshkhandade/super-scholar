@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { SONGS } from "../src/audio/songs";
 import { LIBRARY } from "../src/content/library";
 import {
   clearProgress,
@@ -9,6 +10,7 @@ import {
   loadUploadedPapers,
   markFeedbackSent,
   markTutorialSeen,
+  MUSIC_STYLES,
   saveProgress,
   saveSettings,
   saveUploadedPaper,
@@ -48,6 +50,13 @@ describe("save data", () => {
     const changed = { textSpeed: "fast", musicVolume: 25, musicStyle: "upbeat", sfxVolume: 0, difficulty: "hard" } as const;
     saveSettings(changed, storage);
     expect(loadSettings(storage)).toEqual(changed);
+  });
+
+  it("remembers the STUDY music style, and offers every style that has songs", () => {
+    const storage = memoryStorage();
+    saveSettings({ ...loadSettings(storage), musicStyle: "study" }, storage);
+    expect(loadSettings(storage).musicStyle).toBe("study");
+    expect([...MUSIC_STYLES].sort()).toEqual(Object.keys(SONGS).sort());
   });
 
   it("keeps old saves working and ignores bad setting values", () => {

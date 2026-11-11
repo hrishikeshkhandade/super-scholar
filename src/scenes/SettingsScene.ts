@@ -6,7 +6,7 @@ import { MUSIC_STYLES, TEXT_SPEEDS, VOLUME_LEVELS, clearProgress, loadSettings, 
 import { GAME_WIDTH, Menu, textStyle, volumeLabel } from "../ui";
 import { drawMenuBackdrop } from "./backdrop";
 
-const STYLE_LABELS = { upbeat: "UPBEAT", tradingFloor: "TRADING FLOOR" } as const;
+const STYLE_LABELS = { upbeat: "UPBEAT", tradingFloor: "TRADING FLOOR", study: "STUDY" } as const;
 
 export class SettingsScene extends Phaser.Scene {
   constructor() {

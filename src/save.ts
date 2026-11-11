@@ -23,7 +23,7 @@ export interface Settings {
   difficulty: Difficulty;
 }
 
-export const MUSIC_STYLES: MusicStyle[] = ["upbeat", "tradingFloor"];
+export const MUSIC_STYLES: MusicStyle[] = ["upbeat", "tradingFloor", "study"];
 
 export const TEXT_SPEED_MS: Record<TextSpeed, number> = { slow: 45, normal: 25, fast: 8 };
 export const TEXT_SPEEDS: TextSpeed[] = ["slow", "normal", "fast"];
