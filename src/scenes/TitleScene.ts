@@ -41,9 +41,10 @@ export class TitleScene extends Phaser.Scene {
         label: "NEW GAME",
         onSelect: () => {
           this.registry.set(LAST_QUERY_KEY, "");
-          // A new player's first game starts with the professor's tour, over this screen.
+          // A new player's first game starts with the professor's tour, over this
+          // screen. It ends back here, home, wherever it's closed.
           if (hasSeenTutorial()) this.scene.start("PaperSelect");
-          else this.scene.launch("Tutorial", { then: { scene: "PaperSelect" } });
+          else this.scene.launch("Tutorial", { then: { scene: "Title" } });
         },
       },
       {

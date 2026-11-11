@@ -230,6 +230,9 @@ export class Menu {
 
   private handleKey(event: KeyboardEvent): void {
     if (!this.active || this.items.length === 0 || event.repeat) return;
+    // Keys wait the same short moment as clicks, so Space mashed through the
+    // screen before (like the tour's last line) doesn't pick an option here.
+    if (!this.pointer.canClick) return;
     const typing = isTypingInInput(event);
     const key = event.key.toLowerCase();
     if (key === "arrowup" || (key === "w" && !typing)) this.move(-1);

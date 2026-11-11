@@ -70,11 +70,14 @@ test("a new player's first NEW GAME starts the professor's tour, every step neat
     await press(page, " "); // next line
   }
   expect(problems).toEqual([]);
-  expect(await activeScenes(page)).toEqual(["PaperSelect"]);
+  // Finishing the tour lands on the home screen, not a paper list.
+  expect(await activeScenes(page)).toEqual(["Title"]);
+  // Space mashed past the last line doesn't pick NEW GAME on the title behind it.
+  await press(page, " ");
+  expect(await activeScenes(page)).toEqual(["Title"]);
   for (const step of TUTORIAL_STEPS) expect(voices).toContain(`/tutorial/${step.id}.mp3`);
 
   // Seen once: NEW GAME goes straight to choosing a paper.
-  await chooseOption(page, "PaperSelect", "BACK");
   await chooseOption(page, "Title", "NEW GAME");
   expect(await activeScenes(page)).toEqual(["PaperSelect"]);
   expect(errors).toEqual([]);
@@ -87,7 +90,7 @@ test("the X ends the tour from any step, and ABOUT can replay it", async ({ page
     await press(page, " ");
     await press(page, " ");
   }
-  // Step 5 is on the frozen level; the X closes everything.
+  // Step 5 is on the frozen level; the X closes everything and goes home.
   const screensBefore = await page.evaluate(() => ["Level", "Title"].filter((key) => window.game.scene.isPaused(key)));
   expect(screensBefore).toEqual(["Level"]);
   await page.evaluate(() => {
@@ -96,11 +99,10 @@ test("the X ends the tour from any step, and ABOUT can replay it", async ({ page
     tour.children.list.find((object: any) => object.type === "Rectangle" && object.input?.enabled).emit("pointerdown", {});
     window.steps(5);
   });
-  expect(await activeScenes(page)).toEqual(["PaperSelect"]);
+  expect(await activeScenes(page)).toEqual(["Title"]);
   expect(await page.evaluate(() => window.game.scene.isPaused("Level") || window.game.scene.isActive("Level"))).toBe(false);
 
   // ABOUT's TUTORIAL plays it again from the start, and Esc ends it back on ABOUT.
-  await chooseOption(page, "PaperSelect", "BACK");
   await chooseOption(page, "Title", "ABOUT");
   await page.screenshot({ path: `${SHOTS}/tutorial-about.png` });
   await chooseOption(page, "About", "TUTORIAL");
