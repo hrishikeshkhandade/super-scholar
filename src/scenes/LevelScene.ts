@@ -120,7 +120,7 @@ export class LevelScene extends Phaser.Scene {
     this.physics.world.setBoundsCollision(true, true, false, false);
 
     this.drawBackground();
-    audio.playMusic("level");
+    if (!data.preview) audio.playMusic("level");
 
     this.solids = this.physics.add.staticGroup();
     for (const tile of level.ground) this.solids.create(center(tile).x, center(tile).y, tile.top ? groundTopKey(this.theme) : groundKey(this.theme));
@@ -250,7 +250,9 @@ export class LevelScene extends Phaser.Scene {
     this.tweens.add({ targets: hint, alpha: 0, delay: 4000 + cardMs, duration: 800 });
     const firstLevel = this.stage.worldIndex === 0 && this.stage.checkpointsCleared === 0;
     this.createFactTicker();
-    if (freshStart) {
+    if (this.stage.preview) {
+      hint.setVisible(false);
+    } else if (freshStart) {
       this.cardShowing = showTitleCard(
         this,
         { title: `WORLD ${this.stage.worldIndex + 1}-${this.stage.checkpointsCleared + 1}`, subtitle: levelName.toUpperCase(), detail: world.name },

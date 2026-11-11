@@ -225,6 +225,15 @@ export const sceneTexts = (page: Page, sceneKey: string, { visibleOnly = false }
     { sceneKey, visibleOnly },
   );
 
+// Animations (like the professor popping up) move with real time, not with
+// the frames the checks step through, so let some pass between frames.
+export async function letAnimationsFinish(page: Page): Promise<void> {
+  for (let i = 0; i < 12; i++) {
+    await page.waitForTimeout(50);
+    await page.evaluate(() => window.steps(1));
+  }
+}
+
 // Clicks the option whose text starts with label, as a player would (after
 // the moment a new screen ignores clicks).
 export const chooseOption = (page: Page, sceneKey: string, label: string): Promise<void> =>

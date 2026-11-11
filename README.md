@@ -29,7 +29,17 @@ npx playwright install chromium   # once per machine
 npm run check:game
 ```
 
-These play parts of the real game in a hidden browser (`e2e/game.e2e.ts`): the title loads with no errors, clearing 1-1 shows what was saved to the Notebook, the jump lands on sky blocks and boss platforms, a missed boss question comes back tagged, touching the boss shows its tip once, the boss's win and game-over boxes are centered in the sky, a quick double-click on Credits BACK (or a click just after the title opens) doesn't pick a title option, and every built-in question and answer box fits. They start the dev server themselves and save a screenshot of each checked screen to `e2e/screenshots/`.
+These play parts of the real game in a hidden browser (`e2e/game.e2e.ts`): the title loads with no errors, clearing 1-1 shows what was saved to the Notebook, the jump lands on sky blocks and boss platforms, a missed boss question comes back tagged, touching the boss shows its tip once, the boss's win and game-over boxes are centered in the sky, a quick double-click on Credits BACK (or a click just after the title opens) doesn't pick a title option, every built-in question and answer box fits, and the professor's tour (`e2e/tutorial.e2e.ts`) starts on a first NEW GAME with every step neat on its own screen and the X ending it. `e2e/phone.e2e.ts` repeats key screens on a phone-sized touch screen. They start the dev server themselves and save a screenshot of each checked screen to `e2e/screenshots/`.
+
+## The tutorial's voice
+
+The professor's tour (`src/tutorial.ts`) plays a recorded line per step from `public/tutorial/`. The recordings are made on this computer with Kokoro, an open voice model (the "bm_lewis" voice), so the game needs no voice service. After changing a line's words, record it again (setup steps are at the top of the script):
+
+```bash
+~/kokoro/bin/python scripts/recordTutorial.py <folder with the Kokoro model files>
+```
+
+Only changed lines are re-recorded. `npm test` fails while a line's words and its recording disagree.
 
 ## Deploy
 

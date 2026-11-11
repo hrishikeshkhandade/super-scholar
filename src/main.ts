@@ -19,6 +19,7 @@ import { QuizReviewScene } from "./scenes/QuizReviewScene";
 import { ReviewResultsScene } from "./scenes/ReviewResultsScene";
 import { SettingsScene } from "./scenes/SettingsScene";
 import { TitleScene } from "./scenes/TitleScene";
+import { TutorialScene } from "./scenes/TutorialScene";
 import { GAME_HEIGHT, GAME_WIDTH } from "./ui";
 
 async function waitForFont(): Promise<void> {
@@ -68,6 +69,8 @@ waitForFont().then(() => {
       QuizReviewScene,
       ReviewResultsScene,
       FeedbackScene,
+      // Last, so the tour draws on top of the real screens frozen behind it.
+      TutorialScene,
     ],
   });
   // Every screen fades in from black instead of cutting. The pause menu is

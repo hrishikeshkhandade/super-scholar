@@ -20,6 +20,8 @@ export interface CutsceneData {
   askAbout?: string;
   // The leaderboard run's record of this lesson's practice question.
   runQuestion?: { paperId: string; key: string };
+  // Drawn frozen behind the tutorial, with the first page already shown.
+  preview?: boolean;
 }
 
 // The professor stands on the left and the speech box sits on the right, so
@@ -28,6 +30,7 @@ export interface CutsceneData {
 const PROFESSOR = { x: 150, y: 290, scale: 4 }; // standing on the ground
 // Tall enough for the longest page (190 letters) with room to spare.
 const BOX = { x: 290, y: 116, width: GAME_WIDTH - 310, height: 240 };
+export const LESSON_BOX = BOX; // the tutorial points at it
 const TITLE_Y = 36;
 const AFTER_PRACTICE_MENU_Y = 372;
 // The practice question's box, which may grow up to just under its headings.
@@ -95,6 +98,7 @@ export class CutsceneScene extends Phaser.Scene {
     });
 
     this.showPage(0);
+    if (data.preview) this.finishTyping();
   }
 
   // Forward: D, S, right/down arrow, Space, Enter, or click.

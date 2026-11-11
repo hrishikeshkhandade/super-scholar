@@ -46,7 +46,8 @@ export class AboutScene extends Phaser.Scene {
     });
     this.add.text(40, 266, GOAL_TEXT, textStyle(16, NES.white, GAME_WIDTH - 80));
 
-    new Menu(this, 330, 352, [
+    new Menu(this, 330, 330, [
+      { label: "TUTORIAL", onSelect: () => this.scene.start("Tutorial", { then: { scene: "About" } }) },
       { label: "CREDITS", onSelect: () => this.scene.start("Credits", { from: "About" }) },
       { label: "BACK", onSelect: () => this.scene.start("Title") },
     ]);

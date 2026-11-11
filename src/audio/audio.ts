@@ -25,6 +25,7 @@ const LOOKAHEAD_S = 0.12;
 const SCHEDULE_EVERY_MS = 25;
 const MUSIC_VOLUME = 0.35;
 const SFX_VOLUME = 0.5;
+const DUCKED_MUSIC = 0.3; // share of the music's volume left under a voice
 
 interface Voices {
   lead: string[];
@@ -45,6 +46,8 @@ class AudioEngine {
   private step = 0;
   private nextStepTime = 0;
   private timer?: ReturnType<typeof setInterval>;
+  private voice?: HTMLAudioElement;
+  private musicDucked = false;
 
   // Browsers only allow sound after the player presses a key or clicks, so
   // the audio context is created on that first interaction.
@@ -82,8 +85,33 @@ class AudioEngine {
 
   // 100% is the original loudness; lower levels scale it down.
   private applyVolumes(): void {
-    if (this.musicGain) this.musicGain.gain.value = (MUSIC_VOLUME * this.settings.musicVolume) / 100;
+    const duck = this.musicDucked ? DUCKED_MUSIC : 1;
+    if (this.musicGain) this.musicGain.gain.value = (MUSIC_VOLUME * this.settings.musicVolume * duck) / 100;
     if (this.sfxGain) this.sfxGain.gain.value = (SFX_VOLUME * this.settings.sfxVolume) / 100;
+  }
+
+  // Quieter music while someone talks over it (the tutorial's professor).
+  setMusicDucked(ducked: boolean): void {
+    this.musicDucked = ducked;
+    this.applyVolumes();
+  }
+
+  // Plays one recorded line, the one voice in the game, at the sound effects
+  // volume. A line that can't play (no sound allowed yet, or offline) is
+  // skipped: its words are on screen too. Returns false when sound is off.
+  speak(url: string, onEnd: () => void): boolean {
+    this.stopSpeaking();
+    if (this.settings.sfxVolume === 0) return false;
+    const voice = (this.voice = new Audio(url));
+    voice.volume = this.settings.sfxVolume / 100;
+    voice.addEventListener("ended", onEnd);
+    voice.play().catch(onEnd);
+    return true;
+  }
+
+  stopSpeaking(): void {
+    this.voice?.pause();
+    this.voice = undefined;
   }
 
   playSfx(name: SfxName): void {

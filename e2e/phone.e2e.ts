@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { SHOTS, openGame } from "./play";
+import { SHOTS, letAnimationsFinish, openGame } from "./play";
 
 // The same game on a phone held sideways, with a touch screen. The 800x450
 // game is scaled down to fit, so everything tappable must still be big
@@ -65,4 +65,31 @@ test("on a phone, every option on the menus and new screens is big enough to tap
     for (const { label, height } of result) if (height < MIN_TAP_HEIGHT) tooSmall.push(`${name}: "${label}" is ${height}px tall`);
   }
   expect(tooSmall).toEqual([]);
+});
+
+test("on a phone, the professor's tour says how to tap, and its X is easy to hit", async ({ page }) => {
+  await openGame(page);
+  const voices: string[] = [];
+  page.on("request", (request) => voices.push(new URL(request.url()).pathname));
+  const step = await page.evaluate(() => {
+    window.steps(20);
+    const title = window.game.scene.getScene("Title");
+    title.children.list.find((object: any) => object.type === "Text" && object.text === "NEW GAME").emit("pointerdown", {});
+    window.steps(5);
+    const tour = window.game.scene.getScene("Tutorial");
+    tour.forward(); // the whole welcome line
+    tour.forward(); // on to the controls
+    window.steps(5);
+    tour.forward();
+    window.steps(2);
+    const texts = tour.children.list.filter((object: any) => object.type === "Text").map((text: any) => text.text);
+    const scale = document.querySelector("canvas")!.getBoundingClientRect().width / 800;
+    return { texts, closeSize: Math.round(tour.layout.close.height * scale) };
+  });
+  await letAnimationsFinish(page);
+  await page.screenshot({ path: `${SHOTS}/phone-tutorial-controls.png` });
+  expect(step.texts).toContain("Hold the arrow buttons to run, and press the jump button to jump.");
+  expect(step.texts).toContain("TAP: NEXT");
+  expect(voices).toContain("/tutorial/controls-touch.mp3");
+  expect(step.closeSize).toBeGreaterThanOrEqual(MIN_TAP_HEIGHT);
 });

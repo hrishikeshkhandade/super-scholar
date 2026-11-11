@@ -35,6 +35,7 @@ const NOTEBOOK_KEY = "super-scholar.notebook";
 const CLEARED_KEY = "super-scholar.cleared";
 const STARS_KEY = "super-scholar.stars";
 const FEEDBACK_SENT_KEY = "super-scholar.feedbackSent";
+const TUTORIAL_SEEN_KEY = "super-scholar.tutorialSeen";
 const MAX_SAVED_UPLOADS = 3;
 // 100% is the game's original loudness.
 export const VOLUME_LEVELS = [0, 25, 50, 75, 100];
@@ -146,6 +147,14 @@ export const hasSentFeedback = (storage: Storage | null = browserStorage()) => r
 
 export function markFeedbackSent(storage: Storage | null = browserStorage()): void {
   writeJson(storage, FEEDBACK_SENT_KEY, true);
+}
+
+// Whether this browser has had the professor's tour (watched or closed), so
+// it only starts by itself before a player's first game.
+export const hasSeenTutorial = (storage: Storage | null = browserStorage()) => readJson(storage, TUTORIAL_SEEN_KEY) === true;
+
+export function markTutorialSeen(storage: Storage | null = browserStorage()): void {
+  writeJson(storage, TUTORIAL_SEEN_KEY, true);
 }
 
 // Games made from uploaded PDFs, newest first, so they can be continued later.

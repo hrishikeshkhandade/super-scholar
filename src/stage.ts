@@ -17,4 +17,6 @@ export interface StageData {
   replay?: boolean;
   // In review mode (boss fights only): the scores so far and where it ends.
   review?: Review;
+  // Drawn frozen behind the tutorial: no title card, tips, or music of its own.
+  preview?: boolean;
 }

@@ -3,7 +3,7 @@ import { audio } from "../audio/audio";
 import { findPaper } from "../content/library";
 import { TILE } from "../levels/parseLevel";
 import { NES, css } from "../palette";
-import { loadProgress, startLives } from "../save";
+import { hasSeenTutorial, loadProgress, startLives } from "../save";
 import { GAME_HEIGHT, GAME_WIDTH, Menu, PointerGuard, panel, textStyle, type MenuItem } from "../ui";
 import { GROUND_TOP, drawBackdrop } from "./backdrop";
 import { LAST_QUERY_KEY } from "./PaperSelectScene";
@@ -41,7 +41,9 @@ export class TitleScene extends Phaser.Scene {
         label: "NEW GAME",
         onSelect: () => {
           this.registry.set(LAST_QUERY_KEY, "");
-          this.scene.start("PaperSelect");
+          // A new player's first game starts with the professor's tour, over this screen.
+          if (hasSeenTutorial()) this.scene.start("PaperSelect");
+          else this.scene.launch("Tutorial", { then: { scene: "PaperSelect" } });
         },
       },
       {

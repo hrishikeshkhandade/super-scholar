@@ -122,7 +122,7 @@ export class BossScene extends Phaser.Scene {
     this.playMs = 0;
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.savePlayTime());
 
-    audio.playMusic("boss");
+    if (!data.preview) audio.playMusic("boss");
     this.physics.world.gravity.y = GRAVITY;
     this.physics.world.setBounds(0, 0, GAME_WIDTH, GAME_HEIGHT);
     this.physics.world.setBoundsCollision(true, true, true, true);
@@ -180,6 +180,7 @@ export class BossScene extends Phaser.Scene {
     this.drawHud(world.boss.name);
     // No pausing during a question: the fight is already stopped then.
     enablePause(this, () => this.mode !== "question" && this.mode !== "over" && !this.cardShowing(), PAUSE_BUTTON_X);
+    if (data.preview) return;
     this.cardShowing = showTitleCard(this, {
       title: `WORLD ${this.stage.worldIndex + 1} BOSS`,
       subtitle: world.boss.name,
@@ -206,7 +207,8 @@ export class BossScene extends Phaser.Scene {
     const hint = this.add
       .text(GAME_WIDTH / 2, 130, "STOMP THE BOSS TO ANSWER!\n" + this.behavior.hint, textStyle(16, NES.yellow))
       .setOrigin(0.5)
-      .setAlign("center");
+      .setAlign("center")
+      .setVisible(!this.stage.preview);
     this.tweens.add({ targets: hint, alpha: 0, delay: INTRO_MS + TITLE_CARD_MS, duration: 600 });
   }
 

@@ -2,11 +2,13 @@ import { describe, expect, it } from "vitest";
 import { LIBRARY } from "../src/content/library";
 import {
   clearProgress,
+  hasSeenTutorial,
   hasSentFeedback,
   loadProgress,
   loadSettings,
   loadUploadedPapers,
   markFeedbackSent,
+  markTutorialSeen,
   saveProgress,
   saveSettings,
   saveUploadedPaper,
@@ -82,6 +84,15 @@ describe("save data", () => {
     clearProgress(storage);
     expect(hasSentFeedback(storage)).toBe(true);
     expect(hasSentFeedback(null)).toBe(false);
+  });
+
+  it("remembers that the tour was seen, even after progress is erased", () => {
+    const storage = memoryStorage();
+    expect(hasSeenTutorial(storage)).toBe(false);
+    markTutorialSeen(storage);
+    expect(hasSeenTutorial(storage)).toBe(true);
+    clearProgress(storage);
+    expect(hasSeenTutorial(storage)).toBe(true);
   });
 
   it("still works when storage is unavailable", () => {
