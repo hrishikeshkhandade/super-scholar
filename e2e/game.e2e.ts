@@ -247,6 +247,34 @@ test("beating a boss offers SEND FEEDBACK until this device has sent some", asyn
   expect(await winLabels()).not.toContain("SEND FEEDBACK");
 });
 
+test("the credits screen shows the copyright, with every line inside the frame and none overlapping", async ({ page }) => {
+  await openGame(page);
+  type Line = { text: string; left: number; right: number; top: number; bottom: number };
+  const lines: Line[] = await page.evaluate(() => {
+    const credits = window.startScene("Credits", { from: "Title" });
+    window.steps(60);
+    return credits.children.list
+      .filter((object: any) => object.type === "Text")
+      .map((object: any) => {
+        const edges = object.getBounds();
+        return { text: object.text, left: edges.left, right: edges.right, top: edges.top, bottom: edges.bottom };
+      });
+  });
+  await page.screenshot({ path: `${SHOTS}/credits.png` });
+  expect(lines.map((line) => line.text)).toContain("© 2026 Hrishikesh Khandade. All rights reserved.");
+  const problems: string[] = [];
+  // The menu panel's white frame is 4px wide, 12px in from each edge of the 800x450 screen.
+  for (const line of lines) {
+    if (line.left < 16 || line.right > 784 || line.top < 16 || line.bottom > 434) problems.push(`"${line.text}" crosses the frame`);
+  }
+  for (const [i, a] of lines.entries()) {
+    for (const b of lines.slice(i + 1)) {
+      if (a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom) problems.push(`"${a.text}" overlaps "${b.text}"`);
+    }
+  }
+  expect(problems).toEqual([]);
+});
+
 test("double-clicking BACK on the credits screen stays on the title screen", async ({ page }) => {
   await openGame(page);
   const back = await page.evaluate(() => {

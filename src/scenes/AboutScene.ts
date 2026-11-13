@@ -74,6 +74,8 @@ export class CreditsScene extends Phaser.Scene {
     centered(176, "MADE BY", 16, NES.lightGray);
     centered(210, "HRISHIKESH KHANDADE", 24, NES.yellow);
     centered(242, "for CS 124 at the University of Illinois", 16, NES.lightGray);
+    // The project is all rights reserved (see LICENSE).
+    centered(264, "© 2026 Hrishikesh Khandade. All rights reserved.", 8, NES.lightGray);
 
     // The profile links are menu options with pixel icons, not raw URLs.
     const menuX = 330;
