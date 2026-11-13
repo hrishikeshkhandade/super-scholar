@@ -72,6 +72,10 @@ npm run feedback
 - `askScholar` (Ask the Scholar, after each lesson) accepts only POST, checks the question (up to 200 characters) and lesson text sizes, has its own rate limit of about 6 questions a minute per visitor so it can't use up the quota for writing papers, and tells the AI to treat the question only as a question. Answers are checked and trimmed to fit the speech box; players get 3 questions per lesson.
 - `leaderboard` (TOP SCHOLARS) reads a paper's top 10 with GET and adds a finished run's score with POST. It checks the paper ID, the nickname (3-12 letters or numbers, with a light filter for rude words), and that the score fits the paper; each nickname's best run is its own stored entry, so scores sent at the same moment can't erase each other. Adding scores is rate-limited to about 5 a minute per visitor. Scores are computed in the player's browser, so a determined player could fake one; that's acceptable for a class game.
 
+## License
+
+© 2026 Hrishikesh Khandade. All rights reserved. You may view the code and play the game; any other use needs my permission. See [LICENSE](LICENSE).
+
 ## Credits
 
 - Game, art, music, and the World 1 lessons are original work by Hrishikesh Khandade (built with AI assistance).
