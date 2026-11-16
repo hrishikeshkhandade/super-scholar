@@ -10,6 +10,7 @@ import { TILE, isSolidTile, parseLevel, type BlockContents } from "../levels/par
 import { NES, css } from "../palette";
 import { GRAVITY, JUMP_VELOCITY } from "../jump";
 import { PlayerController, makeOneWay, type Sprite } from "../player";
+import { rideSpeed } from "../ridePlatform";
 import { advanceProgress, currentTuning, markCleared, saveBestStars, startLives, unlockNote } from "../save";
 import { addPlayTime, practiceKey, recordStars } from "../run";
 import { nextFact } from "../foundFacts";
@@ -142,6 +143,9 @@ export class LevelScene extends Phaser.Scene {
     for (const tile of level.movingPlatforms) {
       const platform = this.movingPlatforms.create(tile.x * TILE + 48, tile.y * TILE + 6, "moving-platform") as Sprite;
       makeOneWay(platform.body);
+      // Riders are carried by rideSpeed instead of Phaser's friction, which only nudged
+      // them on frames the physics pushed them out of the platform.
+      platform.body.friction.x = 0;
       platform.setData("minX", platform.x);
       platform.setVelocityX(MOVING_PLATFORM_SPEED);
     }
@@ -288,10 +292,11 @@ export class LevelScene extends Phaser.Scene {
     if (this.finished) return;
     // Only time spent actually playing counts (not the title card).
     if (!this.cardShowing()) this.playMs += deltaMs;
-    this.controls.update(time);
+    // Platforms turn around first, so the player rides at the speed the platform will move.
+    this.updateMovingPlatforms();
+    this.controls.update(time, this.platformSpeedUnderPlayer());
     this.updateFactTicker();
     this.updateBears();
-    this.updateMovingPlatforms();
     this.updateBubbles(time);
     this.skyline.tilePositionX = this.cameras.main.scrollX * 0.2;
     this.hills.tilePositionX = this.cameras.main.scrollX * 0.4;
@@ -321,6 +326,18 @@ export class LevelScene extends Phaser.Scene {
       if (platform.x >= minX + MOVING_PLATFORM_RANGE) platform.setVelocityX(-MOVING_PLATFORM_SPEED);
       if (platform.x <= minX) platform.setVelocityX(MOVING_PLATFORM_SPEED);
     }
+  }
+
+  private platformSpeedUnderPlayer(): number {
+    const platforms = this.movingPlatforms.getChildren().map((object) => {
+      const body = (object as Sprite).body;
+      return { left: body.left, right: body.right, top: body.top, bottom: body.bottom, velocityX: body.velocity.x };
+    });
+    const body = this.player.body;
+    return rideSpeed(
+      { left: body.left, right: body.right, top: body.top, bottom: body.bottom, velocityY: body.velocity.y },
+      platforms,
+    );
   }
 
   private updateBubbles(time: number): void {

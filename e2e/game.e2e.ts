@@ -122,6 +122,45 @@ test("a normal jump lands on the sky blocks and the boss arena's platforms", asy
   expect(result.onRight).toEqual({ bottom: result.platformTop, standing: true });
 });
 
+test("standing still on a moving platform carries the player along with it", async ({ page }) => {
+  await openGame(page);
+  const result = await page.evaluate(async (library) => {
+    const { LIBRARY } = await window.importGame(library);
+    // The first level in the paper that has a moving platform.
+    let level: any;
+    for (let worldIndex = 0; worldIndex < LIBRARY[0].worlds.length && !level; worldIndex++) {
+      for (let checkpoint = 0; checkpoint < 3 && !level; checkpoint++) {
+        const scene = window.startScene("Level", { paper: LIBRARY[0], worldIndex, checkpointsCleared: checkpoint, lives: 99, replay: true });
+        if (scene.movingPlatforms.getLength() > 0) level = scene;
+      }
+    }
+    level.bears.clear(true, true);
+    window.steps(300); // wait out the title card
+    const platform = level.movingPlatforms.getChildren()[0];
+    const player = level.player;
+    player.setPosition(platform.x, platform.body.top - 30);
+    player.setVelocity(0, 0);
+    window.steps(20); // land on it
+    const offsetBefore = player.x - platform.x;
+    const platformStart = platform.x;
+    // Two and a half seconds with no key held: long enough for the platform to turn around.
+    let farthestDrift = 0;
+    let stayedOn = true;
+    for (let frame = 0; frame < 150; frame++) {
+      window.steps(1);
+      farthestDrift = Math.max(farthestDrift, Math.abs(player.x - platform.x - offsetBefore));
+      if (Math.abs(player.body.bottom - platform.body.top) > 4) stayedOn = false;
+    }
+    level.cameras.main.centerOn(platform.x, platform.y);
+    window.hideOverlays(level);
+    return { platformMoved: Math.abs(platform.x - platformStart), farthestDrift, stayedOn };
+  }, LIBRARY);
+  await page.screenshot({ path: `${SHOTS}/3b-ride-moving-platform.png` });
+  expect(result.platformMoved).toBeGreaterThan(0);
+  expect(result.stayedOn).toBe(true);
+  expect(result.farthestDrift).toBeLessThanOrEqual(2);
+});
+
 test("a missed boss question warns it comes back, then returns tagged", async ({ page }) => {
   await openGame(page);
   await page.evaluate(async (library) => {

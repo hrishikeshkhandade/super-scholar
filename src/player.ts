@@ -59,7 +59,9 @@ export class PlayerController {
     }
   }
 
-  update(time: number): void {
+  // groundSpeedX: how fast whatever the player stands on is moving sideways (a moving
+  // platform), so they ride along with it on top of their own running.
+  update(time: number, groundSpeedX = 0): void {
     const body = this.sprite.body;
     const onGround = body.blocked.down || body.touching.down;
     if (onGround) this.lastGroundedAt = time;
@@ -67,7 +69,7 @@ export class PlayerController {
     const direction = (this.isDown("right") ? 1 : 0) - (this.isDown("left") ? 1 : 0);
     // While knocked back, the push wins over the keys for a moment.
     if (time >= this.knockbackUntil) {
-      this.sprite.setVelocityX(direction * RUN_SPEED);
+      this.sprite.setVelocityX(direction * RUN_SPEED + groundSpeedX);
       if (direction !== 0) this.sprite.setFlipX(direction < 0);
     }
 
