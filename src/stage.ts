@@ -19,4 +19,7 @@ export interface StageData {
   review?: Review;
   // Drawn frozen behind the tutorial: no title card, tips, or music of its own.
   preview?: boolean;
+  // Restarted with the R key: skips the title card so play resumes at once.
+  // The level scene reads it once and never passes it on.
+  quickRestart?: boolean;
 }

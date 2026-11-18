@@ -161,6 +161,77 @@ test("standing still on a moving platform carries the player along with it", asy
   expect(result.farthestDrift).toBeLessThanOrEqual(2);
 });
 
+test("R restarts the level once, for free, and the controls hint says so", async ({ page }) => {
+  await openGame(page);
+  // A level with a moving platform, with the player moved away from the start.
+  const before = await page.evaluate(async (library) => {
+    const { LIBRARY } = await window.importGame(library);
+    let level: any;
+    for (let worldIndex = 0; worldIndex < LIBRARY[0].worlds.length && !level; worldIndex++) {
+      for (let checkpoint = 0; checkpoint < 3 && !level; checkpoint++) {
+        const scene = window.startScene("Level", { paper: LIBRARY[0], worldIndex, checkpointsCleared: checkpoint, lives: 3, replay: true });
+        if (scene.movingPlatforms.getLength() > 0) level = scene;
+      }
+    }
+    const hint = level.children.list.find((object: any) => object.type === "Text" && object.text.includes("R RESTART"));
+    const edges = hint.getBounds();
+    const spawnX = level.player.x;
+    const platformStarts = level.movingPlatforms.getChildren().map((platform: any) => platform.x);
+    level.bears.clear(true, true);
+    window.steps(300); // wait out the title card
+    // Stand on the moving platform, far from the start and safe from pits.
+    const platform = level.movingPlatforms.getChildren()[0];
+    level.player.setPosition(platform.x, platform.body.top - 30);
+    level.player.setVelocity(0, 0);
+    window.steps(20);
+    return { spawnX, platformStarts, lives: level.stage.lives, playerX: level.player.x, hintLeft: edges.left, hintRight: edges.right };
+  }, LIBRARY);
+  expect(before.hintLeft).toBeGreaterThanOrEqual(0);
+  expect(before.hintRight).toBeLessThanOrEqual(800);
+  expect(before.playerX).toBeGreaterThan(before.spawnX + 200);
+
+  await page.keyboard.down("r");
+  const restarted = await page.evaluate(() => {
+    window.steps(2);
+    const level = window.game.scene.getScene("Level") as any;
+    const result = {
+      playerX: level.player.x,
+      lives: level.stage.lives,
+      titleCard: level.cardShowing(),
+      platforms: level.movingPlatforms.getChildren().map((platform: any) => platform.x),
+    };
+    window.steps(20); // let the screen's usual fade-in finish
+    return result;
+  });
+  await page.screenshot({ path: `${SHOTS}/3c-restart-hint.png` });
+  await page.evaluate(() => {
+    // Back on the platform before R repeats.
+    const level = window.game.scene.getScene("Level") as any;
+    level.bears.clear(true, true);
+    const platform = level.movingPlatforms.getChildren()[0];
+    level.player.setPosition(platform.x, platform.body.top - 30);
+    level.player.setVelocity(0, 0);
+    window.steps(2);
+  });
+  expect(restarted.playerX).toBe(before.spawnX);
+  expect(restarted.lives).toBe(before.lives);
+  expect(restarted.titleCard).toBe(false);
+  restarted.platforms.forEach((x: number, i: number) => expect(Math.abs(x - before.platformStarts[i])).toBeLessThanOrEqual(4));
+
+  // Still holding R: the keyboard's repeat presses must not restart it again.
+  for (let press = 0; press < 5; press++) {
+    await page.keyboard.down("r");
+    await page.evaluate(() => window.steps(2));
+  }
+  await page.keyboard.up("r");
+  const afterHold = await page.evaluate(() => {
+    const level = window.game.scene.getScene("Level") as any;
+    return { playerX: level.player.x, lives: level.stage.lives };
+  });
+  expect(afterHold.playerX).toBeGreaterThan(before.spawnX + 200);
+  expect(afterHold.lives).toBe(before.lives);
+});
+
 test("a missed boss question warns it comes back, then returns tagged", async ({ page }) => {
   await openGame(page);
   await page.evaluate(async (library) => {

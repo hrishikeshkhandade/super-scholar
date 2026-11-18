@@ -38,6 +38,8 @@ const CLEAR_BOX_WIDTH = GAME_WIDTH - 60;
 // LEVEL CLEAR ignores presses this long, so the jump held at the flag can't skip it.
 const CLEAR_BOX_IGNORE_MS = 500;
 const PAUSE_BUTTON_X = 384; // between the coin count and the level name
+// Shown at the start of a level, then fades out.
+const CONTROLS_HINT = "A/D MOVE  W JUMP  S DROP  ESC PAUSE  R RESTART";
 const TICKER_TOP = HUD_HEIGHT + 6; // a small gap under the HUD
 // The fun-fact card: fades in just under the HUD, in the reading column,
 // with text the size of the lessons'. It turns see-through whenever the
@@ -94,7 +96,10 @@ export class LevelScene extends Phaser.Scene {
   }
 
   create(data: StageData): void {
-    this.stage = { ...data };
+    // quickRestart only applies to this start, so it isn't carried into the
+    // next level or a retry.
+    const { quickRestart, ...stage } = data;
+    this.stage = stage;
     this.coins = 0;
     this.hits = data.levelHits ?? 0;
     this.factsFound = data.levelFacts ?? [];
@@ -203,8 +208,24 @@ export class LevelScene extends Phaser.Scene {
     this.cameras.main.startFollow(this.player, true, 0.25, 0.25);
     this.cameras.main.setDeadzone(120, 80);
 
-    this.drawHud(layout.name);
-    enablePause(this, () => !this.finished && !this.cardShowing(), PAUSE_BUTTON_X);
+    this.drawHud(layout.name, quickRestart === true);
+    const playing = () => !this.finished && !this.cardShowing();
+    enablePause(this, playing, PAUSE_BUTTON_X);
+    if (!this.stage.preview) this.input.keyboard?.on("keydown-R", (event: KeyboardEvent) => this.quickRestart(event, playing));
+  }
+
+  // R starts the level over from its spawn point, free, for practicing a
+  // jump: the player, platforms, bears, and coins all go back to the start.
+  // Lives, saved progress, the leaderboard run, facts found so far, and hits
+  // (so R can't win back the no-hits star) all stay.
+  // Not while paused, on a card or LEVEL CLEAR, or while typing in a field.
+  private quickRestart(event: KeyboardEvent, playing: () => boolean): void {
+    // Holding R sends repeat presses; only the first one restarts.
+    if (event.repeat) return;
+    const target = event.target as HTMLElement | null;
+    if (target && (target.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName))) return;
+    if (!this.scene.isActive() || !playing()) return;
+    this.scene.restart({ ...this.stage, levelHits: this.hits, levelFacts: this.factsFound, quickRestart: true });
   }
 
   // Sky in NES-style color bands, then far scenery and hills that scroll
@@ -230,7 +251,7 @@ export class LevelScene extends Phaser.Scene {
     }
   }
 
-  private drawHud(levelName: string): void {
+  private drawHud(levelName: string, quickRestart: boolean): void {
     const fixed = <T extends Phaser.GameObjects.Components.ScrollFactor>(object: T) => object.setScrollFactor(0);
     fixed(this.add.rectangle(0, 0, GAME_WIDTH, HUD_HEIGHT, NES.black, 0.6).setOrigin(0, 0).setDepth(9));
     this.hearts = new HeartBar(this, 16, 14);
@@ -245,11 +266,11 @@ export class LevelScene extends Phaser.Scene {
     fixed(this.add.text(GAME_WIDTH - 16, 8, label, textStyle(16, NES.yellow)).setOrigin(1, 0).setDepth(10));
     fixed(this.add.text(GAME_WIDTH - 16, 30, world.name.toUpperCase(), textStyle(8, NES.lightGray)).setOrigin(1, 0).setDepth(10));
     const hint = (this.controlsHint = fixed(
-      this.add.text(GAME_WIDTH / 2, 70, isTouchDevice() ? "TAP THE BUTTONS TO MOVE AND JUMP" : "A/D MOVE  W JUMP  S DROP  ESC PAUSE", textStyle(16, NES.white)).setOrigin(0.5).setDepth(10),
+      this.add.text(GAME_WIDTH / 2, 70, isTouchDevice() ? "TAP THE BUTTONS TO MOVE AND JUMP" : CONTROLS_HINT, textStyle(16, NES.white)).setOrigin(0.5).setDepth(10),
     ));
-    // A pit fall restarts the level; showing the title card again every time
-    // would get in the way, so it only shows on a fresh start.
-    const freshStart = (this.stage.levelHits ?? 0) === 0;
+    // A pit fall or the R key restarts the level; showing the title card
+    // again every time would get in the way, so it only shows on a fresh start.
+    const freshStart = !quickRestart && (this.stage.levelHits ?? 0) === 0;
     const cardMs = freshStart ? TITLE_CARD_MS : 0;
     this.tweens.add({ targets: hint, alpha: 0, delay: 4000 + cardMs, duration: 800 });
     const firstLevel = this.stage.worldIndex === 0 && this.stage.checkpointsCleared === 0;
