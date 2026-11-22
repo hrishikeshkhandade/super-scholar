@@ -1,6 +1,9 @@
 import { AbsoluteFill, Easing, Interactive, interpolate, useCurrentFrame, useVideoConfig } from "remotion";
 import { NES, PIXEL_FONT, typedLength } from "../theme";
 
+// Room for the title in the panel: 1680 wide, less 80px padding a side and the 120px cursor.
+const TITLE_WIDTH = 1680 - 2 * 80 - 120;
+
 export type SectionCardProps = {
   label: string;
   title: string;
@@ -14,6 +17,8 @@ export const SectionCard: React.FC<SectionCardProps> = ({ label, title }) => {
   const typeStart = 0.5 * fps;
   const shown = typedLength(title, frame - typeStart, fps, 24);
   const cursorOn = Math.floor(frame / (0.4 * fps)) % 2 === 0;
+  // Pixel-font letters are square, so a long title shrinks to stay on one line in the panel.
+  const titleSize = Math.min(84, Math.floor(TITLE_WIDTH / title.length));
 
   return (
     <AbsoluteFill name="SectionCard" style={{ backgroundColor: NES.navy, justifyContent: "center", alignItems: "center" }}>
@@ -34,7 +39,7 @@ export const SectionCard: React.FC<SectionCardProps> = ({ label, title }) => {
         }}
       >
         <div style={{ fontFamily: PIXEL_FONT, fontSize: 36, color: NES.gray }}>{label}</div>
-        <div style={{ marginTop: 48, display: "flex", whiteSpace: "nowrap", fontFamily: PIXEL_FONT, fontSize: 84, color: NES.yellow }}>
+        <div style={{ marginTop: 48, display: "flex", alignItems: "center", whiteSpace: "nowrap", fontFamily: PIXEL_FONT, fontSize: titleSize, color: NES.yellow }}>
           <span style={{ width: 120, visibility: cursorOn ? "visible" : "hidden" }}>&gt;</span>
           <span>{title.slice(0, shown)}</span>
         </div>

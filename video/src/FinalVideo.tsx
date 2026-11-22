@@ -5,7 +5,7 @@ import { Fragment } from "react";
 import { Intro } from "./scenes/Intro";
 import { SectionCard } from "./scenes/SectionCard";
 import { Walkthrough, walkthroughFrames } from "./scenes/Walkthrough";
-import { BOSS_FIGHT_RUN, UPLOADED_PAPER_RUN } from "./walkthroughs";
+import { BOSS_FIGHT_RUN, REVIEW_NOTEBOOK_RUN, UPLOADED_PAPER_RUN } from "./walkthroughs";
 
 export const FPS = 30;
 const TRANSITION_FRAMES = 15;
@@ -27,6 +27,12 @@ const VIDEO: Scene[] = [
   { name: "Walkthrough: uploaded paper", frames: SCENES.walkthrough, element: <Walkthrough {...UPLOADED_PAPER_RUN} /> },
   { name: "Card: The boss", frames: SCENES.section, element: <SectionCard label="PART 3" title="THE BOSS" /> },
   { name: "Walkthrough: boss fight", frames: walkthroughFrames(BOSS_FIGHT_RUN.shots, FPS), element: <Walkthrough {...BOSS_FIGHT_RUN} /> },
+  { name: "Card: Review and Notebook", frames: SCENES.section, element: <SectionCard label="PART 4" title="REVIEW & NOTEBOOK" /> },
+  {
+    name: "Walkthrough: review and notebook",
+    frames: walkthroughFrames(REVIEW_NOTEBOOK_RUN.shots, FPS),
+    element: <Walkthrough {...REVIEW_NOTEBOOK_RUN} />,
+  },
 ];
 
 // Cards wipe into gameplay; everything else fades.

@@ -38,3 +38,19 @@ export const BOSS_FIGHT_RUN: WalkthroughProps = {
     { from: 162.8, to: 170.5, speed: 1.5, caption: "Win, then flip through every question you missed." },
   ],
 };
+
+// The third recording (2026-11-22): REVIEW's missed questions for the same
+// paper (both right, so KNOWN), then the Notebook's lessons, facts and cards.
+// Times are seconds into public/clips/review-notebook.mp4.
+export const REVIEW_NOTEBOOK_RUN: WalkthroughProps = {
+  clip: "clips/review-notebook.mp4",
+  shots: [
+    { from: 1.8, to: 9, speed: 1.5, caption: "Already read the paper? REVIEW skips the levels and goes straight to the bosses." },
+    { from: 9, to: 24.5, speed: 3, caption: "MISSED QUESTIONS retests only what you got wrong." },
+    { from: 25, to: 29, speed: 1, caption: "Then it scores each section: KNOWN, or which ones to re-read." },
+    { from: 29.6, to: 34, speed: 1, caption: "The Notebook keeps every lesson you've unlocked." },
+    { from: 34, to: 43, speed: 2.5, caption: "The Notebook keeps every lesson you've unlocked." },
+    { from: 60, to: 63, speed: 1, caption: "Fun facts from the bears are saved too." },
+    { from: 63, to: 68.5, speed: 1.5, caption: "Every practice and boss question becomes a flashcard to study." },
+  ],
+};

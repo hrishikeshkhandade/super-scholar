@@ -28,8 +28,10 @@ export const walkthroughFrames = (shots: WalkthroughShot[], fps: number): number
 const VOLUME = 0.7;
 // Fades the game's sound in and out where the caption changes, so the music doesn't pop.
 const FADE_SECONDS = 0.2;
-// Below this speed the game's sound turns into a growl, so slow-motion shots are silent.
+// Outside these speeds the game's sound turns into a growl or a squeak, so
+// slow-motion and fast-forward shots are silent.
 const SLOWEST_AUDIBLE_SPEED = 0.5;
+const FASTEST_AUDIBLE_SPEED = 2.5;
 
 // Recorded gameplay in the game screen, cut into shots, each with its caption.
 export const Walkthrough: React.FC<WalkthroughProps> = ({ clip, shots }) => {
@@ -52,7 +54,7 @@ export const Walkthrough: React.FC<WalkthroughProps> = ({ clip, shots }) => {
                   src={staticFile(clip)}
                   trimBefore={Math.round(shot.from * fps)}
                   playbackRate={shot.speed}
-                  muted={shot.speed < SLOWEST_AUDIBLE_SPEED}
+                  muted={shot.speed < SLOWEST_AUDIBLE_SPEED || shot.speed > FASTEST_AUDIBLE_SPEED}
                   volume={(f) =>
                     interpolate(f, [0, fade, frames - fade, frames], [volumeIn, VOLUME, VOLUME, volumeOut], {
                       extrapolateLeft: "clamp",
