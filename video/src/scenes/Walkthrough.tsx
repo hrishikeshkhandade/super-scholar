@@ -7,6 +7,7 @@ import {
   useVideoConfig,
 } from "remotion";
 import { Caption } from "../components/Caption";
+import { clipEnd, type NarrationClip } from "../components/Narration";
 import { GameScreen } from "../components/GameScreen";
 import { NES } from "../theme";
 
@@ -23,6 +24,8 @@ export type WalkthroughShot = {
 export type WalkthroughProps = {
   clip: string;
   shots: WalkthroughShot[];
+  // Narration playing over this walkthrough: the game's sound dips under it.
+  voice?: NarrationClip[];
 };
 
 // How many video frames a shot lasts once sped up.
@@ -37,15 +40,41 @@ export const walkthroughFrames = (
 const VOLUME = 0.7;
 // Fades the game's sound in and out where the caption changes, so the music doesn't pop.
 const FADE_SECONDS = 0.2;
+// While the student talks, the game's sound drops to this share of VOLUME,
+// easing down and back up over DUCK_SECONDS so the music never jumps.
+const DUCKED = 0.3;
+const DUCK_SECONDS = 0.4;
+
+// How loud the game is at `second` of the walkthrough: 1 with no narration, DUCKED during it.
+function duckAt(second: number, voice: NarrationClip[]): number {
+  return voice.reduce((level, clip) => {
+    const end = clipEnd(clip);
+    const ducked = interpolate(
+      second,
+      [clip.at - DUCK_SECONDS, clip.at, end, end + DUCK_SECONDS],
+      [1, DUCKED, DUCKED, 1],
+      { extrapolateLeft: "clamp", extrapolateRight: "clamp" },
+    );
+    return Math.min(level, ducked);
+  }, 1);
+}
 // Outside these speeds the game's sound turns into a growl or a squeak, so
 // slow-motion and fast-forward shots are silent.
 const SLOWEST_AUDIBLE_SPEED = 0.5;
 const FASTEST_AUDIBLE_SPEED = 2.5;
 
 // Recorded gameplay in the game screen, cut into shots, each with its caption.
-export const Walkthrough: React.FC<WalkthroughProps> = ({ clip, shots }) => {
+export const Walkthrough: React.FC<WalkthroughProps> = ({
+  clip,
+  shots,
+  voice = [],
+}) => {
   const { fps } = useVideoConfig();
   const fade = FADE_SECONDS * fps;
+  // The frame each shot starts at in the walkthrough, to place the ducking.
+  const shotStarts = shots.map((_, index) =>
+    walkthroughFrames(shots.slice(0, index), fps),
+  );
 
   return (
     <AbsoluteFill name="Walkthrough" style={{ backgroundColor: NES.navy }}>
@@ -83,7 +112,7 @@ export const Walkthrough: React.FC<WalkthroughProps> = ({ clip, shots }) => {
                         extrapolateLeft: "clamp",
                         extrapolateRight: "clamp",
                       },
-                    )
+                    ) * duckAt((shotStarts[index] + f) / fps, voice)
                   }
                   style={{ width: "100%", height: "100%" }}
                 />

@@ -1,5 +1,5 @@
 import { Composition, Folder } from "remotion";
-import { FEEDBACK_STORIES } from "./feedbackStories";
+import { FACTS_STORY } from "./feedbackStories";
 import { FINAL_DURATION, FinalVideo, FPS, SCENES } from "./FinalVideo";
 import { Ending } from "./scenes/Ending";
 import { FeedbackStory } from "./scenes/FeedbackStory";
@@ -54,7 +54,7 @@ export const RemotionRoot: React.FC = () => (
         id="FeedbackStory"
         component={FeedbackStory}
         durationInFrames={SCENES.feedback}
-        defaultProps={FEEDBACK_STORIES[0]}
+        defaultProps={FACTS_STORY}
         {...SIZE}
       />
       <Composition

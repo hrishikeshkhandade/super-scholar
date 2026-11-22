@@ -12,6 +12,8 @@ const LINE_HEIGHT = 40;
 const PANEL = { left: 120, top: 120, width: 1680, height: 880 };
 const VISIBLE_LINES = Math.floor((PANEL.height - 2 * 6 - 2 * 44) / LINE_HEIGHT);
 const GREEN = "#58d854";
+// Seconds between play-through lines, quick enough to finish while the narration describes them.
+const LINE_INTERVAL = 0.18;
 
 type Line = { at: number; text: string; color: string; typed?: boolean };
 
@@ -32,7 +34,7 @@ export const TestRun: React.FC = () => {
     },
     { at: 1.8, text: "$ npm run check:game", color: NES.white, typed: true },
     ...playThroughs.map((name, index) => ({
-      at: 2.7 + index * 0.28,
+      at: 2.7 + index * LINE_INTERVAL,
       text: ` ✓ ${name}`,
       color: GREEN,
     })),
@@ -95,4 +97,4 @@ export const TestRun: React.FC = () => {
 
 // How long the terminal needs to show every line, plus a beat to read the total.
 export const testRunSeconds = (): number =>
-  2.7 + projectData.playThroughs.length * 0.28 + 0.5 + 1.8;
+  2.7 + projectData.playThroughs.length * LINE_INTERVAL + 0.5 + 1.8;

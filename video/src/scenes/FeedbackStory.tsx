@@ -18,6 +18,8 @@ export type FeedbackStoryProps = {
   fix: string;
   // A screenshot of the fix, from the play-through checks.
   image: string;
+  // Seconds in when the fix (and the arrow just before it) appears.
+  fixAt?: number;
 };
 
 const TEXT: React.CSSProperties = {
@@ -36,10 +38,12 @@ export const FeedbackStory: React.FC<FeedbackStoryProps> = ({
   heard,
   fix,
   image,
+  fixAt = 1.6,
 }) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
-  const fixFrom = 1.6 * fps;
+  const fixFrom = fixAt * fps;
+  const arrowFrom = fixFrom - 0.5 * fps;
 
   return (
     <AbsoluteFill name="FeedbackStory" style={{ backgroundColor: NES.navy }}>
@@ -61,13 +65,18 @@ export const FeedbackStory: React.FC<FeedbackStoryProps> = ({
           fontFamily: PIXEL_FONT,
           fontSize: 80,
           color: NES.white,
-          opacity: interpolate(frame, [1.1 * fps, 1.4 * fps], [0, 1], {
-            extrapolateLeft: "clamp",
-            extrapolateRight: "clamp",
-          }),
+          opacity: interpolate(
+            frame,
+            [arrowFrom, arrowFrom + 0.3 * fps],
+            [0, 1],
+            {
+              extrapolateLeft: "clamp",
+              extrapolateRight: "clamp",
+            },
+          ),
           translate: interpolate(
             frame,
-            [1.1 * fps, 1.5 * fps],
+            [arrowFrom, arrowFrom + 0.4 * fps],
             ["-30px 0px", "0px 0px"],
             {
               extrapolateLeft: "clamp",

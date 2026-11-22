@@ -12,10 +12,11 @@ export const UPLOADED_PAPER_RUN: WalkthroughProps = {
       speed: 1,
       caption: "Pick a paper from the library, or upload any PDF.",
     },
+    // 1.2x rather than 2x, so the narration about Prof. Quant lands while he's on screen.
     {
       from: 6,
       to: 21,
-      speed: 2,
+      speed: 1.2,
       caption:
         "Prof. Quant explains the paper in plain words, then shows you how to play.",
     },
@@ -132,7 +133,7 @@ export const REVIEW_NOTEBOOK_RUN: WalkthroughProps = {
     {
       from: 1.8,
       to: 9,
-      speed: 1.5,
+      speed: 1,
       caption:
         "Already read the paper? REVIEW skips the levels and goes straight to the bosses.",
     },
@@ -142,10 +143,11 @@ export const REVIEW_NOTEBOOK_RUN: WalkthroughProps = {
       speed: 3,
       caption: "MISSED QUESTIONS retests only what you got wrong.",
     },
+    // Held a little longer (0.65x) for the narration about which sections you know.
     {
       from: 25,
       to: 29,
-      speed: 1,
+      speed: 0.65,
       caption: "Then it scores each section: KNOWN, or which ones to re-read.",
     },
     {

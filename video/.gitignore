@@ -8,3 +8,6 @@ out
 
 # Recorded video clips (large; kept on this computer only)
 public/clips/
+
+# The student's narration recordings (kept on this computer, like the clips)
+public/narration/
