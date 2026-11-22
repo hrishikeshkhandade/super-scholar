@@ -18,3 +18,23 @@ export const UPLOADED_PAPER_RUN: WalkthroughProps = {
     { from: 64.5, to: 67.3, speed: 1, caption: "On to the next level." },
   ],
 };
+
+// The second recording (2026-11-21): the same paper's World 1 boss, Sir
+// Forget-a-Lot, with a wrong answer, hits, retried misses, and the review of
+// missed questions after the win. Times are seconds into public/clips/boss.mp4.
+export const BOSS_FIGHT_RUN: WalkthroughProps = {
+  clip: "clips/boss.mp4",
+  shots: [
+    { from: 85.8, to: 91.5, speed: 1, caption: "Every world ends in a boss fight." },
+    { from: 91.5, to: 97, speed: 1.5, caption: "Stomp the boss and it asks a question about the paper." },
+    { from: 97, to: 99.5, speed: 0.8, caption: "A wrong answer makes it angrier, and that question comes back later." },
+    // HIT! BOSS TAKES DAMAGE is up for under half a second, so that moment plays at quarter speed.
+    { from: 113, to: 115.1, speed: 1, caption: "A right answer hurts the boss." },
+    { from: 115.1, to: 115.5, speed: 0.25, caption: "A right answer hurts the boss." },
+    { from: 115.5, to: 117.5, speed: 1, caption: "A right answer hurts the boss." },
+    { from: 131, to: 137, speed: 2, caption: "Dodge its charge and keep stomping." },
+    { from: 150.5, to: 156.8, speed: 1.3, caption: "Missed questions come back as a second try." },
+    // Ends on the review of misses, before the next world and the pause menu.
+    { from: 162.8, to: 170.5, speed: 1.5, caption: "Win, then flip through every question you missed." },
+  ],
+};
