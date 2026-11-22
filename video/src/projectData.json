@@ -1,0 +1,354 @@
+{
+  "firstCommit": "2026-10-06",
+  "commits": 121,
+  "features": [
+    {
+      "date": "2026-10-06",
+      "title": "Title menu"
+    },
+    {
+      "date": "2026-10-06",
+      "title": "Cutscenes with practice questions"
+    },
+    {
+      "date": "2026-10-06",
+      "title": "Replaced the auto-runner with a WASD platformer"
+    },
+    {
+      "date": "2026-10-07",
+      "title": "Fun-fact banner"
+    },
+    {
+      "date": "2026-10-07",
+      "title": "Hosted on Netlify at https://super-scholar.netlify.app"
+    },
+    {
+      "date": "2026-10-07",
+      "title": "Chiptune sound"
+    },
+    {
+      "date": "2026-10-07",
+      "title": "Renamed the game to Super Scholar"
+    },
+    {
+      "date": "2026-10-07",
+      "title": "Crisp text"
+    },
+    {
+      "date": "2026-10-07",
+      "title": "Boss arena"
+    },
+    {
+      "date": "2026-10-07",
+      "title": "Live paper search with OpenAlex"
+    },
+    {
+      "date": "2026-10-07",
+      "title": "Upload any PDF and play it"
+    },
+    {
+      "date": "2026-10-08",
+      "title": "Play papers straight from search without leaving the site"
+    },
+    {
+      "date": "2026-10-08",
+      "title": "Generated levels for World 2 and up"
+    },
+    {
+      "date": "2026-10-08",
+      "title": "Cutscenes can go back"
+    },
+    {
+      "date": "2026-10-08",
+      "title": "\"STOMP BEARS FOR FUN FACTS!\" tip for 2 seconds at the start o..."
+    },
+    {
+      "date": "2026-10-08",
+      "title": "About screen with HOW TO PLAY"
+    },
+    {
+      "date": "2026-10-08",
+      "title": "Unique levels and backgrounds"
+    },
+    {
+      "date": "2026-10-08",
+      "title": "Bug hunt"
+    },
+    {
+      "date": "2026-10-08",
+      "title": "Security hardening"
+    },
+    {
+      "date": "2026-10-08",
+      "title": "Pause menu"
+    },
+    {
+      "date": "2026-10-08",
+      "title": "Plagiarism and licensing audit"
+    },
+    {
+      "date": "2026-10-09",
+      "title": "Scholar's Notebook"
+    },
+    {
+      "date": "2026-10-13",
+      "title": "Touch controls for phones and tablets"
+    },
+    {
+      "date": "2026-10-13",
+      "title": "AI-written worlds for uploaded and downloaded papers"
+    },
+    {
+      "date": "2026-10-16",
+      "title": "Moved hosting from Netlify to Cloudflare"
+    },
+    {
+      "date": "2026-10-16",
+      "title": "The built-in paper is complete"
+    },
+    {
+      "date": "2026-10-17",
+      "title": "Level select"
+    },
+    {
+      "date": "2026-10-17",
+      "title": "Stars"
+    },
+    {
+      "date": "2026-10-17",
+      "title": "Title cards and fades"
+    },
+    {
+      "date": "2026-10-17",
+      "title": "Quiz review"
+    },
+    {
+      "date": "2026-10-18",
+      "title": "Gentler boss fights"
+    },
+    {
+      "date": "2026-10-18",
+      "title": "In-game FEEDBACK form"
+    },
+    {
+      "date": "2026-10-18",
+      "title": "Polish"
+    },
+    {
+      "date": "2026-10-18",
+      "title": "Four showcase papers built in and ready to play instantly"
+    },
+    {
+      "date": "2026-10-19",
+      "title": "Title screen redesign"
+    },
+    {
+      "date": "2026-10-20",
+      "title": "Every menu screen matches the title"
+    },
+    {
+      "date": "2026-10-20",
+      "title": "No more accidental clicks after BACK"
+    },
+    {
+      "date": "2026-10-20",
+      "title": "Fun facts no longer cover the level"
+    },
+    {
+      "date": "2026-10-21",
+      "title": "Optional HARD mode"
+    },
+    {
+      "date": "2026-10-22",
+      "title": "Every world's boss fights in its own style, in a fixed order"
+    },
+    {
+      "date": "2026-10-22",
+      "title": "Fun facts show again while playing, in a sleek way"
+    },
+    {
+      "date": "2026-10-22",
+      "title": "Ask the Scholar"
+    },
+    {
+      "date": "2026-10-22",
+      "title": "Full check-in audit"
+    },
+    {
+      "date": "2026-10-22",
+      "title": "TOP SCHOLARS leaderboard, one per paper"
+    },
+    {
+      "date": "2026-10-24",
+      "title": "LEADERBOARD on the title sign"
+    },
+    {
+      "date": "2026-10-25",
+      "title": "QUIT TO TITLE in the pause menu works in one click"
+    },
+    {
+      "date": "2026-10-27",
+      "title": "Shorter lines on the lesson screen"
+    },
+    {
+      "date": "2026-10-27",
+      "title": "Shorter lines on the other reading screens"
+    },
+    {
+      "date": "2026-10-27",
+      "title": "Bigger fun facts"
+    },
+    {
+      "date": "2026-10-27",
+      "title": "Notebook question cards and quiz review are now flashcards in..."
+    },
+    {
+      "date": "2026-10-27",
+      "title": "Fixes from classmate play-tests"
+    },
+    {
+      "date": "2026-10-28",
+      "title": "PAUSE"
+    },
+    {
+      "date": "2026-10-29",
+      "title": "Right and wrong answers shown on the question itself"
+    },
+    {
+      "date": "2026-10-29",
+      "title": "The Notebook explains itself"
+    },
+    {
+      "date": "2026-10-30",
+      "title": "Boss fights say why a question comes back"
+    },
+    {
+      "date": "2026-11-01",
+      "title": "No repeated facts in AI-made or rules-made worlds either"
+    },
+    {
+      "date": "2026-11-02",
+      "title": "Boss fights explain that touching the boss hurts"
+    },
+    {
+      "date": "2026-11-03",
+      "title": "Boss question and answer boxes are centered in the sky"
+    },
+    {
+      "date": "2026-11-03",
+      "title": "Play-through checks"
+    },
+    {
+      "date": "2026-11-04",
+      "title": "The boss's WORLD CLEAR, PAPER COMPLETE and GAME OVER boxes ar..."
+    },
+    {
+      "date": "2026-11-04",
+      "title": "Menus really ignore clicks for a moment after a screen opens ..."
+    },
+    {
+      "date": "2026-11-04",
+      "title": "Phone tap targets"
+    },
+    {
+      "date": "2026-11-04",
+      "title": "MISSED QUESTIONS in REVIEW"
+    },
+    {
+      "date": "2026-11-04",
+      "title": "SEND FEEDBACK on the boss win box"
+    },
+    {
+      "date": "2026-11-05",
+      "title": "LEVEL CLEAR is a solid box centered in the sky with 16px text..."
+    },
+    {
+      "date": "2026-11-05",
+      "title": "Levels ask for real platforming"
+    },
+    {
+      "date": "2026-11-05",
+      "title": "REVIEW mode for people who've already read a paper"
+    },
+    {
+      "date": "2026-11-05",
+      "title": "The Notebook is easier to get around"
+    },
+    {
+      "date": "2026-11-05",
+      "title": "REVIEW and the Notebook are linked"
+    },
+    {
+      "date": "2026-11-05",
+      "title": "REVIEW can test one section at a time"
+    },
+    {
+      "date": "2026-11-10",
+      "title": "The professor's tutorial"
+    },
+    {
+      "date": "2026-11-11",
+      "title": "TRADING FLOOR is the default music style for new players"
+    },
+    {
+      "date": "2026-11-11",
+      "title": "The tour ends on the title screen"
+    },
+    {
+      "date": "2026-11-11",
+      "title": "STUDY music style"
+    },
+    {
+      "date": "2026-11-11",
+      "title": "Public copy on my own GitHub"
+    },
+    {
+      "date": "2026-11-13",
+      "title": "All rights reserved"
+    },
+    {
+      "date": "2026-11-13",
+      "title": "The CREDITS screen shows"
+    },
+    {
+      "date": "2026-11-15",
+      "title": "Moving platforms carry the player"
+    },
+    {
+      "date": "2026-11-18",
+      "title": "R restarts the level"
+    },
+    {
+      "date": "2026-11-21",
+      "title": "Final video project in video/"
+    }
+  ],
+  "unitTests": {
+    "passed": 197,
+    "total": 197,
+    "files": 26
+  },
+  "playThroughs": [
+    "the game loads to the title screen with no errors",
+    "clearing 1-1 shows a centered LEVEL CLEAR box that waits for the player",
+    "a normal jump lands on the sky blocks and the boss arena's platforms",
+    "standing still on a moving platform carries the player along with it",
+    "R restarts the level once, for free, and the controls hint says so",
+    "a missed boss question warns it comes back, then returns tagged",
+    "touching the boss shows the don't-touch tip once per fight",
+    "the boss's win and game-over boxes sit centered in the sky",
+    "beating a boss offers SEND FEEDBACK until this device has sent some",
+    "the credits screen shows the copyright, with every line inside the frame and none overlapping",
+    "double-clicking BACK on the credits screen stays on the title screen",
+    "a click right after the title screen opens doesn't pick an option",
+    "REVIEW goes straight to the boss fights, then scores each section",
+    "REVIEW can test one section: one boss fight, then its results",
+    "MISSED QUESTIONS retests only what you got wrong, and right answers drop off",
+    "the Notebook reaches a world in two clicks and only pages through what's unlocked",
+    "every practice and boss question in every built-in paper fits its box",
+    "on a phone, every option on the menus and new screens is big enough to tap",
+    "on a phone, the professor's tour says how to tap, and its X is easy to hit",
+    "a new player's first NEW GAME starts the professor's tour, every step neat on its own screen",
+    "the X ends the tour from any step, and ABOUT can replay it"
+  ]
+}

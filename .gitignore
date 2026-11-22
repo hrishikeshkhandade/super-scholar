@@ -22,3 +22,6 @@ __pycache__/
 # Play-through check output (npm run check:game)
 e2e/results/
 e2e/screenshots/
+
+# Test runner report (written by video/scripts/projectData.mjs)
+.vitest/

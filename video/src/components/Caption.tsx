@@ -1,4 +1,10 @@
-import { Easing, Interactive, interpolate, useCurrentFrame, useVideoConfig } from "remotion";
+import {
+  Easing,
+  Interactive,
+  interpolate,
+  useCurrentFrame,
+  useVideoConfig,
+} from "remotion";
 import { NES, PIXEL_FONT, typedLength } from "../theme";
 
 export type CaptionProps = {
@@ -33,12 +39,20 @@ export const Caption: React.FC<CaptionProps> = ({ text, from = 0 }) => {
         fontSize: 32,
         lineHeight: 1.6,
         color: NES.white,
-        opacity: interpolate(frame, [0, 0.2 * fps], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" }),
-        translate: interpolate(frame, [0, 0.45 * fps], ["0px 60px", "0px 0px"], {
+        opacity: interpolate(frame, [0, 0.2 * fps], [0, 1], {
           extrapolateLeft: "clamp",
           extrapolateRight: "clamp",
-          easing: Easing.spring({ damping: 200 }),
         }),
+        translate: interpolate(
+          frame,
+          [0, 0.45 * fps],
+          ["0px 60px", "0px 0px"],
+          {
+            extrapolateLeft: "clamp",
+            extrapolateRight: "clamp",
+            easing: Easing.spring({ damping: 200 }),
+          },
+        ),
       }}
     >
       {text.slice(0, typedLength(text, frame - 0.3 * fps, fps, 40))}

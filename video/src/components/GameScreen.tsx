@@ -2,9 +2,17 @@ import { NES } from "../theme";
 
 // The game's screen inside the video: 3/4 size, white border, centered near
 // the top of the frame, leaving room for the caption bar beneath it.
-export const SCREEN = { left: 240, top: 50, width: 1440, height: 810, border: 6 } as const;
+export const SCREEN = {
+  left: 240,
+  top: 50,
+  width: 1440,
+  height: 810,
+  border: 6,
+} as const;
 
-export const GameScreen: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+export const GameScreen: React.FC<{ children: React.ReactNode }> = ({
+  children,
+}) => (
   <div
     style={{
       position: "absolute",

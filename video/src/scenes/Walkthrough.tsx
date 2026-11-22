@@ -1,5 +1,11 @@
 import { Video } from "@remotion/media";
-import { AbsoluteFill, interpolate, Series, staticFile, useVideoConfig } from "remotion";
+import {
+  AbsoluteFill,
+  interpolate,
+  Series,
+  staticFile,
+  useVideoConfig,
+} from "remotion";
 import { Caption } from "../components/Caption";
 import { GameScreen } from "../components/GameScreen";
 import { NES } from "../theme";
@@ -20,10 +26,13 @@ export type WalkthroughProps = {
 };
 
 // How many video frames a shot lasts once sped up.
-export const shotFrames = (shot: WalkthroughShot, fps: number): number => Math.round(((shot.to - shot.from) * fps) / shot.speed);
+export const shotFrames = (shot: WalkthroughShot, fps: number): number =>
+  Math.round(((shot.to - shot.from) * fps) / shot.speed);
 
-export const walkthroughFrames = (shots: WalkthroughShot[], fps: number): number =>
-  shots.reduce((total, shot) => total + shotFrames(shot, fps), 0);
+export const walkthroughFrames = (
+  shots: WalkthroughShot[],
+  fps: number,
+): number => shots.reduce((total, shot) => total + shotFrames(shot, fps), 0);
 
 const VOLUME = 0.7;
 // Fades the game's sound in and out where the caption changes, so the music doesn't pop.
@@ -43,29 +52,47 @@ export const Walkthrough: React.FC<WalkthroughProps> = ({ clip, shots }) => {
       <Series>
         {shots.map((shot, index) => {
           const frames = shotFrames(shot, fps);
-          const continues = index > 0 && shots[index - 1].caption === shot.caption;
-          const continuesInto = index < shots.length - 1 && shots[index + 1].caption === shot.caption;
+          const continues =
+            index > 0 && shots[index - 1].caption === shot.caption;
+          const continuesInto =
+            index < shots.length - 1 &&
+            shots[index + 1].caption === shot.caption;
           const volumeIn = continues ? VOLUME : 0;
           const volumeOut = continuesInto ? VOLUME : 0;
           return (
-            <Series.Sequence key={`${shot.from}-${shot.to}`} name={shot.caption} durationInFrames={frames}>
+            <Series.Sequence
+              key={`${shot.from}-${shot.to}`}
+              name={shot.caption}
+              durationInFrames={frames}
+            >
               <GameScreen>
                 <Video
                   src={staticFile(clip)}
                   trimBefore={Math.round(shot.from * fps)}
                   playbackRate={shot.speed}
-                  muted={shot.speed < SLOWEST_AUDIBLE_SPEED || shot.speed > FASTEST_AUDIBLE_SPEED}
+                  muted={
+                    shot.speed < SLOWEST_AUDIBLE_SPEED ||
+                    shot.speed > FASTEST_AUDIBLE_SPEED
+                  }
                   volume={(f) =>
-                    interpolate(f, [0, fade, frames - fade, frames], [volumeIn, VOLUME, VOLUME, volumeOut], {
-                      extrapolateLeft: "clamp",
-                      extrapolateRight: "clamp",
-                    })
+                    interpolate(
+                      f,
+                      [0, fade, frames - fade, frames],
+                      [volumeIn, VOLUME, VOLUME, volumeOut],
+                      {
+                        extrapolateLeft: "clamp",
+                        extrapolateRight: "clamp",
+                      },
+                    )
                   }
                   style={{ width: "100%", height: "100%" }}
                 />
               </GameScreen>
               {/* A continuing caption starts long finished, so it doesn't slide or retype. */}
-              <Caption text={shot.caption} from={continues ? -10 * fps : 0.2 * fps} />
+              <Caption
+                text={shot.caption}
+                from={continues ? -10 * fps : 0.2 * fps}
+              />
             </Series.Sequence>
           );
         })}

@@ -1,3 +1,4 @@
+import { loadFont as loadMonoFont } from "@remotion/google-fonts/JetBrainsMono";
 import { loadFont } from "@remotion/google-fonts/PressStart2P";
 
 // The video uses the game's own look: the NES colors from src/palette.ts and
@@ -18,7 +19,10 @@ export const NES = {
   tan: "#fca044",
 } as const;
 
-export const { fontFamily: PIXEL_FONT } = loadFont("normal", { weights: ["400"], subsets: ["latin"] });
+export const { fontFamily: PIXEL_FONT } = loadFont("normal", {
+  weights: ["400"],
+  subsets: ["latin"],
+});
 
 // A hard black outline around pixel text, like the game's title.
 export function pixelOutline(size: number): string {
@@ -32,10 +36,33 @@ export function pixelOutline(size: number): string {
     [-size, size],
     [size, -size],
   ];
-  return [...offsets.map(([x, y]) => `${x}px ${y}px 0 ${NES.black}`), `0 ${size * 2}px 0 ${NES.black}`].join(", ");
+  return [
+    ...offsets.map(([x, y]) => `${x}px ${y}px 0 ${NES.black}`),
+    `0 ${size * 2}px 0 ${NES.black}`,
+  ].join(", ");
 }
 
 // How many characters of `text` show after `frame`, typing `perSecond` a second.
-export function typedLength(text: string, frame: number, fps: number, perSecond = 30): number {
-  return Math.max(0, Math.min(text.length, Math.floor((frame / fps) * perSecond)));
+export function typedLength(
+  text: string,
+  frame: number,
+  fps: number,
+  perSecond = 30,
+): number {
+  return Math.max(
+    0,
+    Math.min(text.length, Math.floor((frame / fps) * perSecond)),
+  );
+}
+
+// The terminal in "How I built it" uses a plain monospace font, like a real one.
+export const { fontFamily: MONO_FONT } = loadMonoFont("normal", {
+  weights: ["400", "700"],
+  subsets: ["latin"],
+});
+
+// "Oct 6" from "2026-10-06".
+export function shortDate(date: string): string {
+  const [, month, day] = date.split("-").map(Number);
+  return `${["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"][month - 1]} ${day}`;
 }

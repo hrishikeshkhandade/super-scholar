@@ -1,4 +1,11 @@
-import { AbsoluteFill, Easing, Interactive, interpolate, useCurrentFrame, useVideoConfig } from "remotion";
+import {
+  AbsoluteFill,
+  Easing,
+  Interactive,
+  interpolate,
+  useCurrentFrame,
+  useVideoConfig,
+} from "remotion";
 import { Ground } from "../components/Ground";
 import { PixelCloud } from "../components/PixelCloud";
 import { NES, PIXEL_FONT, pixelOutline, typedLength } from "../theme";
@@ -17,13 +24,20 @@ export const Intro: React.FC = () => {
   const bylineStart = taglineStart + 1.4 * fps;
 
   return (
-    <AbsoluteFill name="Intro" style={{ background: `linear-gradient(${NES.sky} 0%, ${NES.teal} 100%)` }}>
+    <AbsoluteFill
+      name="Intro"
+      style={{ background: `linear-gradient(${NES.sky} 0%, ${NES.teal} 100%)` }}
+    >
       <Interactive.Div
         name="Clouds"
         style={{
           position: "absolute",
           inset: 0,
-          translate: interpolate(frame, [0, 8 * fps], ["0px 0px", "-160px 0px"]),
+          translate: interpolate(
+            frame,
+            [0, 8 * fps],
+            ["0px 0px", "-160px 0px"],
+          ),
         }}
       >
         <PixelCloud x={180} y={120} />
@@ -31,8 +45,21 @@ export const Intro: React.FC = () => {
         <PixelCloud x={620} y={190} unit={10} />
       </Interactive.Div>
 
-      <AbsoluteFill style={{ justifyContent: "center", alignItems: "center", paddingBottom: 60 }}>
-        <div style={{ display: "flex", fontFamily: PIXEL_FONT, fontSize: 124, color: NES.yellow }}>
+      <AbsoluteFill
+        style={{
+          justifyContent: "center",
+          alignItems: "center",
+          paddingBottom: 60,
+        }}
+      >
+        <div
+          style={{
+            display: "flex",
+            fontFamily: PIXEL_FONT,
+            fontSize: 124,
+            color: NES.yellow,
+          }}
+        >
           {TITLE.split("").map((letter, index) => (
             <Interactive.Div
               key={index}
@@ -40,11 +67,16 @@ export const Intro: React.FC = () => {
               style={{
                 width: letter === " " ? 70 : undefined,
                 textShadow: pixelOutline(8),
-                translate: interpolate(frame, [index * 3, index * 3 + 0.7 * fps], ["0px -700px", "0px 0px"], {
-                  extrapolateLeft: "clamp",
-                  extrapolateRight: "clamp",
-                  easing: Easing.spring({ damping: 12 }),
-                }),
+                translate: interpolate(
+                  frame,
+                  [index * 3, index * 3 + 0.7 * fps],
+                  ["0px -700px", "0px 0px"],
+                  {
+                    extrapolateLeft: "clamp",
+                    extrapolateRight: "clamp",
+                    easing: Easing.spring({ damping: 12 }),
+                  },
+                ),
               }}
             >
               {letter}
@@ -73,11 +105,16 @@ export const Intro: React.FC = () => {
             fontFamily: PIXEL_FONT,
             fontSize: 26,
             color: NES.black,
-            opacity: interpolate(frame, [bylineStart, bylineStart + 0.5 * fps], [0, 1], {
-              extrapolateLeft: "clamp",
-              extrapolateRight: "clamp",
-              easing: Easing.bezier(0.16, 1, 0.3, 1),
-            }),
+            opacity: interpolate(
+              frame,
+              [bylineStart, bylineStart + 0.5 * fps],
+              [0, 1],
+              {
+                extrapolateLeft: "clamp",
+                extrapolateRight: "clamp",
+                easing: Easing.bezier(0.16, 1, 0.3, 1),
+              },
+            ),
           }}
         >
           {BYLINE}
