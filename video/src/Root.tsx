@@ -3,6 +3,8 @@ import { FINAL_DURATION, FinalVideo, FPS, SCENES } from "./FinalVideo";
 import { GameplayStill } from "./scenes/GameplayStill";
 import { Intro } from "./scenes/Intro";
 import { SectionCard } from "./scenes/SectionCard";
+import { Walkthrough } from "./scenes/Walkthrough";
+import { UPLOADED_PAPER_RUN } from "./walkthroughs";
 
 const SIZE = { width: 1920, height: 1080, fps: FPS };
 
@@ -26,6 +28,13 @@ export const RemotionRoot: React.FC = () => (
           image: "stills/2-level-clear-with-facts.png",
           caption: "Bears hold fun facts from the paper. Stomp one and a fact appears.",
         }}
+        {...SIZE}
+      />
+      <Composition
+        id="Walkthrough"
+        component={Walkthrough}
+        durationInFrames={SCENES.walkthrough}
+        defaultProps={UPLOADED_PAPER_RUN}
         {...SIZE}
       />
     </Folder>
