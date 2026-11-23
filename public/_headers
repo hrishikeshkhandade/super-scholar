@@ -1,7 +1,7 @@
 # Security headers for every page and file of the game (Cloudflare static assets).
+# Only the game itself and the portfolio site may show it in a frame (frame-ancestors).
 /*
-  Content-Security-Policy: default-src 'self'; script-src 'self'; worker-src 'self' blob:; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self' https://api.openalex.org; object-src 'none'; base-uri 'self'; form-action 'none'; frame-ancestors 'none'
-  X-Frame-Options: DENY
+  Content-Security-Policy: default-src 'self'; script-src 'self'; worker-src 'self' blob:; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self' https://api.openalex.org; object-src 'none'; base-uri 'self'; form-action 'none'; frame-ancestors 'self' https://portfolio.hrishikhandade.workers.dev
   X-Content-Type-Options: nosniff
   Referrer-Policy: strict-origin-when-cross-origin
   Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=()
