@@ -4,6 +4,8 @@
 {
   "$schema": "./node_modules/wrangler/config-schema.json",
   "name": "super-scholar",
+  // The older Cloudflare account. Named here because one login can reach more than one account.
+  "account_id": "b21adc72894fc7e731af604802522a6d",
   "main": "./worker/index.ts",
   "compatibility_date": "2026-10-14",
   "assets": {
