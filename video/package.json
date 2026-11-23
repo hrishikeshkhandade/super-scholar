@@ -30,7 +30,8 @@
     "build": "remotion bundle",
     "upgrade": "remotion upgrade",
     "lint": "eslint src && tsc",
-    "data": "node scripts/projectData.mjs"
+    "data": "node scripts/projectData.mjs",
+    "thumbnail": "remotion still Thumbnail out/thumbnail.jpg --image-format=jpeg --jpeg-quality=95 --scale=0.6667"
   },
   "allowScripts": {
     "esbuild": false

@@ -12,13 +12,14 @@ npm run data                                    # refresh the project's numbers 
 scripts/prepareNarration.sh "<recordings folder>" # clean up the narration recordings into public/narration/
 npm run dev                                     # open Remotion Studio to preview and scrub
 npx remotion render FinalVideo out/final.mp4    # render the video
+npm run thumbnail                               # render the YouTube thumbnail (1280x720) to out/thumbnail.jpg
 npm run lint                                    # lint and type-check
 ```
 
 ## Layout
 
 - `src/FinalVideo.tsx`: the whole video, scene by scene, with scene lengths.
-- `src/scenes/`: the opening (`Intro`), chapter cards (`SectionCard`), recorded gameplay (`Walkthrough`), "How I built it" (`PlanScroll`, `FeedbackStory`, `TestRun`, `ProjectStats`), and the closing card (`Ending`).
+- `src/scenes/`: the opening (`Intro`), chapter cards (`SectionCard`), recorded gameplay (`Walkthrough`), "How I built it" (`PlanScroll`, `FeedbackStory`, `TestRun`, `ProjectStats`), the closing card (`Ending`), and the YouTube thumbnail (`Thumbnail`).
 - `src/walkthroughs.ts`: which seconds of each recording become shots, at what speed, with which caption.
 - `src/narration.ts`: where each phrase of the narration plays, cut at the pauses in the recordings.
 - `src/projectData.json`: real numbers from the project, written by `npm run data` (`scripts/projectData.mjs`).

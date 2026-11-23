@@ -8,6 +8,7 @@ import { PlanScroll } from "./scenes/PlanScroll";
 import { ProjectStats } from "./scenes/ProjectStats";
 import { SectionCard } from "./scenes/SectionCard";
 import { TestRun } from "./scenes/TestRun";
+import { Thumbnail } from "./scenes/Thumbnail";
 import { Walkthrough, walkthroughFrames } from "./scenes/Walkthrough";
 import { UPLOADED_PAPER_RUN } from "./walkthroughs";
 
@@ -17,6 +18,12 @@ const SIZE = { width: 1920, height: 1080, fps: FPS };
 // its own, to preview and tweak in Remotion Studio.
 export const RemotionRoot: React.FC = () => (
   <>
+    <Composition
+      id="Thumbnail"
+      component={Thumbnail}
+      durationInFrames={1}
+      {...SIZE}
+    />
     <Composition
       id="FinalVideo"
       component={FinalVideo}
