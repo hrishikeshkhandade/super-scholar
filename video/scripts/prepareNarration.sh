@@ -7,10 +7,12 @@
 #      were tried and blurred words: scored by transcribing each version, the
 #      gate kept 96-100% of the original's words, the others 82-94%.
 #   2. in "part 2", removes a Mac notification chime at 18.3 s (two tones, 696 Hz
-#      and 1048 Hz, with overtones), only while it rings: wide notches for its loud
-#      first 0.8 s, a treble cut over its 0.2 s strike, a smooth 5 dB dip there,
-#      then narrow notches over its fading tail, which rings under "Then you play"
-#      until about 20.3 s (measured: the tones hold their pitch as they fade),
+#      and 1048 Hz, with faint overtones) for the whole 2 s it rings, under "plain
+#      words. Then you play": six 100 Hz-wide notches on each tone, a treble cut
+#      over its 0.2 s strike, and a smooth 5 dB dip there. Measured, the tones go
+#      from 40-50 dB above the voice to at or below it at the strike and 30-100 dB
+#      below for the rest; narrower, shallower notches left a ring the student
+#      could still hear,
 #   3. raises the whole file by one fixed amount to -16 LUFS (the usual level for
 #      online video), with a limiter on peaks. A fixed raise, unlike a dynamic
 #      one, doesn't lift the hum in the pauses.
@@ -27,16 +29,13 @@ TARGET_LUFS=-16
 CLEAN="highpass=f=80,agate=threshold=0.006:ratio=6:range=0.03:attack=5:release=150:knee=2"
 
 # The chime filters, each switched on only while the chime rings.
-RINGING="enable='between(t,18.25,19.05)'"
-FADING="enable='between(t,19.05,20.4)'"
+RINGING="enable='between(t,18.25,20.45)'"
 STRIKE="enable='between(t,18.27,18.47)'"
-notch() { echo "bandreject=f=$1:width_type=h:width=$2:$RINGING"; }
-tail_notch() { echo "bandreject=f=$1:width_type=h:width=40:$FADING"; }
-CHIME="$(notch 700 140),$(notch 700 140),$(notch 700 140)"
-CHIME+=",$(notch 1048 140),$(notch 1048 140),$(notch 1048 140)"
-CHIME+=",$(notch 1395 100),$(notch 1395 100),$(notch 2092 100),$(notch 2092 100)"
+# notch <frequency> <width> <how many times>: stacked for depth.
+notch() { for _ in $(seq "$3"); do printf ",bandreject=f=%s:width_type=h:width=%s:%s" "$1" "$2" "$RINGING"; done; }
+CHIME="$(notch 698 100 6)$(notch 1045 100 6)$(notch 1395 60 2)$(notch 2092 60 2)"
+CHIME="${CHIME#,}"
 CHIME+=",lowpass=f=1200:$STRIKE,lowpass=f=1200:$STRIKE,lowpass=f=1200:$STRIKE"
-CHIME+=",$(tail_notch 700),$(tail_notch 700),$(tail_notch 700),$(tail_notch 1045),$(tail_notch 1045),$(tail_notch 1045)"
 CHIME+=",volume='1-0.45*min(1\,max(0\,min((t-18.24)/0.04\,(18.50-t)/0.04)))':eval=frame"
 
 # Recording name -> name used in the video.
