@@ -6,14 +6,7 @@
 #      voice itself is untouched. Stronger denoisers (anlmdn, afwtdn, RNNoise)
 #      were tried and blurred words: scored by transcribing each version, the
 #      gate kept 96-100% of the original's words, the others 82-94%.
-#   2. in "part 2", removes a Mac notification chime at 18.3 s (two tones, 696 Hz
-#      and 1048 Hz, with faint overtones) for the whole 2 s it rings, under "plain
-#      words. Then you play": six 100 Hz-wide notches on each tone, a treble cut
-#      over its 0.2 s strike, and a smooth 5 dB dip there. Measured, the tones go
-#      from 40-50 dB above the voice to at or below it at the strike and 30-100 dB
-#      below for the rest; narrower, shallower notches left a ring the student
-#      could still hear,
-#   3. raises the whole file by one fixed amount to -16 LUFS (the usual level for
+#   2. raises the whole file by one fixed amount to -16 LUFS (the usual level for
 #      online video), with a limiter on peaks. A fixed raise, unlike a dynamic
 #      one, doesn't lift the hum in the pauses.
 # Usage: scripts/prepareNarration.sh "<folder with the recordings>"
@@ -28,26 +21,20 @@ TARGET_LUFS=-16
 # below about -44 dBFS it eases the sound down by up to 30 dB.
 CLEAN="highpass=f=80,agate=threshold=0.006:ratio=6:range=0.03:attack=5:release=150:knee=2"
 
-# The chime filters, each switched on only while the chime rings.
-RINGING="enable='between(t,18.25,20.45)'"
-STRIKE="enable='between(t,18.27,18.47)'"
-# notch <frequency> <width> <how many times>: stacked for depth.
-notch() { for _ in $(seq "$3"); do printf ",bandreject=f=%s:width_type=h:width=%s:%s" "$1" "$2" "$RINGING"; done; }
-CHIME="$(notch 698 100 6)$(notch 1045 100 6)$(notch 1395 60 2)$(notch 2092 60 2)"
-CHIME="${CHIME#,}"
-CHIME+=",lowpass=f=1200:$STRIKE,lowpass=f=1200:$STRIKE,lowpass=f=1200:$STRIKE"
-CHIME+=",volume='1-0.45*min(1\,max(0\,min((t-18.24)/0.04\,(18.50-t)/0.04)))':eval=frame"
-
 # Recording name -> name used in the video.
 names=("Intro:1-intro" "part 2:2-level" "part 3:3-boss" "part 4:4-review" "part 5:5-built" "part 6:6-ending")
 for pair in "${names[@]}"; do
   from="${pair%%:*}"
   to="${pair##*:}"
   filters="$CLEAN"
-  if [ "$from" = "part 2" ]; then filters="$CHIME,$filters"; fi
+  # Seconds left out of the loudness measurement: part 2 has a Mac notification
+  # chime at 18.2-20.4 s (that sentence isn't used in the video), which would
+  # otherwise make the file measure louder than the voice and come out too quiet.
+  measured="$filters"
+  if [ "$from" = "part 2" ]; then measured="$filters,aselect='not(between(t\,18.2\,20.4))'"; fi
 
   # Measure the cleaned recording's loudness, then raise it by one fixed amount.
-  loudness=$(ffmpeg -hide_banner -i "$source_dir/$from.aifc" -af "$filters,ebur128" -f null - </dev/null 2>&1 |
+  loudness=$(ffmpeg -hide_banner -i "$source_dir/$from.aifc" -af "$measured,ebur128" -f null - </dev/null 2>&1 |
     awk '/^ +I:/ { value = $2 } END { print value }')
   gain=$(echo "$TARGET_LUFS - ($loudness)" | bc -l)
   ffmpeg -v error -y -i "$source_dir/$from.aifc" \

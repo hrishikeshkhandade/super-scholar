@@ -17,8 +17,11 @@ export const INTRO_VOICE = [clip("1-intro", 1.0, 8.45, 0.4)];
 export const LEVEL_VOICE = [
   // "You can pick a paper... Here I uploaded one called Language Models Need Sleep."
   clip("2-level", 0.85, 8.3, 0.3),
-  // "AI turns each section into a world... Professor Quant introduces... Then you play."
-  clip("2-level", 8.8, 19.8, 7.9),
+  // "AI turns each section into a world, and the game checks its work, so nothing is
+  // copied from the paper or repeated." The next sentence ("Professor Quant introduces
+  // the paper in plain words. Then you play.") is left out: a Mac notification rang
+  // under it in the recording, and the on-screen caption says the same thing.
+  clip("2-level", 8.8, 15.6, 7.9),
   // "Every bear you stomp holds a fun fact from the paper."
   clip("2-level", 20.3, 22.95, 19.3),
   // "Reach the flag and you get a short lesson... then a practice question."
